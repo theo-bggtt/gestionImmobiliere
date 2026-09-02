@@ -32,6 +32,7 @@ export default [
         route("nouveau", "routes/_app/elements.nouveau.tsx"),
         route(":elementId/modifier", "routes/_app/elements.$elementId.modifier.tsx"),
       ]),
+      route("types/nouveau", "routes/_app/types.nouveau.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;
