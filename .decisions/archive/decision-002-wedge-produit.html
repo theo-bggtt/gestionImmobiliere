@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 2 : Le wedge produit — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; }
+.category-badge.strategy { background: #fef3c7; color: #b45309; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.locked-banner { max-width: 1200px; margin: 0 auto 1.5rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #059669; border-radius: 10px; padding: 0.85rem 1.25rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.locked-banner .tag { background: #059669; color: white; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
+.locked-banner p { font-size: 0.85rem; color: #065f46; margin: 0; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #b45309; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #78350f; line-height: 1.6; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; position: relative; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.5rem; background: #f8fafc; min-height: 190px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.life { display: flex; flex-direction: column; gap: 9px; width: 100%; max-width: 300px; }
+.life-track { display: flex; gap: 3px; }
+.life-seg { flex: 1; min-height: 40px; border-radius: 5px; background: #e9edf2; border: 2px solid transparent; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 700; color: #94a3b8; text-align: center; line-height: 1.2; padding: 3px 1px; }
+.life-seg.own { background: #eff6ff; border-color: #6366f1; color: #1d4ed8; }
+.life-axis { display: flex; justify-content: space-between; font-size: 0.52rem; color: #cbd5e1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.life-caption { font-size: 0.66rem; color: #64748b; line-height: 1.45; text-align: center; }
+.life-caption strong { color: #1d4ed8; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 2 sur 10</span>
+  <h1>Le wedge produit</h1>
+  <span class="category-badge strategy">Stratégie</span>
+  <p class="decision-description">
+    Un wedge, ce n'est pas une liste de fonctionnalités. C'est <strong>le moment de la vie du bâtiment que tu possèdes mieux que quiconque</strong>, celui par lequel tu entres et à partir duquel tu t'étends. Un bâtiment vit 30 à 100 ans et ton produit ne peut pas être indispensable sur toute la durée dès le premier jour.
+  </p>
+  <p class="decision-description">
+    Le visuel de chaque option montre la même frise de vie du bâtiment. La zone bleue est le moment que cette option revendique. Regarde surtout deux choses : est-ce que la donnée capturée à ce moment-là est <strong>reconstituable plus tard</strong> (si oui, tu n'as pas de fossé), et est-ce que ton canal de vente est <strong>physiquement présent</strong> à ce moment-là.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option A mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="locked-banner">
+  <span class="tag">Décision 1 verrouillée</span>
+  <p>Le pro (architecte ou entreprise générale) livre le dossier et le facture au chantier. Toutes les options ci-dessous sont évaluées à travers ce filtre : <strong>ton canal est sur le chantier, pas devant le propriétaire.</strong></p>
+</div>
+
+<div class="context-box">
+  <h3>Ce qui existe déjà, à ne pas ignorer</h3>
+  <p>
+    La photo de chantier documentée est une catégorie établie : TaskTag, TrueLook, les prestataires de scan 360 avant plâtrerie. Mais ces outils documentent <strong>pour couvrir la responsabilité du constructeur</strong>, et ils s'arrêtent à la réception du chantier. Aucun ne remet un dossier vivant qui appartient au propriétaire pendant trente ans. C'est là ta différence, et il faudra être très net là-dessus pour ne pas passer pour une énième app de photos de chantier.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Le dossier exhaustif</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="life">
+        <div class="life-track">
+          <div class="life-seg own">Chantier</div>
+          <div class="life-seg own">Emmé&shy;nage&shy;ment</div>
+          <div class="life-seg own">Entretien 10 ans</div>
+          <div class="life-seg own">Sinistre</div>
+          <div class="life-seg own">Vente</div>
+        </div>
+        <div class="life-axis"><span>An 0</span><span>An 30</span></div>
+        <div class="life-caption">Tu revendiques <strong>tout</strong>. Donc rien en particulier.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Le produit complet dès le départ : chaque pièce, chaque gaine, chaque prise, chaque intervention, chaque garantie. Le jumeau numérique allégé de la maison. C'est la traduction fidèle de ton brief initial, et c'est là que le produit doit finir. Mais comme point d'entrée, revendiquer tout revient à ne rien revendiquer : tu n'as pas de phrase de vente en dix secondes, tu as un cahier des charges. Et tu affrontes le problème de saisie sur cinq fronts à la fois au lieu d'un.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>C'est la vision juste, et la destination du produit</li>
+          <li>Aucune fonctionnalité à recoller plus tard</li>
+          <li>Le modèle de données est pensé complet dès le début</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Aucun angle d'attaque : tu ne tiens pas en une phrase</li>
+          <li>Le temps avant la première version utilisable explose</li>
+          <li>Rien n'y est irremplaçable, donc rien n'y est défendable</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">La mémoire des murs fermés</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="life">
+        <div class="life-track">
+          <div class="life-seg own">Chantier</div>
+          <div class="life-seg">Emmé&shy;nage&shy;ment</div>
+          <div class="life-seg">Entretien 10 ans</div>
+          <div class="life-seg">Sinistre</div>
+          <div class="life-seg">Vente</div>
+        </div>
+        <div class="life-axis"><span>An 0</span><span>An 30</span></div>
+        <div class="life-caption">Tu possèdes <strong>l'instant avant que le mur se referme</strong>.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Ta promesse tient en une phrase : <em>on sait ce qu'il y a derrière chaque mur de cette maison, parce qu'on l'a photographié et positionné avant de le fermer.</em> Le pro capture sur site, au moment où tout est ouvert et visible. C'est la seule donnée du dossier qui soit <strong>strictement irremplaçable</strong> : une facture, une garantie, un nom d'artisan se reconstituent avec un carton d'archives, un mur fermé ne se rouvre pas. C'est aussi le seul moment où ton canal de vente est physiquement présent, et Houzy, plateforme web sans présence de chantier, ne peut structurellement pas y être.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Seule donnée du dossier vraiment impossible à reconstituer</li>
+          <li>Ton canal est déjà sur place, tu ne crées pas un comportement</li>
+          <li>Se démontre en dix secondes avec une photo</li>
+          <li>Houzy ne peut pas y aller sans changer de métier</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Ne concerne que le bâti en travaux, pas le parc existant</li>
+          <li>Il faudra vite se distinguer des apps de photo de chantier</li>
+          <li>Le positionnement précis dans le mur est un vrai problème technique</li>
+          <li>Wedge étroit par construction, il faut assumer de dire non</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">La preuve opposable</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="life">
+        <div class="life-track">
+          <div class="life-seg">Chantier</div>
+          <div class="life-seg">Emmé&shy;nage&shy;ment</div>
+          <div class="life-seg own">Entretien 10 ans</div>
+          <div class="life-seg own">Sinistre</div>
+          <div class="life-seg">Vente</div>
+        </div>
+        <div class="life-axis"><span>An 0</span><span>An 30</span></div>
+        <div class="life-caption">Tu possèdes <strong>le litige</strong> : garantie, sinistre, expertise.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Le produit est une chaîne de preuve : qui a fait quoi, quand, sous quelle garantie, avec photos horodatées. Sa valeur apparaît aux moments désagréables, quand l'assureur conteste, quand l'entreprise nie, quand la garantie de deux ans arrive à échéance. C'est le positionnement qui mène le plus naturellement vers l'assurance bâtiment comme client final, donc vers l'endgame évoqué en décision 1. Mais la valeur est différée et hypothétique : personne n'achète avec enthousiasme une assurance contre un ennui qu'il n'a pas encore.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Ouvre directement la porte des assureurs et des ECA</li>
+          <li>Valeur chiffrable : un litige évité vaut des milliers de francs</li>
+          <li>Crée une raison de tenir le dossier à jour dans la durée</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Bénéfice différé et probabiliste, donc dur à vendre</li>
+          <li>Valeur juridique réelle à faire valider, sinon c'est du marketing</li>
+          <li>Ton canal (le pro) n'a aucun intérêt à documenter contre lui-même</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Le passeport du bâtiment</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="life">
+        <div class="life-track">
+          <div class="life-seg">Chantier</div>
+          <div class="life-seg">Emmé&shy;nage&shy;ment</div>
+          <div class="life-seg">Entretien 10 ans</div>
+          <div class="life-seg">Sinistre</div>
+          <div class="life-seg own">Vente</div>
+        </div>
+        <div class="life-axis"><span>An 0</span><span>An 30</span></div>
+        <div class="life-caption">Tu possèdes <strong>la transmission</strong>, et l'acheteur devient ton client.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Le dossier voyage avec la maison. Une maison documentée se vend mieux, plus vite et se négocie moins, et l'acheteur hérite du dossier, donc de ton produit : boucle virale gratuite. Ça s'appuie sur un vrai vent porteur réglementaire, le CECB devenant obligatoire dans plusieurs cantons romands à la vente ou au remplacement du chauffage. Le problème est le rythme : un bien se vend tous les quinze à vingt ans. Ta boucle de rétroaction se compte en décennies, et tu n'auras aucun signal exploitable avant très longtemps.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Boucle virale intégrée : l'acheteur hérite et devient client</li>
+          <li>Vent porteur réglementaire réel avec le CECB</li>
+          <li>Valeur facile à comprendre pour le propriétaire</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Événement rarissime : une vente tous les 15 à 20 ans</li>
+          <li>Boucle d'apprentissage produit quasi inexistante</li>
+          <li>C'est exactement le terrain de Houzy, courtiers et estimation compris</li>
+          <li>Ton canal, le pro du chantier, n'est pas là au moment de la vente</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Dossier exhaustif</th>
+          <th class="col-b col-recommended">B : Mémoire des murs</th>
+          <th class="col-c">C : Preuve opposable</th>
+          <th class="col-d">D : Passeport du bâtiment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Donnée reconstituable après coup</td>
+          <td>En partie</td>
+          <td class="col-recommended">Non, jamais</td>
+          <td>Difficilement</td>
+          <td>Oui</td>
+        </tr>
+        <tr>
+          <td>Ton canal est présent au moment clé</td>
+          <td>Partiellement</td>
+          <td class="col-recommended">Oui, physiquement</td>
+          <td>Non</td>
+          <td>Non</td>
+        </tr>
+        <tr>
+          <td>Se démontre en 10 secondes</td>
+          <td>Non</td>
+          <td class="col-recommended">Oui, une photo suffit</td>
+          <td>Non</td>
+          <td>Moyennement</td>
+        </tr>
+        <tr>
+          <td>Houzy peut-il te copier</td>
+          <td>Oui, sans effort</td>
+          <td class="col-recommended">Pas sans changer de métier</td>
+          <td>Avec un partenariat assureur</td>
+          <td>Ils y sont déjà</td>
+        </tr>
+        <tr>
+          <td>Marché adressable</td>
+          <td>Tout le parc</td>
+          <td class="col-recommended">Bâti en travaux uniquement</td>
+          <td>Tout le parc</td>
+          <td>Biens en vente</td>
+        </tr>
+        <tr>
+          <td>Fréquence du moment capté</td>
+          <td>Continue</td>
+          <td class="col-recommended">1 à 3 fois en 30 ans</td>
+          <td>Régulière</td>
+          <td>Tous les 15 à 20 ans</td>
+        </tr>
+        <tr>
+          <td>Boucle d'apprentissage produit</td>
+          <td>Diffuse</td>
+          <td class="col-recommended">Rapide, chantier après chantier</td>
+          <td>Lente</td>
+          <td>Quasi nulle</td>
+        </tr>
+        <tr>
+          <td>Délai avant première version utile</td>
+          <td>6 à 12 mois</td>
+          <td class="col-recommended">6 à 10 semaines</td>
+          <td>3 à 5 mois</td>
+          <td>4 à 6 mois</td>
+        </tr>
+        <tr>
+          <td>Mène vers l'endgame assureur</td>
+          <td>Indirectement</td>
+          <td class="col-recommended">Oui, via le stock de dossiers</td>
+          <td>Directement</td>
+          <td>Peu</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option C mais [ta variante] »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-001 je veux l'option D finalement »</strong></p>
+</div>
+
+</body>
+</html>

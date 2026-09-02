@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 8 : Navigation et direction visuelle — gestionImmobiliere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; background: #ecfdf5; color: #047857; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #b45309; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #78350f; line-height: 1.6; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.5rem; background: #e6ebf1; min-height: 300px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono','Fira Code',monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+/* --- telephone --- */
+.phone { width: 232px; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(15,23,42,.22), 0 0 0 7px #1e293b, 0 0 0 8px #0f172a; }
+.scr { height: 366px; display: flex; flex-direction: column; }
+.tabs { display: flex; border-top: 1px solid rgba(0,0,0,.08); margin-top: auto; }
+.tab { flex: 1; text-align: center; padding: 7px 0 9px; font-size: 0.44rem; font-weight: 700; letter-spacing: 0.03em; }
+.tab i { display: block; font-style: normal; font-size: 0.72rem; margin-bottom: 1px; }
+/* A blueprint */
+.sA { background: #0b1b2b; color: #cfe6f5; font-family: 'IBM Plex Mono', monospace; }
+.sA .top { padding: 11px 12px 8px; }
+.sA .ttl { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #6fd3f7; }
+.sA .sub { font-size: 0.46rem; color: #4b7794; margin-top: 1px; }
+.sA .plan { flex: 1; margin: 0 10px; border: 1px solid #1d4260; position: relative;
+  background-image: linear-gradient(90deg, rgba(60,140,190,.16) 1px, transparent 1px), linear-gradient(0deg, rgba(60,140,190,.16) 1px, transparent 1px);
+  background-size: 17px 17px; }
+.sA .rm { position: absolute; border: 1px solid #3f86b8; font-size: 0.4rem; color: #8fc8e8; display: flex; align-items: center; justify-content: center; letter-spacing: 0.04em; }
+.sA .pn { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: #f0a13a; box-shadow: 0 0 7px #f0a13a; }
+.sA .tabs { border-top-color: #17334a; background: #071522; }
+.sA .tab { color: #3f6a86; } .sA .tab.on { color: #6fd3f7; }
+/* B sobre */
+.sB { background: #ffffff; color: #0f172a; }
+.sB .top { padding: 12px 12px 9px; }
+.sB .hi { font-size: 0.52rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8; }
+.sB .fld { margin-top: 6px; border: 2px solid #0f172a; border-radius: 9px; padding: 8px 10px; font-size: 0.66rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
+.sB .lbl { font-size: 0.46rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8; padding: 10px 12px 4px; }
+.sB .row { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid #f1f5f9; }
+.sB .sq { width: 26px; height: 26px; border-radius: 6px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 0.66rem; flex-shrink: 0; }
+.sB .nm { font-size: 0.6rem; font-weight: 700; line-height: 1.2; }
+.sB .mt { font-size: 0.46rem; color: #94a3b8; }
+.sB .tabs { background: white; }
+.sB .tab { color: #cbd5e1; } .sB .tab.on { color: #0f172a; }
+/* C editorial */
+.sC { background: #faf6f0; color: #33291f; }
+.sC .top { padding: 13px 13px 6px; }
+.sC .kick { font-size: 0.44rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #b08a5e; }
+.sC .h { font-family: 'Fraunces', Georgia, serif; font-size: 1.02rem; font-weight: 700; line-height: 1.15; margin-top: 2px; letter-spacing: -0.01em; }
+.sC .item { margin: 8px 13px 0; }
+.sC .im { height: 58px; border-radius: 7px; }
+.sC .dt { font-size: 0.43rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #b08a5e; margin-top: 5px; }
+.sC .tx { font-family: 'Fraunces', Georgia, serif; font-size: 0.66rem; font-weight: 500; line-height: 1.25; margin-top: 1px; }
+.sC .tabs { border-top-color: #e6dccd; background: #f4ede3; }
+.sC .tab { color: #c0ac93; } .sC .tab.on { color: #7a5b34; }
+/* D photo */
+.sD { background: #14161a; color: #f3f4f6; }
+.sD .top { padding: 12px 11px 7px; display: flex; align-items: baseline; justify-content: space-between; }
+.sD .h { font-size: 0.8rem; font-weight: 800; letter-spacing: -0.01em; }
+.sD .n { font-size: 0.46rem; color: #6b7280; font-weight: 700; }
+.sD .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 11px; }
+.sD .cel { height: 62px; border-radius: 10px; position: relative; overflow: hidden; display: flex; align-items: flex-end; }
+.sD .cel span { position: relative; z-index: 2; font-size: 0.52rem; font-weight: 800; padding: 5px 7px; text-shadow: 0 1px 4px rgba(0,0,0,.9); }
+.sD .cel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.66), transparent 62%); }
+.sD .tabs { border-top-color: #262a31; background: #0d0f12; }
+.sD .tab { color: #4b5563; } .sD .tab.on { color: #f3f4f6; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 8 sur 8</span>
+  <h1>Navigation et direction visuelle</h1>
+  <span class="category-badge">Archi info &middot; Visuel</span>
+  <p class="decision-description">
+    La dernière, et elle en contient deux qui se commandent l'une l'autre : <strong>ce que tu vois en ouvrant l'app</strong>, et à quoi ça ressemble. Un écran d'accueil centré sur le plan appelle un style technique. Un écran centré sur les photos appelle autre chose.
+  </p>
+  <p class="decision-description">
+    Les quatre maquettes sont des écrans d'accueil complets, avec leur palette et leur typographie. Le reste de l'app suit.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option D mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="context-box">
+  <h3>Le test du premier jour</h3>
+  <p>
+    Juge chaque maquette avec <strong>trois fiches en base</strong>, pas deux cents. Un plan sans points et une grille de pièces sans photos font un écran d'accueil désolant, et c'est précisément le moment où l'utilisateur décide s'il continue. Ta capture opportuniste garantit que les premières semaines seront maigres : l'accueil doit être bon <em>vide</em>, pas seulement plein.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Le plan d'abord &middot; technique</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="phone"><div class="scr sA">
+        <div class="top"><div class="ttl">Rez-de-chaussée</div><div class="sub">11 points &middot; 6 zones</div></div>
+        <div class="plan">
+          <div class="rm" style="left:5%;top:6%;width:44%;height:40%">SÉJOUR</div>
+          <div class="rm" style="left:52%;top:6%;width:43%;height:40%">CUISINE</div>
+          <div class="rm" style="left:5%;top:50%;width:28%;height:42%">SDB</div>
+          <div class="rm" style="left:36%;top:50%;width:28%;height:42%">CH.1</div>
+          <div class="rm" style="left:67%;top:50%;width:28%;height:42%">CH.2</div>
+          <div class="pn" style="left:16%;top:20%"></div>
+          <div class="pn" style="left:63%;top:16%"></div>
+          <div class="pn" style="left:42%;top:66%"></div>
+          <div class="pn" style="left:78%;top:74%"></div>
+        </div>
+        <div class="tabs"><div class="tab on"><i>&#9635;</i>PLAN</div><div class="tab"><i>&#9906;</i>CHERCHER</div><div class="tab"><i>&#9711;</i>SAISIR</div><div class="tab"><i>&#9776;</i>PLUS</div></div>
+      </div></div>
+    </div>
+    <div class="option-summary">
+      Le plan occupe l'écran, en bleu de construction, police à chasse fixe, tracés fins. C'est fidèle à ton image de départ et c'est ce qui impressionne le plus quand on te montre l'app. Le style colle au sujet : on parle de conduites et de circuits, pas de décoration. Deux réserves sérieuses. Le premier jour, ce plan est vide et l'écran d'accueil est une grille déserte. Et sur un téléphone tenu à une main, un plan entier tient dans huit centimètres : tu passeras ton temps à zoomer avant de pouvoir viser quoi que ce soit.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Fidèle à ta vision d'origine</li>
+          <li>Le style sert le sujet, pas l'inverse</li>
+          <li>Excellent sur grand écran</li>
+          <li>Vue d'ensemble immédiate quand c'est rempli</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Accueil désolant tant que le plan est vide</li>
+          <li>Zoom permanent sur téléphone</li>
+          <li>Chemin le plus lent vers un objet connu</li>
+          <li>Le sombre technique vieillit vite et fatigue</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">La recherche d'abord &middot; sobre</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="phone"><div class="scr sB">
+        <div class="top">
+          <div class="hi">Ma maison</div>
+          <div class="fld"><span>&#128269;</span><span>Chercher un objet&hellip;</span></div>
+        </div>
+        <div class="lbl">Récemment consulté</div>
+        <div class="row"><div class="sq">&#128167;</div><div><div class="nm">Vanne d'arrêt</div><div class="mt">Cuisine &middot; sous évier</div></div></div>
+        <div class="row"><div class="sq">&#9889;</div><div><div class="nm">Tableau électrique</div><div class="mt">Cave</div></div></div>
+        <div class="row"><div class="sq">&#128293;</div><div><div class="nm">Chaudière Viessmann</div><div class="mt">Cave &middot; entretien mars</div></div></div>
+        <div class="row"><div class="sq">&#128225;</div><div><div class="nm">Prise RJ45</div><div class="mt">Bureau</div></div></div>
+        <div class="tabs"><div class="tab on"><i>&#9906;</i>CHERCHER</div><div class="tab"><i>&#9635;</i>PLAN</div><div class="tab"><i>&#9711;</i>SAISIR</div><div class="tab"><i>&#9776;</i>PLUS</div></div>
+      </div></div>
+    </div>
+    <div class="option-summary">
+      Un champ de recherche en haut, la liste des objets récents en dessous, et le plan dans l'onglet d'à côté. Le style est utilitaire assumé : blanc, contraste fort, police système, aucune décoration. Ça ressemble à un outil parce que c'en est un, et un outil bien fait ne cherche pas à être joli, il cherche à être rapide. C'est la seule option qui <strong>tient debout avec trois fiches</strong> : une liste courte reste une liste, alors qu'un plan vide reste un vide. Et c'est l'accueil qui correspond à l'usage réel, puisque neuf fois sur dix tu sais ce que tu cherches.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Bon dès la troisième fiche, et bon à la trois-centième</li>
+          <li>Correspond à l'usage réel : tu sais ce que tu cherches</li>
+          <li>Le plus rapide à une main, sur téléphone</li>
+          <li>Le style sobre ne se démode pas</li>
+          <li>Le plan reste à un doigt, dans l'onglet voisin</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Peu spectaculaire, ça ne fait rêver personne</li>
+          <li>Enterre le plan, qui était ton image de départ</li>
+          <li>Peut donner l'impression d'une base de données</li>
+          <li>Ne met pas les photos en valeur alors qu'elles sont partout</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">L'activité d'abord &middot; éditorial</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="phone"><div class="scr sC">
+        <div class="top"><div class="kick">Août 2026</div><div class="h">Trois choses<br>cette semaine</div></div>
+        <div class="item">
+          <div class="im" style="background:linear-gradient(135deg,#d9c4a3,#a8845c)"></div>
+          <div class="dt">Il y a 2 jours</div>
+          <div class="tx">Filtre VMC remplacé &middot; buanderie</div>
+        </div>
+        <div class="item">
+          <div class="im" style="background:linear-gradient(135deg,#b9c9b0,#7d9470)"></div>
+          <div class="dt">À prévoir &middot; 14 sept.</div>
+          <div class="tx">Entretien annuel chaudière</div>
+        </div>
+        <div class="tabs"><div class="tab on"><i>&#9635;</i>FIL</div><div class="tab"><i>&#9906;</i>CHERCHER</div><div class="tab"><i>&#9711;</i>SAISIR</div><div class="tab"><i>&#9776;</i>PLUS</div></div>
+      </div></div>
+    </div>
+    <div class="option-summary">
+      L'accueil est un fil : ce qui vient d'être fait, ce qui arrive bientôt. Papier chaud, titres en serif, grandes images. C'est de loin le plus agréable à regarder, et c'est la seule option qui donne une raison d'ouvrir l'app <em>quand tu n'as rien à chercher</em>, grâce aux rappels d'entretien. C'est aussi celle qui met en valeur les photos, qui sont partout dans ton produit. Le problème est arithmétique : une maison génère deux ou trois événements par mois. Un fil d'actualité alimenté à cette cadence est un fil vide, et le style éditorial rend le vide encore plus visible.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Seule option qui donne une raison d'ouvrir sans besoin précis</li>
+          <li>Met en valeur les photos et les avant/après</li>
+          <li>Les rappels d'entretien trouvent leur place naturelle</li>
+          <li>Le plus beau des quatre, sans discussion</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>2 à 3 événements par mois, le fil sera creux</li>
+          <li>Le style éditorial souligne le vide au lieu de le masquer</li>
+          <li>N'aide pas à retrouver un objet précis</li>
+          <li>Serif et images demandent un vrai travail de mise au point</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Les pièces d'abord &middot; photo</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="phone"><div class="scr sD">
+        <div class="top"><div class="h">Ma maison</div><div class="n">8 PIÈCES</div></div>
+        <div class="grid">
+          <div class="cel" style="background:linear-gradient(140deg,#c99a4e,#7a5620)"><span>Cuisine</span></div>
+          <div class="cel" style="background:linear-gradient(140deg,#5f93bf,#2c5578)"><span>Salle de bain</span></div>
+          <div class="cel" style="background:linear-gradient(140deg,#7fa86a,#40603a)"><span>Buanderie</span></div>
+          <div class="cel" style="background:linear-gradient(140deg,#8c8c94,#4a4a52)"><span>Cave</span></div>
+          <div class="cel" style="background:linear-gradient(140deg,#b5794f,#6b3f26)"><span>Séjour</span></div>
+          <div class="cel" style="background:linear-gradient(140deg,#6d8fa0,#37505d)"><span>Extérieur</span></div>
+        </div>
+        <div class="tabs"><div class="tab on"><i>&#9635;</i>PIÈCES</div><div class="tab"><i>&#9906;</i>CHERCHER</div><div class="tab"><i>&#9711;</i>SAISIR</div><div class="tab"><i>&#9776;</i>PLUS</div></div>
+      </div></div>
+    </div>
+    <div class="option-summary">
+      Une grille de pièces en photo, sur fond sombre pour que les images ressortent. C'est immédiatement lisible : tu reconnais ta buanderie sans lire son nom, ce qu'aucun plan ne permet. Sur téléphone, c'est le format le plus confortable des quatre, et ça exploite directement le flot de photos que ta capture opportuniste produit. Le défaut est structurel : une maison ne se réduit pas à des pièces. Le chauffage, l'électricité et la ventilation traversent les murs, et cette grille n'a nulle part où les mettre. Le jour un, les vignettes sont grises.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Reconnaissance instantanée, sans lecture</li>
+          <li>Le format le plus confortable sur téléphone</li>
+          <li>Exploite les photos que tu produis déjà</li>
+          <li>Le sombre met les images en valeur</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Aucune place pour les systèmes qui traversent les pièces</li>
+          <li>Vignettes grises tant qu'il n'y a pas de photos</li>
+          <li>Devient long à parcourir au-delà de douze pièces</li>
+          <li>Le fond sombre complique les photos déjà sombres, caves et locaux</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Plan &middot; technique</th>
+          <th class="col-b col-chosen">B : Recherche &middot; sobre</th>
+          <th class="col-c">C : Activité &middot; éditorial</th>
+          <th class="col-d">D : Pièces &middot; photo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tient avec 3 fiches</td>
+          <td>Non</td>
+          <td class="col-chosen">Oui</td>
+          <td>Non</td>
+          <td>Non</td>
+        </tr>
+        <tr>
+          <td>Tient avec 300 fiches</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui</td>
+          <td>Oui</td>
+          <td>Moyennement</td>
+        </tr>
+        <tr>
+          <td>Retrouver un objet connu</td>
+          <td>Lent</td>
+          <td class="col-chosen">Immédiat</td>
+          <td>Lent</td>
+          <td>Moyen</td>
+        </tr>
+        <tr>
+          <td>Confort à une main</td>
+          <td>Mauvais</td>
+          <td class="col-chosen">Excellent</td>
+          <td>Bon</td>
+          <td>Excellent</td>
+        </tr>
+        <tr>
+          <td>Raison d'ouvrir sans besoin</td>
+          <td>Faible</td>
+          <td class="col-chosen">Faible</td>
+          <td>Forte</td>
+          <td>Moyenne</td>
+        </tr>
+        <tr>
+          <td>Systèmes traversant les murs</td>
+          <td>Bien</td>
+          <td class="col-chosen">Bien</td>
+          <td>Moyen</td>
+          <td>Impossible</td>
+        </tr>
+        <tr>
+          <td>Effet sur la vue de partage</td>
+          <td>Peu adapté</td>
+          <td class="col-chosen">Direct à réutiliser</td>
+          <td>Trop riche</td>
+          <td>Très adapté</td>
+        </tr>
+        <tr>
+          <td>Vieillissement du style</td>
+          <td>Rapide</td>
+          <td class="col-chosen">Très lent</td>
+          <td>Lent</td>
+          <td>Moyen</td>
+        </tr>
+        <tr>
+          <td>Effort de mise au point visuelle</td>
+          <td>Élevé</td>
+          <td class="col-chosen">Faible</td>
+          <td>Très élevé</td>
+          <td>Moyen</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option B avec la grille de D »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-004 je veux revoir les phases »</strong></p>
+</div>
+
+</body>
+</html>

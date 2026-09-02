@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 3 : Comment ça se remplit — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; background: #e0f2fe; color: #0369a1; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.warn-banner { max-width: 1200px; margin: 0 auto 1.25rem; background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #e11d48; border-radius: 10px; padding: 0.95rem 1.25rem; }
+.warn-banner h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #be123c; margin-bottom: 0.35rem; }
+.warn-banner p { font-size: 0.85rem; color: #9f1239; line-height: 1.6; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #475569; line-height: 1.6; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.35rem; background: #f8fafc; min-height: 230px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.option-summary code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem; font-family: 'SF Mono','Fira Code',monospace; color: #0f172a; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono','Fira Code',monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.flow-container { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 0.25rem; width: 100%; max-width: 275px; }
+.flow-step { display: flex; align-items: center; gap: 9px; background: white; border: 2px solid #e2e8f0; border-radius: 9px; padding: 7px 10px; font-size: 0.66rem; font-weight: 600; color: #334155; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.flow-step.highlight { border-color: #6366f1; background: #eff6ff; color: #1d4ed8; }
+.flow-step.error { border-color: #e11d48; background: #fff1f2; color: #be123c; }
+.flow-step-number { width: 20px; height: 20px; border-radius: 50%; background: #e2e8f0; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 0.56rem; font-weight: 700; flex-shrink: 0; }
+.flow-step.highlight .flow-step-number { background: #6366f1; color: white; }
+.flow-step.error .flow-step-number { background: #e11d48; color: white; }
+.flow-step-label { flex: 1; line-height: 1.3; }
+.flow-down-arrow { font-size: 0.9rem; color: #94a3b8; padding: 1px 0; text-align: center; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 3 sur 8</span>
+  <h1>Comment ça se remplit</h1>
+  <span class="category-badge">Interaction</span>
+  <p class="decision-description">
+    Ta maison contient facilement 150 à 300 choses enregistrables. La question n'est pas de savoir si le modèle sait les stocker, on vient de régler ça. C'est de savoir <strong>par quel geste elles y entrent</strong>, et pourquoi tu referais ce geste la trois-centième fois.
+  </p>
+  <p class="decision-description">
+    Chaque visuel est le déroulé réel de l'utilisateur. Regarde surtout <strong>à quelle étape ça peut s'arrêter</strong>, et ce qui reste dans la base ce jour-là.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option A mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="warn-banner">
+  <h3>La décision où meurent les apps de gestion de maison</h3>
+  <p>
+    Ce n'est pas une figure de style. Le schéma est toujours le même : l'utilisateur s'inscrit motivé, remplit deux ou trois pièces, se rend compte qu'il en a pour quinze heures, et ne revient jamais. Le dossier reste à 20% et devient inutile, donc il n'y a aucune raison d'y retourner, donc il reste à 20%. <strong>Toutes les autres décisions supposent que celle-ci est résolue.</strong>
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">La session méthodique</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="flow-container">
+        <div class="flow-step"><span class="flow-step-number">1</span><span class="flow-step-label">Tu bloques un samedi après-midi</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step"><span class="flow-step-number">2</span><span class="flow-step-label">Tu listes les pièces de la maison</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">3</span><span class="flow-step-label">Cuisine : prises, vannes, appareils</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step"><span class="flow-step-number">4</span><span class="flow-step-label">Salon : tu recommences</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step error"><span class="flow-step-number">5</span><span class="flow-step-label">Chambre 1&hellip; tu poses le téléphone</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step error"><span class="flow-step-number">6</span><span class="flow-step-label">Le dossier reste à 30%, pour toujours</span></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Un assistant guidé, pièce par pièce, avec barre de progression et liste de contrôle. C'est le réflexe naturel et c'est ce que produit un modèle de données bien fait quand on ne réfléchit pas à l'usage. Le problème est structurel : la valeur n'arrive qu'à la fin, donc les quinze premières heures ne rapportent rien. Aucune boucle de récompense, aucune raison de rouvrir l'app demain, et l'abandon à la troisième pièce est le résultat <em>normal</em>, pas l'accident.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Résultat complet et homogène si tu vas au bout</li>
+          <li>Tu sais toujours ce qui manque</li>
+          <li>Très simple à développer</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>La valeur n'arrive qu'à la fin, donc jamais</li>
+          <li>Une barre de progression à 30% devient un reproche quotidien</li>
+          <li>C'est exactement le mode d'échec documenté du secteur</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">La capture opportuniste</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="flow-container">
+        <div class="flow-step"><span class="flow-step-number">1</span><span class="flow-step-label">Tu changes le filtre de la VMC</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">2</span><span class="flow-step-label">Photo depuis l'app &middot; 3 secondes</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">3</span><span class="flow-step-label">L'app propose : pièce ? objet ? type ?</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step"><span class="flow-step-number">4</span><span class="flow-step-label">Tu confirmes &middot; 15 secondes de plus</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">5</span><span class="flow-step-label">La fiche VMC existe, datée</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step"><span class="flow-step-number">6</span><span class="flow-step-label">6 mois plus tard : « filtre VMC » &rarr; trouvé</span></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Pas de grande session. Chaque fois que tu fais quelque chose dans la maison, tu photographies et tu ajoutes vingt secondes de contexte. Le dossier grossit par accumulation, au rythme de ta vie réelle. Le point capital est à l'étape 2 : la photo fait 80% du travail de saisie, parce qu'elle contient la marque, le modèle, l'état, et souvent le numéro de série, sans que tu tapes une lettre. Chaque entrée a une raison d'exister <em>au moment où tu la crées</em>, donc il n'y a pas d'effort à consentir contre une récompense future. C'est le seul modèle qui survit à ta propre lassitude.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Aucun marathon, aucune session à planifier</li>
+          <li>Chaque entrée a un déclencheur naturel dans la vraie vie</li>
+          <li>La photo porte l'essentiel de l'information</li>
+          <li>Trois mois d'inactivité ne cassent rien</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Le dossier n'est jamais « complet », il faut l'assumer</li>
+          <li>Impossible de répondre à « qu'est-ce que je n'ai pas encore noté »</li>
+          <li>La capture mobile doit être vraiment rapide, sinon rien ne marche</li>
+          <li>Les premiers mois sont maigres, la valeur arrive par accumulation</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Le squelette prérempli</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="flow-container">
+        <div class="flow-step"><span class="flow-step-number">1</span><span class="flow-step-label">Tu saisis ton adresse</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">2</span><span class="flow-step-label">L'app récupère l'EGID au RegBL</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">3</span><span class="flow-step-label">Elle propose : 5,5 p., 1978, mazout</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step"><span class="flow-step-number">4</span><span class="flow-step-label">Tu corriges et tu confirmes</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step"><span class="flow-step-number">5</span><span class="flow-step-label">Les zones existent en 2 minutes</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step error"><span class="flow-step-number">6</span><span class="flow-step-label">Mais rien de ce qu'il y a dedans</span></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu donnes l'adresse, l'app va chercher ce que la Suisse publie déjà sur ton bâtiment et fabrique le squelette : zones, année de construction, type de chauffage. Corriger une proposition coûte psychologiquement dix fois moins que créer depuis une page blanche, et c'est un très bon premier écran. Mais le plafond est bas et net : le RegBL décrit le <em>bâtiment</em>, pas son contenu. Il ne saura jamais où est ta prise RJ45. Excellent démarrage, incapable de tenir la distance tout seul.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Jamais de page blanche au premier lancement</li>
+          <li>Corriger est bien plus facile que créer</li>
+          <li>Avantage suisse réel, la donnée publique est de qualité</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>S'arrête au squelette, ne remplit aucun contenu</li>
+          <li>Granularité bâtiment, jamais pièce par pièce</li>
+          <li>Étendue exacte des attributs publics à confirmer auprès de l'OFS</li>
+          <li>Ne résout pas le problème, il le repousse de deux minutes</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">La reprise du classeur</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="flow-container">
+        <div class="flow-step"><span class="flow-step-number">1</span><span class="flow-step-label">Tu déposes 40 PDF et photos en vrac</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">2</span><span class="flow-step-label">OCR puis extraction automatique</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">3</span><span class="flow-step-label">23 fiches proposées : chaudière, garanties&hellip;</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step"><span class="flow-step-number">4</span><span class="flow-step-label">Tu valides ou corriges en lot</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step highlight"><span class="flow-step-number">5</span><span class="flow-step-label">La chronologie se peuple de vraies dates</span></div>
+        <div class="flow-down-arrow">&darr;</div>
+        <div class="flow-step error"><span class="flow-step-number">6</span><span class="flow-step-label">Zéro info sur les prises et les gaines</span></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu ne crées pas de données, tu convertis celles qui existent déjà. Le carton de factures, de garanties et de notices contient les dates, les marques, les montants et les noms d'artisans, et valider une proposition va environ dix fois plus vite que taper une fiche. C'est de loin le meilleur rendement à l'heure passée, et c'est ce qui remplit ta chronologie avec de vraies dates plutôt qu'avec des approximations. Mais ça ne dit rien de ce qui n'a jamais été écrit sur papier, c'est-à-dire précisément l'emplacement des prises, des vannes et des gaines qui t'intéressait au départ.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Meilleur rendement par heure passée, de loin</li>
+          <li>Valider est bien plus rapide que saisir</li>
+          <li>Remplit garanties, intervenants et chronologie d'un coup</li>
+          <li>Le carton existe déjà chez tout le monde</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Muet sur tout ce qui n'a jamais été sur papier</li>
+          <li>Chaîne OCR plus extraction : coût réel et qualité inégale</li>
+          <li>Un lot mal extrait à valider est plus pénible que la saisie</li>
+          <li>Opération ponctuelle, ne fait pas revenir dans l'app</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Session méthodique</th>
+          <th class="col-b col-chosen">B : Capture opportuniste</th>
+          <th class="col-c">C : Squelette prérempli</th>
+          <th class="col-d">D : Reprise du classeur</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Effort de la première session</td>
+          <td>Plusieurs heures</td>
+          <td class="col-chosen">20 secondes</td>
+          <td>2 minutes</td>
+          <td>1 à 2 heures</td>
+        </tr>
+        <tr>
+          <td>Où ça s'arrête</td>
+          <td>Troisième pièce</td>
+          <td class="col-chosen">Ça ne s'arrête pas</td>
+          <td>Au squelette</td>
+          <td>Quand le carton est vide</td>
+        </tr>
+        <tr>
+          <td>Prises, vannes, gaines</td>
+          <td>Oui, si tu finis</td>
+          <td class="col-chosen">Oui, progressivement</td>
+          <td>Non</td>
+          <td>Non</td>
+        </tr>
+        <tr>
+          <td>Garanties, dates, artisans</td>
+          <td>Oui, si tu finis</td>
+          <td class="col-chosen">Lentement</td>
+          <td>Partiellement</td>
+          <td>Oui, immédiatement</td>
+        </tr>
+        <tr>
+          <td>Raison de rouvrir l'app demain</td>
+          <td>La culpabilité</td>
+          <td class="col-chosen">Un geste réel dans la maison</td>
+          <td>Aucune</td>
+          <td>Aucune</td>
+        </tr>
+        <tr>
+          <td>Si tu lâches 3 mois</td>
+          <td>Tu ne reviens pas</td>
+          <td class="col-chosen">Rien de cassé</td>
+          <td>Sans objet</td>
+          <td>Sans objet</td>
+        </tr>
+        <tr>
+          <td>Dépendance externe</td>
+          <td>Aucune</td>
+          <td class="col-chosen">Aucune</td>
+          <td>RegBL, à confirmer</td>
+          <td>OCR + extraction</td>
+        </tr>
+        <tr>
+          <td>Coût de développement</td>
+          <td>Faible</td>
+          <td class="col-chosen">Moyen, tout est dans le soin</td>
+          <td>Faible</td>
+          <td>Élevé</td>
+        </tr>
+        <tr>
+          <td>Sert de socle aux autres</td>
+          <td>Non</td>
+          <td class="col-chosen">Oui, c'est la colonne vertébrale</td>
+          <td>Complément d'accueil</td>
+          <td>Accélérateur ponctuel</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option B mais [ta variante] »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-002 je veux l'option A finalement »</strong></p>
+</div>
+
+</body>
+</html>

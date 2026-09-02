@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 4 : Le plan interactif — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; background: #fce7f3; color: #be185d; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.locked-banner { max-width: 1200px; margin: 0 auto 1.25rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #059669; border-radius: 10px; padding: 0.85rem 1.25rem; }
+.locked-banner .tag { background: #059669; color: white; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; margin-right: 0.5rem; }
+.locked-banner p { font-size: 0.85rem; color: #065f46; margin: 0; display: inline; }
+.locked-banner code { background: #d1fae5; border-radius: 3px; padding: 1px 5px; font-size: 0.78rem; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #b45309; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #78350f; line-height: 1.6; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-card.option-e { grid-column: 1 / -1; }
+.option-card.option-e .option-label { color: #ea580c; }
+.option-card.option-e .visual-preview { min-height: 0; padding: 1.5rem; }
+.option-card.option-e .verdict { grid-template-columns: 1fr 1fr 1fr; }
+.option-card.option-e .cons { border-right: 1px solid #f1f5f9; }
+.custom-badge { background: #ea580c; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.layers { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; width: 100%; }
+.layer-stack { display: flex; flex-direction: column; gap: 5px; width: 250px; }
+.layer { border: 2px solid #e2e8f0; border-radius: 8px; padding: 8px 11px; background: white; }
+.layer-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.layer-name { font-size: 0.68rem; font-weight: 700; color: #334155; }
+.layer-tag { font-size: 0.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+.layer-tag.p1 { background: #ecfdf5; color: #047857; }
+.layer-tag.p2 { background: #eff6ff; color: #1d4ed8; }
+.layer-tag.p3 { background: #f5f3ff; color: #6d28d9; }
+.layer-desc { font-size: 0.58rem; color: #94a3b8; margin-top: 2px; line-height: 1.35; font-family: 'SF Mono','Fira Code',monospace; }
+.layer.l1 { border-color: #6ee7b7; } .layer.l2 { border-color: #93c5fd; } .layer.l3 { border-color: #c4b5fd; }
+.layer-plus { text-align: center; color: #cbd5e1; font-size: 0.8rem; font-weight: 700; }
+.phases { display: flex; flex-direction: column; gap: 7px; width: 280px; }
+.phase { display: flex; align-items: flex-start; gap: 9px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 8px 11px; }
+.phase-n { width: 21px; height: 21px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.56rem; font-weight: 800; flex-shrink: 0; color: white; }
+.phase.p1 { border-color: #6ee7b7; } .phase.p1 .phase-n { background: #059669; }
+.phase.p2 { border-color: #93c5fd; } .phase.p2 .phase-n { background: #3b82f6; }
+.phase.p3 { border-color: #c4b5fd; } .phase.p3 .phase-n { background: #8b5cf6; }
+.phase.p4 { border-color: #e2e8f0; opacity: .72; } .phase.p4 .phase-n { background: #94a3b8; }
+.phase-txt { flex: 1; }
+.phase-title { font-size: 0.66rem; font-weight: 700; color: #334155; line-height: 1.25; }
+.phase-cost { font-size: 0.56rem; color: #94a3b8; font-weight: 700; margin-top: 1px; }
+.layers-label { font-size: 0.55rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; text-align: center; margin-bottom: 7px; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.35rem; background: #eef2f6; min-height: 235px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.option-summary code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem; font-family: 'SF Mono','Fira Code',monospace; color: #0f172a; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono','Fira Code',monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+/* --- maquettes --- */
+.mock { width: 100%; max-width: 268px; background: white; border: 1px solid #d7dee7; border-radius: 9px; overflow: hidden; box-shadow: 0 2px 10px rgba(15,23,42,0.09); }
+.mock-bar { height: 24px; background: #f8fafc; border-bottom: 1px solid #e8edf3; display: flex; align-items: center; padding: 0 9px; gap: 5px; font-size: 0.5rem; color: #64748b; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.mock-bar .dot { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; }
+.mock-body { padding: 9px; }
+.mock-cap { font-size: 0.52rem; color: #94a3b8; text-align: center; padding: 5px 9px 8px; line-height: 1.35; }
+.mock-cap strong { color: #475569; }
+/* plan vectoriel */
+.fp { position: relative; height: 138px; background: #fcfdfe; border-radius: 4px; }
+.fp-room { position: absolute; border: 2px solid #94a3b8; background: #f8fafc; border-radius: 2px; font-size: 0.46rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.1; }
+.fp-room.sel { border-color: #6366f1; background: #eff6ff; color: #1d4ed8; }
+/* plan scanne */
+.scan { position: relative; height: 138px; border-radius: 3px; overflow: hidden;
+  background-color: #f2ede2;
+  background-image:
+    linear-gradient(90deg, rgba(90,80,60,.30) 2px, transparent 2px),
+    linear-gradient(0deg, rgba(90,80,60,.30) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(90,80,60,.16) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(90,80,60,.16) 1px, transparent 1px);
+  background-size: 62px 100%, 100% 54px, 31px 100%, 100% 27px;
+  box-shadow: inset 0 0 26px rgba(120,100,70,.28);
+}
+.scan::after { content: ""; position: absolute; inset: 0; background: linear-gradient(122deg, rgba(255,255,255,.42), transparent 46%, rgba(120,100,70,.13)); }
+.pin { position: absolute; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,.35); z-index: 2; display: flex; align-items: center; justify-content: center; font-size: 0.42rem; color: white; font-weight: 800; }
+.pin.e { background: #d97706; } .pin.w { background: #0891b2; } .pin.n { background: #7c3aed; } .pin.h { background: #dc2626; }
+/* liste de pieces */
+.rooms { display: flex; flex-direction: column; gap: 6px; }
+.room-card { display: flex; align-items: center; gap: 8px; border: 1px solid #e8edf3; border-radius: 7px; padding: 5px; background: white; }
+.room-thumb { width: 38px; height: 30px; border-radius: 4px; flex-shrink: 0; }
+.room-info { flex: 1; min-width: 0; }
+.room-name { font-size: 0.6rem; font-weight: 700; color: #334155; line-height: 1.2; }
+.room-count { font-size: 0.5rem; color: #94a3b8; }
+/* plan BIM cote */
+.bim { position: relative; height: 138px; background: #fbfdff; border-radius: 4px; }
+.bim-room { position: absolute; border: 1.5px solid #0891b2; background: rgba(8,145,178,.07); font-size: 0.44rem; font-weight: 700; color: #0e7490; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; text-align: center; }
+.bim-room em { font-style: normal; font-size: 0.4rem; color: #94a3b8; font-weight: 600; }
+.bim-dim { position: absolute; font-size: 0.4rem; color: #cbd5e1; font-weight: 700; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 4 sur 8</span>
+  <h1>Le plan interactif</h1>
+  <span class="category-badge">Visuel &middot; Interaction</span>
+  <p class="decision-description">
+    C'est l'image par laquelle tu as ouvert ton brief : une première page qui montre le plan, on clique sur une pièce, on voit ce qu'il y a dedans. C'est aussi, de très loin, la fonction la plus chère du projet, et celle où il est le plus facile de brûler un mois.
+  </p>
+  <p class="decision-description">
+    Deux questions en une : <strong>d'où vient le plan</strong>, et <strong>qu'est-ce qu'on clique dessus</strong>. Les quatre maquettes montrent l'écran réel obtenu.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option C mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="locked-banner">
+  <span class="tag">Hérité des décisions 1 à 3</span>
+  <p>Chaque objet a déjà une <code>zone</code> obligatoire, et tu as choisi la capture opportuniste : la position se pose <strong>au moment de la photo, depuis le téléphone</strong>, pas dans une session d'édition sur ordinateur. Une option qui exige de dessiner d'abord contredit la décision 3.</p>
+</div>
+
+<div class="context-box">
+  <h3>La vraie question à te poser</h3>
+  <p>
+    Sois honnête sur l'usage : dans six mois, quand tu chercheras la vanne d'arrêt de la salle de bain, est-ce que tu vas ouvrir un plan et cliquer sur la pièce, ou taper « vanne » dans une barre de recherche ? La recherche gagnera neuf fois sur dix. <strong>Le plan est ce que tu veux voir, la recherche est ce que tu vas utiliser.</strong> Ça ne veut pas dire qu'il faut supprimer le plan, ça veut dire qu'il ne mérite pas trois semaines.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">L'éditeur de plan intégré</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="mock">
+        <div class="mock-bar"><span class="dot"></span>Éditeur &middot; rez</div>
+        <div class="mock-body">
+          <div class="fp">
+            <div class="fp-room" style="left:0;top:0;width:47%;height:52%">Séjour</div>
+            <div class="fp-room sel" style="left:49%;top:0;width:51%;height:52%">Cuisine</div>
+            <div class="fp-room" style="left:0;top:54%;width:31%;height:46%">SdB</div>
+            <div class="fp-room" style="left:33%;top:54%;width:31%;height:46%">Ch. 1</div>
+            <div class="fp-room" style="left:66%;top:54%;width:34%;height:46%">Ch. 2</div>
+          </div>
+        </div>
+        <div class="mock-cap">Propre et net. <strong>Mais c'est toi qui dessines</strong>, rectangle par rectangle.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu dessines les pièces dans l'app avec un outil rectangle et polygone. Le résultat est vectoriel, propre, redimensionnable, et la géométrie des pièces devient une vraie donnée : l'app sait dans quelle pièce tombe un point. C'est techniquement le plus satisfaisant et c'est un piège de calendrier. Un éditeur graphique utilisable, ça veut dire poignées de redimensionnement, magnétisme, annulation, gestion tactile, et trois semaines minimum avant d'afficher quoi que ce soit d'utile. Et pour un résultat qui ressemblera à un plan générique, pas à ta maison.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Géométrie réelle : l'app sait où tombe un point</li>
+          <li>Vectoriel, net à toutes les tailles d'écran</li>
+          <li>Aucun document externe requis</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>3 à 4 semaines avant le premier écran utile</li>
+          <li>Dessiner sur téléphone est pénible, ça contredit la décision 3</li>
+          <li>Personne n'aime dessiner son plan, c'est une corvée d'entrée</li>
+          <li>Résultat générique, sans la reconnaissance visuelle de ta maison</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Plan scanné + points posés</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="mock">
+        <div class="mock-bar"><span class="dot"></span>Plan &middot; rez &middot; 11 points</div>
+        <div class="mock-body">
+          <div class="scan">
+            <span class="pin e" style="left:14%;top:20%">&#9889;</span>
+            <span class="pin w" style="left:63%;top:14%">&#128167;</span>
+            <span class="pin n" style="left:36%;top:44%">&#128225;</span>
+            <span class="pin e" style="left:76%;top:52%">&#9889;</span>
+            <span class="pin h" style="left:22%;top:70%">&#128293;</span>
+            <span class="pin w" style="left:57%;top:76%">&#128167;</span>
+          </div>
+        </div>
+        <div class="mock-cap">Le plan de ton <strong>permis de construire</strong>, photographié. Tu poses les points.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu téléverses le plan qui existe déjà chez toi (permis de construire, plan de vente, ou une simple photo au téléphone), et tu poses des points dessus. Un point, c'est deux coordonnées en pourcentage et un lien vers un objet, donc quelques jours de travail au lieu de quelques semaines. Le gain n'est pas que budgétaire : l'écran montre <em>ta</em> maison, avec ses murs de travers et ses annotations manuscrites, ce qu'aucun plan vectoriel reconstitué ne fera. Et ça colle à la décision 3, puisque tu poses le point au moment où tu prends la photo, depuis le téléphone.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>3 à 4 jours de travail au lieu de 3 à 4 semaines</li>
+          <li>Le plan existe déjà dans presque chaque maison</li>
+          <li>Reconnaissance immédiate : c'est ta maison, pas un schéma</li>
+          <li>Poser un point est un geste de téléphone, cohérent avec la décision 3</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>L'image est muette : l'app ne déduit pas la pièce d'un point</li>
+          <li>Un plan par étage, avec un sélecteur d'étage à prévoir</li>
+          <li>Sur téléphone, il faut zoomer pour viser un point</li>
+          <li>Étape de recadrage et redressement à prévoir sur les scans tordus</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Pas de plan, des pièces en photo</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="mock">
+        <div class="mock-bar"><span class="dot"></span>Ma maison &middot; 8 pièces</div>
+        <div class="mock-body">
+          <div class="rooms">
+            <div class="room-card"><div class="room-thumb" style="background:linear-gradient(135deg,#fde68a,#f59e0b)"></div><div class="room-info"><div class="room-name">Cuisine</div><div class="room-count">7 objets &middot; 3 photos</div></div></div>
+            <div class="room-card"><div class="room-thumb" style="background:linear-gradient(135deg,#bfdbfe,#3b82f6)"></div><div class="room-info"><div class="room-name">Salle de bain</div><div class="room-count">5 objets &middot; 2 photos</div></div></div>
+            <div class="room-card"><div class="room-thumb" style="background:linear-gradient(135deg,#d9f99d,#65a30d)"></div><div class="room-info"><div class="room-name">Buanderie</div><div class="room-count">4 objets &middot; 6 photos</div></div></div>
+            <div class="room-card"><div class="room-thumb" style="background:linear-gradient(135deg,#e2e8f0,#94a3b8)"></div><div class="room-info"><div class="room-name">Cave</div><div class="room-count">9 objets &middot; 4 photos</div></div></div>
+          </div>
+        </div>
+        <div class="mock-cap">Zéro plan. <strong>Une photo de la pièce se reconnaît mieux qu'un rectangle.</strong></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu supprimes le plan de la v1. Les pièces sont des cartes avec une photo réelle, et on navigue par nom et par image. C'est l'option qu'un chef de produit sans état d'âme te ferait livrer en premier, et l'argument n'est pas seulement le coût : une photo de ta buanderie se reconnaît instantanément, alors qu'un rectangle étiqueté « buanderie » demande un effort de lecture. Ça marche parfaitement sur téléphone, ça coûte zéro jour, et ça n'empêche absolument pas d'ajouter le plan plus tard. Ce que tu perds est réel : la vision d'ensemble et le rapport spatial entre les pièces.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Coût nul, disponible immédiatement</li>
+          <li>Une photo se reconnaît plus vite qu'un plan</li>
+          <li>Parfaitement adapté au téléphone</li>
+          <li>N'interdit rien : le plan peut arriver ensuite</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Tu perds la vue d'ensemble que tu as demandée</li>
+          <li>Aucun rapport spatial entre les pièces</li>
+          <li>Beaucoup moins impressionnant à montrer</li>
+          <li>Ne dit rien de ce qui traverse les murs</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Import BIM ou plan vectoriel</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="mock">
+        <div class="mock-bar"><span class="dot"></span>IFC importé &middot; rez</div>
+        <div class="mock-body">
+          <div class="bim">
+            <div class="bim-dim" style="left:38%;top:1px">9.40 m</div>
+            <div class="bim-room" style="left:0;top:11px;width:47%;height:50%">Séjour<em>28.4 m&sup2;</em></div>
+            <div class="bim-room" style="left:49%;top:11px;width:51%;height:50%">Cuisine<em>14.1 m&sup2;</em></div>
+            <div class="bim-room" style="left:0;top:calc(50% + 16px);width:31%;height:40%">SdB<em>6.2</em></div>
+            <div class="bim-room" style="left:33%;top:calc(50% + 16px);width:31%;height:40%">Ch. 1<em>12.8</em></div>
+            <div class="bim-room" style="left:66%;top:calc(50% + 16px);width:34%;height:40%">Ch. 2<em>11.5</em></div>
+          </div>
+        </div>
+        <div class="mock-cap">Géométrie et surfaces exactes. <strong>Encore faut-il avoir le fichier.</strong></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu importes le fichier IFC ou DXF de l'architecte et tu récupères la géométrie réelle : polygones de pièces, surfaces exactes, parfois les équipements déjà positionnés. C'est la réponse techniquement idéale, celle qui ouvre la 3D plus tard. Le problème est brutalement simple : presque aucun propriétaire de maison individuelle n'a ce fichier. Il existe pour les constructions récentes suivies en BIM, c'est-à-dire une fraction minuscule du parc. Tu paierais un parseur IFC, qui est un projet en soi, pour servir quelques pourcents de tes utilisateurs.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Géométrie et surfaces exactes, sans saisie</li>
+          <li>Ouvre la porte à la 3D et aux vues en coupe</li>
+          <li>Différenciant si tu vises un jour les pros du bâtiment</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Quasi personne ne possède le fichier</li>
+          <li>Un parseur IFC est un projet à lui seul</li>
+          <li>Effort maximal pour la couverture la plus faible</li>
+          <li>Il faudrait quand même une solution de repli pour tous les autres</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+
+  <article class="option-card option-e chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option E &middot; ton choix</span>
+        <div class="card-badges"><span class="custom-badge">Sur mesure</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Plan en couches : image, géométrie, points</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="layers">
+        <div>
+          <div class="layers-label">Le modèle, en trois couches</div>
+          <div class="layer-stack">
+            <div class="layer l3">
+              <div class="layer-top"><span class="layer-name">Points</span><span class="layer-tag p3">toujours</span></div>
+              <div class="layer-desc">point(element_id, plan_id, x%, y%)</div>
+            </div>
+            <div class="layer-plus">+</div>
+            <div class="layer l2">
+              <div class="layer-top"><span class="layer-name">Géométrie des pièces</span><span class="layer-tag p2">optionnelle</span></div>
+              <div class="layer-desc">zone_geom(zone_id, polygone, source)<br>source = tracé | importé</div>
+            </div>
+            <div class="layer-plus">+</div>
+            <div class="layer l1">
+              <div class="layer-top"><span class="layer-name">Image de fond</span><span class="layer-tag p1">optionnelle</span></div>
+              <div class="layer-desc">plan(id, etage, image, echelle)</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="layers-label">L'ordre de construction</div>
+          <div class="phases">
+            <div class="phase p1"><span class="phase-n">1</span><div class="phase-txt"><div class="phase-title">Scan + points posés &nbsp;<span style="color:#0891b2">(ex-B)</span></div><div class="phase-cost">3 à 4 jours &middot; couvre presque toutes les maisons</div></div></div>
+            <div class="phase p2"><span class="phase-n">2</span><div class="phase-txt"><div class="phase-title">Tracé des pièces par-dessus le scan &nbsp;<span style="color:#7c3aed">(ex-A, allégé)</span></div><div class="phase-cost">~1 semaine &middot; tu traces, tu ne dessines pas</div></div></div>
+            <div class="phase p3"><span class="phase-n">3</span><div class="phase-txt"><div class="phase-title">Éditeur complet sans image de fond &nbsp;<span style="color:#7c3aed">(ex-A)</span></div><div class="phase-cost">+2 à 3 semaines &middot; seulement si le tracé ne suffit pas</div></div></div>
+            <div class="phase p4"><span class="phase-n">4</span><div class="phase-txt"><div class="phase-title">Import IFC / DXF &nbsp;<span style="color:#dc2626">(ex-D)</span></div><div class="phase-cost">4 à 8 semaines &middot; quand un vrai besoin apparaît</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="option-summary">
+      A, B et D ne sont pas trois fonctions, ce sont <strong>trois sources pour deux couches</strong>. L'image de fond vient du scan. La géométrie des pièces vient soit d'un tracé à la main, soit d'un import IFC : même table, même usage, seule la colonne <code>source</code> change. Et les points se posent dans tous les cas. D'où le modèle en couches : chacune est optionnelle, et l'app se dégrade proprement. Avec géométrie, elle déduit la pièce d'un point posé. Sans géométrie, tu l'indiques toi-même, comme en option B. <strong>Le modèle de données, on le fait maintenant et ça ne coûte rien.</strong> Ce qui coûte, c'est de tout construire avant d'avoir une app utilisable, d'où l'ordre proposé à droite. La phase 2 est la vraie bonne surprise : tracer une pièce par-dessus un scan existant, c'est cinq clics et aucune mesure, alors que dessiner un plan à blanc demande magnétisme, cotes et précision.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Ce que tu gagnes</h3>
+        <ul>
+          <li>Les trois options coexistent sans se contredire</li>
+          <li>Aucune impasse : le modèle est posé dès le départ</li>
+          <li>Une app utilisable en 4 jours, pas en 2 mois</li>
+          <li>Le tracé sur scan donne 80% de A pour 25% du coût</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Ce que ça coûte</h3>
+        <ul>
+          <li>Deux chemins de saisie à maintenir, avec ou sans géométrie</li>
+          <li>Chaque écran doit gérer le cas « pas de polygone »</li>
+          <li>Le rendu superpose image et vecteur, calage à soigner</li>
+        </ul>
+      </div>
+      <div class="cons" style="border-right:none">
+        <h3>Si tu fais tout d'un coup</h3>
+        <ul>
+          <li>Environ 2,5 mois avant le premier écran utile</li>
+          <li>Ni recherche, ni photos, ni chronologie pendant ce temps</li>
+          <li>Le plus gros investissement sur la fonction la moins utilisée</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Choisi : modèle en couches, construction par phases</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Éditeur intégré</th>
+          <th class="col-b">B : Plan scanné + points</th>
+          <th class="col-c">C : Pièces en photo</th>
+          <th class="col-d">D : Import BIM</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Temps de développement</td>
+          <td>3 à 4 semaines</td>
+          <td >3 à 4 jours</td>
+          <td>Compris dans le reste</td>
+          <td>4 à 8 semaines</td>
+        </tr>
+        <tr>
+          <td>Effort demandé à l'utilisateur</td>
+          <td>Dessiner tout le plan</td>
+          <td >Photographier un plan</td>
+          <td>Aucun</td>
+          <td>Fournir un fichier IFC</td>
+        </tr>
+        <tr>
+          <td>Part des maisons couvertes</td>
+          <td>Toutes</td>
+          <td >La grande majorité</td>
+          <td>Toutes</td>
+          <td>Très faible</td>
+        </tr>
+        <tr>
+          <td>L'app déduit la pièce d'un point</td>
+          <td>Oui</td>
+          <td >Non, tu l'indiques</td>
+          <td>Sans objet</td>
+          <td>Oui</td>
+        </tr>
+        <tr>
+          <td>Cohérent avec la capture mobile</td>
+          <td>Non</td>
+          <td >Oui</td>
+          <td>Oui</td>
+          <td>Neutre</td>
+        </tr>
+        <tr>
+          <td>Reconnaissance « c'est chez moi »</td>
+          <td>Faible</td>
+          <td >Forte</td>
+          <td>Très forte</td>
+          <td>Moyenne</td>
+        </tr>
+        <tr>
+          <td>Vue d'ensemble de la maison</td>
+          <td>Oui</td>
+          <td >Oui</td>
+          <td>Non</td>
+          <td>Oui</td>
+        </tr>
+        <tr>
+          <td>Confort sur téléphone</td>
+          <td>Mauvais</td>
+          <td >Correct avec zoom</td>
+          <td>Excellent</td>
+          <td>Correct</td>
+        </tr>
+        <tr>
+          <td>Chemin d'évolution</td>
+          <td>Bloqué, c'est le sommet</td>
+          <td >Vectoriser plus tard si besoin</td>
+          <td>Ajouter le plan ensuite</td>
+          <td>Déjà au maximum</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option C mais [ta variante] »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-003 je veux l'option D finalement »</strong></p>
+</div>
+
+</body>
+</html>

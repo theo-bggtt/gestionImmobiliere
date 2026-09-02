@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 1 : Qui paie, et par quel canal — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; }
+.category-badge.strategy { background: #fef3c7; color: #b45309; }
+.category-badge.technical { background: #ede9fe; color: #6d28d9; }
+.category-badge.visual { background: #fce7f3; color: #be185d; }
+.category-badge.interaction { background: #e0f2fe; color: #0369a1; }
+.category-badge.ia { background: #ecfdf5; color: #047857; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; position: relative; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.5rem; background: #f8fafc; min-height: 200px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #b45309; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #78350f; line-height: 1.6; }
+.chain { display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 300px; }
+.chain-row { display: flex; align-items: center; gap: 8px; }
+.chain-label { font-size: 0.55rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; width: 58px; flex-shrink: 0; text-align: right; line-height: 1.2; }
+.chain-box { flex: 1; background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 7px 10px; font-size: 0.72rem; font-weight: 600; color: #334155; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.chain-box.pays { border-color: #059669; background: #ecfdf5; color: #047857; }
+.chain-box.risk { border-color: #e11d48; background: #fff1f2; color: #be123c; }
+.chain-arrow { color: #cbd5e1; font-size: 0.8rem; padding-left: 66px; line-height: 1; }
+.chain-note { font-size: 0.6rem; color: #94a3b8; padding-left: 66px; margin-top: 6px; font-style: italic; line-height: 1.35; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 1 sur 10</span>
+  <h1>Qui paie, et par quel canal</h1>
+  <span class="category-badge strategy">Stratégie</span>
+  <p class="decision-description">
+    Avant de choisir un framework, il faut savoir qui sort la carte de crédit. Ce choix détermine tout le reste : le modèle de données, l'authentification, l'app mobile ou pas, et surtout à quel point le produit doit être joli plutôt que complet.
+  </p>
+  <p class="decision-description">
+    La question centrale n'est pas « combien je facture » mais <strong>« qui saisit les données »</strong>. Toutes les apps de gestion de maison meurent du même mal : le propriétaire s'inscrit motivé, remplit trois pièces, et ne revient jamais. Le dossier reste vide, l'abonnement saute. Le seul modèle qui survit est celui où la personne qui remplit n'est pas celle qui doit trouver la motivation de le faire.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option A mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="context-box">
+  <h3>Le contexte concurrentiel à garder en tête</h3>
+  <p>
+    Houzy (fusionné avec myky en août 2026 pour former Swiss Digital Home SA) revendique 320'000 biens et 3,5M d'utilisateurs annuels. Actionnaires : Helvetia Baloise, la BEKB, la GVB et 17 banques cantonales. Leur produit est <strong>gratuit</strong> et monétisé en génération de leads vers banques, assureurs et artisans. Ils font l'estimation, l'hypothèque, le potentiel solaire, la mise en relation. Ils ne font <strong>pas</strong> le dossier technique as-built. C'est la brèche, mais elle ne s'exploite pas par le même canal qu'eux.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">L'abonnement propriétaire</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="chain">
+        <div class="chain-row"><span class="chain-label">Saisit</span><div class="chain-box risk">Le propriétaire</div></div>
+        <div class="chain-arrow">&darr;</div>
+        <div class="chain-row"><span class="chain-label">Utilise</span><div class="chain-box">Le propriétaire</div></div>
+        <div class="chain-arrow">&darr;</div>
+        <div class="chain-row"><span class="chain-label">Paie</span><div class="chain-box pays">Le propriétaire &middot; ~CHF 8/mois</div></div>
+        <div class="chain-note">Une seule personne sur les trois lignes. C'est le problème.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Le modèle évident, celui que tout le monde essaie. Palier gratuit limité, puis CHF 6 à 12 par mois pour les photos illimitées, le plan et l'export. C'est aussi le seul des quatre où la personne qui fait le travail de saisie est exactement celle qui paie pour avoir le droit de le faire. Et tu affrontes Houzy de face, sauf que Houzy est gratuit et arrive préinstallé dans la conversation hypothécaire de dix-sept banques cantonales.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Tu veux lancer seul, dès demain, sans rien négocier</li>
+          <li>Marge brute très élevée, aucun intermédiaire</li>
+          <li>Feedback utilisateur direct et immédiat</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Tu n'as aucun canal de distribution face à un concurrent adossé aux banques</li>
+          <li>Le churn des apps de home management est historiquement catastrophique</li>
+          <li>Tu demandes à l'utilisateur de faire le travail ET de payer</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Le pro livre le dossier</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="chain">
+        <div class="chain-row"><span class="chain-label">Saisit</span><div class="chain-box pays">Architecte / entreprise générale</div></div>
+        <div class="chain-arrow">&darr;</div>
+        <div class="chain-row"><span class="chain-label">Utilise</span><div class="chain-box">Le propriétaire, pendant 30 ans</div></div>
+        <div class="chain-arrow">&darr;</div>
+        <div class="chain-row"><span class="chain-label">Paie</span><div class="chain-box pays">Le pro au chantier, puis le proprio en maintien</div></div>
+        <div class="chain-note">La saisie et le paiement sont portés par celui dont c'est le métier.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu vends au professionnel qui construit ou rénove, pas au propriétaire. En fin de chantier, l'architecte ou l'entreprise générale remet aujourd'hui un classeur ou une clé USB. Tu lui vends la version vivante, facturée au dossier, de l'ordre de CHF 400 à 1'000 : indolore sur un budget de chantier à six chiffres, et refacturable au maître d'ouvrage. Le propriétaire hérite d'un dossier déjà rempli à 90% et peut ensuite prendre un abonnement de maintien à petit prix. C'est le seul des quatre qui règle le problème de saisie, parce que la donnée entre au moment exact où elle est complète, par quelqu'un qui est payé pour la structurer.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>La donnée arrive déjà remplie, ce qui désamorce le risque numéro un</li>
+          <li>Ticket unitaire élevé : tu vis avec peu de clients</li>
+          <li>Zéro concurrence frontale avec Houzy</li>
+          <li>Tu peux construire avec un seul archi partenaire et itérer en conditions réelles</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Les architectes sont des acheteurs de logiciel lents et frugaux</li>
+          <li>Il faudra parler IFC, Archicad ou Revit tôt ou tard</li>
+          <li>Le revenu côté pro est ponctuel, pas récurrent</li>
+          <li>Tu dépends d'un intermédiaire pour atteindre l'utilisateur final</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Gérances et PPE</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="chain">
+        <div class="chain-row"><span class="chain-label">Saisit</span><div class="chain-box">Le gérant technique</div></div>
+        <div class="chain-arrow">&darr;</div>
+        <div class="chain-row"><span class="chain-label">Utilise</span><div class="chain-box">Gérant + copropriétaires</div></div>
+        <div class="chain-arrow">&darr;</div>
+        <div class="chain-row"><span class="chain-label">Paie</span><div class="chain-box pays">La régie &middot; abonnement par immeuble</div></div>
+        <div class="chain-note">Revenu récurrent, mais ce n'est plus une villa.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu vends aux régies immobilières et administrateurs de PPE, qui gèrent des dizaines d'immeubles et perdent l'information technique à chaque changement de gérant. Vrai budget logiciel, vraie douleur, revenu récurrent par immeuble. Mais tu quittes ton brief : ce n'est plus la maison individuelle, c'est du collectif, avec décompte de charges, assemblées et fonds de rénovation. Et le terrain ERP est déjà tenu par GARAIO REM, Pepsimmo et SAI depuis vingt ans.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>ARR récurrent et prévisible, le modèle le plus sain sur le papier</li>
+          <li>Les gérances ont un budget logiciel et savent acheter</li>
+          <li>Marché suisse très fragmenté, beaucoup de petites structures accessibles</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Ce n'est plus le produit que tu as décrit : le plan cliquable d'une villa n'est pas leur sujet</li>
+          <li>Concurrence d'ERP installés et intégrés à la compta</li>
+          <li>Cycle de vente long : démo, appel d'offres, migration de données</li>
+          <li>On va te demander de la comptabilité, et tu vas dire oui</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">L'assurance bâtiment</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="chain">
+        <div class="chain-row"><span class="chain-label">Saisit</span><div class="chain-box risk">Le propriétaire, guidé</div></div>
+        <div class="chain-arrow">&darr;</div>
+        <div class="chain-row"><span class="chain-label">Utilise</span><div class="chain-box">Proprio + expert sinistre</div></div>
+        <div class="chain-arrow">&darr;</div>
+        <div class="chain-row"><span class="chain-label">Paie</span><div class="chain-box pays">L'ECA cantonal ou l'assureur</div></div>
+        <div class="chain-note">Un seul oui vaut tout un canton. Mais il met deux ans à venir.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu ne vends pas au propriétaire mais à celui qui a un intérêt financier direct à ce que le bâtiment soit documenté. Un dossier tenu à jour, c'est un sinistre expertisé plus vite, une preuve d'entretien opposable, moins de litiges. En Suisse l'assurance bâtiment est en monopole public cantonal dans la grande majorité des cantons (les cantons dits GUSTAVO font exception et sont en marché libre), donc décrocher un canton revient à décrocher tous ses propriétaires d'un coup. Économiquement c'est de loin le plus beau modèle des quatre. Opérationnellement, c'est deux ans de cycle de vente avec une institution publique, en solo, sans produit fini.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Distribution massive en un seul contrat signé</li>
+          <li>Le payeur a un ROI mesurable, pas une envie passagère</li>
+          <li>Le monopole cantonal fait qu'un oui vaut tout un canton</li>
+          <li>Position très défendable une fois installée</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>12 à 24 mois de cycle de vente avec un établissement public, invivable sans trésorerie</li>
+          <li>Tu deviens fournisseur d'un client unique, avec la dépendance qui va avec</li>
+          <li>Il faut un produit déjà solide avant même la première réunion</li>
+          <li>Houzy est déjà dans la place chez la GVB et Helvetia Baloise</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Abonnement propriétaire</th>
+          <th class="col-b col-chosen">B : Le pro livre le dossier</th>
+          <th class="col-c">C : Gérances et PPE</th>
+          <th class="col-d">D : Assurance bâtiment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Qui saisit la donnée</td>
+          <td>Le propriétaire, bénévolement</td>
+          <td class="col-chosen">Le pro, dans son temps facturé</td>
+          <td>Le gérant, dans son temps facturé</td>
+          <td>Le propriétaire, incité</td>
+        </tr>
+        <tr>
+          <td>Ticket moyen</td>
+          <td>CHF 100/an</td>
+          <td class="col-chosen">CHF 400 à 1'000 par dossier</td>
+          <td>CHF 20 à 50 par immeuble/mois</td>
+          <td>Contrat à six chiffres</td>
+        </tr>
+        <tr>
+          <td>Récurrence</td>
+          <td>Oui, mais churn élevé</td>
+          <td class="col-chosen">Ponctuel côté pro, récurrent côté proprio</td>
+          <td>Forte et stable</td>
+          <td>Très forte, contrat pluriannuel</td>
+        </tr>
+        <tr>
+          <td>Cycle de vente</td>
+          <td>Aucun</td>
+          <td class="col-chosen">1 à 3 mois</td>
+          <td>6 à 12 mois</td>
+          <td>12 à 24 mois</td>
+        </tr>
+        <tr>
+          <td>Clients pour vivre</td>
+          <td>~1'500 abonnés</td>
+          <td class="col-chosen">~15 pros actifs</td>
+          <td>~30 régies</td>
+          <td>1 à 2 cantons</td>
+        </tr>
+        <tr>
+          <td>Choc frontal avec Houzy</td>
+          <td>Total, et tu perds</td>
+          <td class="col-chosen">Nul, autre terrain</td>
+          <td>Nul, mais ERP en face</td>
+          <td>Élevé, ils sont déjà au capital</td>
+        </tr>
+        <tr>
+          <td>Faisable en solo</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui</td>
+          <td>Difficilement</td>
+          <td>Non</td>
+        </tr>
+        <tr>
+          <td>Délai avant le 1er franc</td>
+          <td>Court mais pour des miettes</td>
+          <td class="col-chosen">3 à 6 mois</td>
+          <td>9 à 18 mois</td>
+          <td>18 à 30 mois</td>
+        </tr>
+        <tr>
+          <td>Reste fidèle à ton brief</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui, et le renforce</td>
+          <td>Non, tu changes de produit</td>
+          <td>Oui</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option A mais [ta variante] »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix plus tard : <strong>« pour decision-001 je veux l'option D finalement »</strong></p>
+</div>
+
+</body>
+</html>

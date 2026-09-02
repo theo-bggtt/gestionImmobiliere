@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 1 : Les audiences et ce que chacune voit — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; background: #ede9fe; color: #6d28d9; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #3b82f6; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #1d4ed8; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #1e3a8a; line-height: 1.6; }
+.context-box p + p { margin-top: 0.5rem; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.35rem; background: #f8fafc; min-height: 200px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.option-summary code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem; font-family: 'SF Mono','Fira Code',monospace; color: #0f172a; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono','Fira Code',monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.perm { width: 100%; max-width: 285px; }
+.perm-grid { display: grid; grid-template-columns: 1fr 32px 32px 32px; gap: 4px; align-items: center; }
+.perm.wide { max-width: 300px; }
+.perm.wide .perm-grid { grid-template-columns: 1fr 27px 27px 27px 27px; gap: 3px; }
+.perm.wide .perm-cell { height: 28px; font-size: 0.66rem; }
+.perm.wide .perm-head { font-size: 0.44rem; }
+.perm-scope { font-size: 0.5rem; font-weight: 700; color: #7c3aed; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 999px; padding: 1px 6px; display: inline-block; margin-top: 6px; }
+.perm-head { font-size: 0.48rem; font-weight: 800; text-transform: uppercase; color: #94a3b8; text-align: center; line-height: 1.15; padding-bottom: 3px; letter-spacing: 0.02em; }
+.perm-head.first { text-align: left; font-size: 0.5rem; }
+.perm-fiche { font-size: 0.62rem; font-weight: 600; color: #334155; background: white; border: 1px solid #e2e8f0; border-radius: 5px; padding: 6px 8px; line-height: 1.25; }
+.perm-fiche em { display: block; font-style: normal; font-size: 0.52rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 1px; }
+.perm-cell { height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; }
+.perm-cell.yes { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.perm-cell.no { background: #f8fafc; color: #cbd5e1; border: 1px solid #e8edf3; }
+.perm-cell.warn { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+.perm-cell.cfg { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; font-size: 0.62rem; }
+.perm-note { font-size: 0.62rem; color: #64748b; margin-top: 10px; line-height: 1.45; text-align: center; }
+.perm-note strong { color: #334155; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 1 sur 8</span>
+  <h1>Les audiences et ce que chacune voit</h1>
+  <span class="category-badge">Technique</span>
+  <p class="decision-description">
+    Ta base contient des choses de nature très différente : où sont les prises de la chambre, quel disjoncteur les alimente, et combien l'électricien a facturé. Tu veux pouvoir montrer la première à un locataire Airbnb, la deuxième à un artisan, et garder la troisième pour toi.
+  </p>
+  <p class="decision-description">
+    La question est donc : <strong>comment chaque fiche sait-elle qui a le droit de la voir ?</strong> C'est la première décision parce qu'elle ajoute une colonne à presque toutes tes tables et qu'elle conditionne chaque écran. La reprendre dans six mois voudrait dire repasser sur toutes les fiches déjà saisies.
+  </p>
+  <p class="decision-description">
+    Les quatre visuels montrent les <strong>mêmes trois fiches</strong> vues par les <strong>mêmes trois personnes</strong>. Compare-les ligne par ligne, les différences sautent aux yeux.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option A mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="context-box">
+  <h3>Ce que ça ne fait pas, et c'est volontaire</h3>
+  <p>
+    Aucune de ces options ne stocke de secrets. Pas de code d'alarme, pas de combinaison de coffre, pas d'emplacement de clé. Ta ligne de départ tient : <strong>on ne met pas dans l'outil ce qui ouvre la maison</strong>, et ça reste vrai quelle que soit l'option retenue.
+  </p>
+  <p>
+    Ce dont on parle ici est plus modeste et plus indispensable : décider quelles fiches sortent par un lien de partage. Ce n'est pas de la cryptographie, c'est une colonne en base et un filtre dans une requête.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Privé ou partagé</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="perm">
+        <div class="perm-grid">
+          <div class="perm-head first">La fiche</div>
+          <div class="perm-head">Toi</div>
+          <div class="perm-head">Loca&shy;taire</div>
+          <div class="perm-head">Arti&shy;san</div>
+
+          <div class="perm-fiche">Prise 230V<em>chambre 2</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div>
+
+          <div class="perm-fiche">Tableau électrique<em>cave</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell no">&times;</div><div class="perm-cell warn">&times;</div>
+
+          <div class="perm-fiche">Facture électricien<em>2'400.-</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell no">&times;</div><div class="perm-cell no">&times;</div>
+        </div>
+        <div class="perm-note">L'artisan a <strong>exactement</strong> la vue du locataire. C'est là que ça casse.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Une case à cocher par fiche : <code>partageable</code>, oui ou non. Un seul lien de partage, qui donne accès à tout ce qui est coché. C'est ce qu'on écrit en une soirée et ça couvre le cas Airbnb du premier coup. Le mur arrive le jour où le chauffagiste passe : pour qu'il voie la fiche de la chaudière, tu dois la cocher, et elle devient visible par tous les locataires en même temps. Tu finiras par décocher après chaque intervention, et un jour tu oublieras.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Un booléen par fiche, impossible de se tromper</li>
+          <li>Écrit et testé en une soirée</li>
+          <li>Suffit si tu ne partages jamais qu'avec des locataires</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Une seule vue partagée pour tous les tiers</li>
+          <li>Impossible d'ouvrir la technique à un pro sans l'ouvrir à tous</li>
+          <li>Migration pénible : il faudra requalifier chaque fiche à la main</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B &middot; modifiée</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Niveaux + portée</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="perm wide">
+        <div class="perm-grid">
+          <div class="perm-head first">La fiche</div>
+          <div class="perm-head">Toi</div>
+          <div class="perm-head">Loca&shy;taire</div>
+          <div class="perm-head">Arti&shy;san</div>
+          <div class="perm-head">Jardi&shy;nier</div>
+
+          <div class="perm-fiche">Prise 230V<em>usage &middot; chambre 2</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div><div class="perm-cell no">&times;</div>
+
+          <div class="perm-fiche">Tableau électrique<em>technique &middot; cave</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell no">&times;</div><div class="perm-cell yes">&#10003;</div><div class="perm-cell no">&times;</div>
+
+          <div class="perm-fiche">Facture électricien<em>privé</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell no">&times;</div><div class="perm-cell no">&times;</div><div class="perm-cell no">&times;</div>
+
+          <div class="perm-fiche">Vanne d'arrosage<em>usage &middot; extérieur</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div>
+        </div>
+        <div class="perm-note">
+          <span class="perm-scope">lien jardinier &middot; usage &middot; extérieur</span><br>
+          Deux réglages sur le <strong>lien</strong>, pas sur les 200 fiches.
+        </div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Chaque fiche porte un niveau parmi quatre : <code>public</code>, <code>usage</code>, <code>technique</code>, <code>privé</code>. Et chaque lien de partage porte deux réglages : un <strong>plafond de niveau</strong> et une <strong>portée</strong>, c'est-à-dire la liste des zones ou systèmes qu'il laisse passer. Le lien du jardinier plafonne à <code>usage</code> et se limite à l'extérieur : il voit la vanne d'arrosage, pas la prise de la chambre. Le filtre final tient en une ligne : <code>niveau &lt;= plafond ET zone &isin; portée</code>. Le point clé qui rend ça bon marché : la portée est un réglage <strong>du lien</strong>, pas de la fiche. Tu n'ajoutes rien à saisir sur tes 200 fiches, tu ajoutes deux champs sur tes trois ou quatre partages.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Le jardinier, le locataire et l'artisan sont trois liens différents</li>
+          <li>Rien de plus à saisir par fiche qu'avec B simple</li>
+          <li>Défaut toujours sûr : fiche non classée = privée</li>
+          <li>Deux garde-fous indépendants, il faut se tromper deux fois pour fuiter</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Impose que chaque fiche soit rattachée à une zone, sans exception</li>
+          <li>Une fiche sans zone échappe au filtre de portée, il faut l'interdire</li>
+          <li>Il faut trancher zones ou systèmes, et comment les deux se combinent</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Choisi : niveaux + portée par lien</code></div>
+  </article>
+
+  <article class="option-card option-c not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Étiquettes libres</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="perm">
+        <div class="perm-grid">
+          <div class="perm-head first">La fiche</div>
+          <div class="perm-head">Toi</div>
+          <div class="perm-head">Loca&shy;taire</div>
+          <div class="perm-head">Arti&shy;san</div>
+
+          <div class="perm-fiche">Prise 230V<em>#usage #élec</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div><div class="perm-cell yes">&#10003;</div>
+
+          <div class="perm-fiche">Tableau électrique<em>#technique #élec</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell no">&times;</div><div class="perm-cell yes">&#10003;</div>
+
+          <div class="perm-fiche">Facture électricien<em>aucune étiquette</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell warn">?</div><div class="perm-cell warn">?</div>
+        </div>
+        <div class="perm-note">Souple, mais une fiche <strong>sans étiquette</strong>, c'est quoi ? La réponse te suit partout.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Chaque fiche reçoit des étiquettes libres, et chaque lien de partage définit lesquelles il laisse passer. Tu peux fabriquer « le plombier ne voit que le sanitaire » sans avoir prévu ce cas à l'avance, ce qu'aucune autre option ne permet. Le problème n'est pas la souplesse, c'est le défaut : une fiche sans étiquette est indéterminée, et tu dois choisir entre « invisible » (et tes fiches disparaissent silencieusement des partages) ou « visible » (et un oubli d'étiquette devient une fuite). Sans compter que l'écran pour composer un lien devient vite un constructeur de requêtes.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Gère les cas transversaux qu'une hiérarchie ne sait pas dire</li>
+          <li>Nouvelle audience = nouveau lien, sans toucher au schéma</li>
+          <li>Les étiquettes resservent pour la recherche et le filtrage</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Aucun défaut n'est bon : soit ça fuit, soit ça disparaît</li>
+          <li>Impossible de répondre d'un coup d'œil à « qui voit quoi »</li>
+          <li>L'écran de composition d'un lien devient un mini langage de requête</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Matrice pièce par pièce</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="perm">
+        <div class="perm-grid">
+          <div class="perm-head first">La fiche</div>
+          <div class="perm-head">Toi</div>
+          <div class="perm-head">Loca&shy;taire</div>
+          <div class="perm-head">Arti&shy;san</div>
+
+          <div class="perm-fiche">Prise 230V<em>à configurer</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell cfg">&#9881;</div><div class="perm-cell cfg">&#9881;</div>
+
+          <div class="perm-fiche">Tableau électrique<em>à configurer</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell cfg">&#9881;</div><div class="perm-cell cfg">&#9881;</div>
+
+          <div class="perm-fiche">Facture électricien<em>à configurer</em></div>
+          <div class="perm-cell yes">&#10003;</div><div class="perm-cell cfg">&#9881;</div><div class="perm-cell cfg">&#9881;</div>
+        </div>
+        <div class="perm-note">6 réglages ici. Multiplie par <strong>200 fiches</strong> et chaque nouveau partage.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Le contrôle d'accès complet : pour chaque partage, tu choisis les pièces et les systèmes autorisés, fiche par fiche si tu veux. C'est la réponse techniquement juste, celle qu'un produit d'entreprise finit toujours par implémenter. C'est aussi celle qui te coûtera trois semaines avant d'avoir affiché un seul plan, et qui produit un écran de réglages que personne, toi compris, ne remplira consciencieusement. Une permission qu'on ne configure pas est une permission par défaut, et tu retombes sur les problèmes des autres options en ayant payé le prix fort.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Précision maximale, aucun cas d'usage hors de portée</li>
+          <li>Ne se refait jamais, tu es tranquille pour toujours</li>
+          <li>Indispensable si tu vises un jour les gérances et le multi-lots</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Sur-ingénierie flagrante pour une maison et trois audiences</li>
+          <li>Des semaines dépensées avant le premier écran utile</li>
+          <li>Un écran de réglages que tu ne rempliras pas sérieusement</li>
+          <li>Complexité qui te ralentira sur toutes les décisions suivantes</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Privé ou partagé</th>
+          <th class="col-b col-chosen">B : Niveaux + portée</th>
+          <th class="col-c">C : Étiquettes libres</th>
+          <th class="col-d">D : Matrice complète</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>En base</td>
+          <td>1 booléen</td>
+          <td class="col-chosen">1 entier</td>
+          <td>1 table de liaison</td>
+          <td>2 tables + jointures</td>
+        </tr>
+        <tr>
+          <td>Que se passe-t-il si tu oublies</td>
+          <td>La fiche reste privée</td>
+          <td class="col-chosen">La fiche reste privée</td>
+          <td>Indéterminé, à trancher</td>
+          <td>Dépend du défaut choisi</td>
+        </tr>
+        <tr>
+          <td>Locataire et artisan séparés</td>
+          <td>Non</td>
+          <td class="col-chosen">Oui</td>
+          <td>Oui</td>
+          <td>Oui</td>
+        </tr>
+        <tr>
+          <td>« Qui voit cette fiche »</td>
+          <td>Évident</td>
+          <td class="col-chosen">Évident</td>
+          <td>Il faut réfléchir</td>
+          <td>Il faut une requête</td>
+        </tr>
+        <tr>
+          <td>Effort à chaque saisie</td>
+          <td>Une case</td>
+          <td class="col-chosen">Un menu à 4 choix</td>
+          <td>Étiqueter, sans oublier</td>
+          <td>Rien, puis tout d'un coup</td>
+        </tr>
+        <tr>
+          <td>Temps d'implémentation</td>
+          <td>Une soirée</td>
+          <td class="col-chosen">2 à 3 soirées</td>
+          <td>1 à 2 semaines</td>
+          <td>3 semaines et plus</td>
+        </tr>
+        <tr>
+          <td>Cas « jardinier, extérieur seul »</td>
+          <td>Impossible</td>
+          <td class="col-chosen">Pas sans extension</td>
+          <td>Natif</td>
+          <td>Natif</td>
+        </tr>
+        <tr>
+          <td>Coût pour évoluer plus tard</td>
+          <td>Requalifier chaque fiche</td>
+          <td class="col-chosen">Ajouter un filtre de portée</td>
+          <td>Déjà au maximum</td>
+          <td>Déjà au maximum</td>
+        </tr>
+        <tr>
+          <td>Te ralentit sur le reste du projet</td>
+          <td>Non</td>
+          <td class="col-chosen">À peine</td>
+          <td>Un peu</td>
+          <td>Beaucoup</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option A mais [ta variante] »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-001 je veux l'option C finalement »</strong></p>
+</div>
+
+</body>
+</html>

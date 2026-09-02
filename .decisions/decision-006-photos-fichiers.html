@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 6 : Photos, documents et fichiers — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; background: #ede9fe; color: #6d28d9; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.locked-banner { max-width: 1200px; margin: 0 auto 1.25rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #059669; border-radius: 10px; padding: 0.85rem 1.25rem; }
+.locked-banner .tag { background: #059669; color: white; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; margin-right: 0.5rem; }
+.locked-banner p { font-size: 0.85rem; color: #065f46; margin: 0; display: inline; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #e11d48; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #be123c; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #9f1239; line-height: 1.6; }
+.context-box p + p { margin-top: 0.45rem; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.35rem; background: #eef2f6; min-height: 245px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.option-summary code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem; font-family: 'SF Mono','Fira Code',monospace; color: #0f172a; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono','Fira Code',monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.ph { width: 100%; max-width: 268px; background: white; border: 1px solid #d7dee7; border-radius: 9px; overflow: hidden; box-shadow: 0 2px 10px rgba(15,23,42,0.09); }
+.ph-bar { height: 23px; background: #f8fafc; border-bottom: 1px solid #e8edf3; display: flex; align-items: center; padding: 0 9px; font-size: 0.5rem; color: #64748b; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.ph-body { padding: 8px; }
+.wall { height: 96px; border-radius: 5px; position: relative; overflow: hidden;
+  background: linear-gradient(180deg,#9a8f7e 0%,#7c7263 55%,#6a6153 100%); }
+.wall::before { content:""; position:absolute; inset:0;
+  background: repeating-linear-gradient(90deg, rgba(255,250,235,.30) 0 13px, transparent 13px 47px); }
+.wall .pipe { position:absolute; border-radius:2px; }
+.wall .pw { background:#4a90c2; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
+.wall .pe { background:#d97b3a; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
+.wall .pn { background:#5aa86a; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
+.ppin { position:absolute; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; font-size:0.44rem; font-weight:800; color:white; z-index:3; }
+.ph-cap { font-size: 0.52rem; color: #94a3b8; text-align: center; padding: 5px 9px 8px; line-height: 1.35; }
+.ph-cap strong { color: #475569; }
+.ph-cap em { font-style: normal; color: #be123c; font-weight: 700; }
+.att { margin-top: 7px; font-size: 0.56rem; color: #64748b; }
+.att-lbl { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; font-size: 0.46rem; margin-bottom: 3px; }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.chip2 { font-size: 0.5rem; font-weight: 600; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; border-radius: 999px; padding: 2px 6px; }
+.chip2.on { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+.warnline { margin-top: 6px; font-size: 0.5rem; color: #be123c; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 5px; padding: 4px 6px; line-height: 1.35; }
+.tl { display: flex; flex-direction: column; gap: 0; }
+.tl-row { display: flex; gap: 7px; }
+.tl-rail { width: 14px; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.tl-dot { width: 7px; height: 7px; border-radius: 50%; background: #6366f1; margin-top: 5px; flex-shrink: 0; }
+.tl-line { width: 2px; flex: 1; background: #e2e8f0; }
+.tl-card { flex: 1; border: 1px solid #eef2f6; border-radius: 6px; padding: 5px 7px; margin-bottom: 5px; background: white; }
+.tl-date { font-size: 0.46rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; }
+.tl-txt { font-size: 0.58rem; font-weight: 600; color: #334155; line-height: 1.25; }
+.legend { margin-top: 7px; display: flex; flex-direction: column; gap: 2px; }
+.lg { display: flex; align-items: center; gap: 5px; font-size: 0.52rem; color: #475569; }
+.lg b { width: 12px; height: 12px; border-radius: 50%; color: white; font-size: 0.4rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 6 sur 8</span>
+  <h1>Photos, documents et fichiers</h1>
+  <span class="category-badge">Technique</span>
+  <p class="decision-description">
+    Depuis la décision 3, la photo n'est plus un ornement : c'est ton principal moyen de saisie. Elle porte la marque, le modèle, la plaque signalétique et l'état. Elle mérite donc un vrai modèle, pas une colonne <code>image_url</code> ajoutée à la va-vite.
+  </p>
+  <p class="decision-description">
+    Le cas qui tranche : <strong>tu photographies un mur ouvert pendant des travaux.</strong> On y voit une conduite d'eau, une gaine électrique et un câble réseau. Trois objets, une seule image. Les quatre maquettes montrent ce que chaque modèle en fait.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option B mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="locked-banner">
+  <span class="tag">Hérité des décisions 1, 3 et 4</span>
+  <p>Une photo porte un <strong>niveau</strong> et une <strong>zone</strong> comme n'importe quelle fiche. Elle doit s'enregistrer <strong>hors ligne</strong> puis se synchroniser. Et le mécanisme « points sur une image » existe déjà, tu l'as construit pour le plan.</p>
+</div>
+
+<div class="context-box">
+  <h3>Deux pièges que la photo t'apporte gratuitement</h3>
+  <p>
+    <strong>Les métadonnées EXIF contiennent les coordonnées GPS.</strong> Tu partages une photo à un locataire Airbnb, il récupère la position exacte de la maison, la date, et le modèle de ton téléphone. Il faut <strong>effacer l'EXIF sur toute image servie par un lien de partage</strong>. Ce n'est pas optionnel, et ça vaut aussi pour l'orientation, qu'il faut appliquer avant de la supprimer sinon les photos partent de travers.
+  </p>
+  <p>
+    <strong>Une photo montre ce que tu n'as pas voulu montrer.</strong> Le courrier posé sur la table, l'écran allumé, le panneau d'alarme au fond du couloir. Le niveau de visibilité protège la fiche, pas le contenu de l'image. Il faut au minimum une prévisualisation « voici ce que verra le locataire » avant d'émettre un lien.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Pièce jointe d'une fiche</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="ph">
+        <div class="ph-bar">Photo &middot; 1 rattachement</div>
+        <div class="ph-body">
+          <div class="wall">
+            <span class="pipe pw" style="left:22%;top:8%;width:5px;height:84%"></span>
+            <span class="pipe pe" style="left:52%;top:8%;width:4px;height:84%"></span>
+            <span class="pipe pn" style="left:74%;top:8%;width:3px;height:84%"></span>
+          </div>
+          <div class="att">
+            <div class="att-lbl">Rattachée à</div>
+            <div class="chips"><span class="chip2 on">Gaine élec. bureau</span></div>
+          </div>
+          <div class="warnline">La conduite d'eau et le câble réseau sont sur l'image, mais reliés à rien.</div>
+        </div>
+        <div class="ph-cap">Une photo, <em>une seule fiche</em>. Le reste est perdu.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      La photo est une colonne ou une table fille de l'élément. Une image, un objet. C'est immédiat à écrire et parfaitement suffisant pour une photo de plaque signalétique. Mais ça se casse sur le cas qui t'intéresse le plus : une photo de mur ouvert montre trois ou six choses, et tu dois choisir laquelle mérite l'image. Les autres n'auront rien. Et un avant/après de rénovation n'appartient à aucun objet précis, il appartient à une pièce et à un chantier, donc il n'a pas de place dans ce modèle.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Une demi-journée de travail, modèle trivial</li>
+          <li>Parfait pour la photo de plaque signalétique</li>
+          <li>Affichage simple : la fiche montre ses images</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Une photo qui montre 3 objets doit en choisir un</li>
+          <li>Aucune place pour un avant/après de chantier</li>
+          <li>Duplication de l'image si tu veux la lier ailleurs</li>
+          <li>Impossible de parcourir « toutes les photos de la cave »</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Fichier autonome, liens multiples</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="ph">
+        <div class="ph-bar">Fichier &middot; 4 liens</div>
+        <div class="ph-body">
+          <div class="wall">
+            <span class="pipe pw" style="left:22%;top:8%;width:5px;height:84%"></span>
+            <span class="pipe pe" style="left:52%;top:8%;width:4px;height:84%"></span>
+            <span class="pipe pn" style="left:74%;top:8%;width:3px;height:84%"></span>
+          </div>
+          <div class="att">
+            <div class="att-lbl">Liée à</div>
+            <div class="chips">
+              <span class="chip2 on">Conduite eau</span>
+              <span class="chip2 on">Gaine élec.</span>
+              <span class="chip2 on">Câble RJ45</span>
+              <span class="chip2">Zone : bureau</span>
+              <span class="chip2">Chantier 2024</span>
+              <span class="chip2">rôle : avant</span>
+            </div>
+          </div>
+        </div>
+        <div class="ph-cap">Un fichier, <strong>autant de liens que nécessaire</strong>, plus un rôle.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Le fichier devient une entité de plein droit : <code>fichier(id, url, type_mime, date_prise, zone_id, niveau, legende)</code>, plus une table de liaison vers les éléments, les événements et les zones, avec un <code>role</code> sur le lien. Une photo de mur ouvert se relie aux trois conduites d'un coup. Un avant/après, ce sont deux fichiers liés au même chantier avec les rôles <em>avant</em> et <em>après</em>, ce qui rend la comparaison automatique. Et tu peux enfin parcourir toutes les photos d'une zone ou d'une période, ce qui est le geste naturel quand tu cherches une image dont tu ne sais plus à quoi elle était rattachée.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Une photo sert plusieurs objets sans duplication</li>
+          <li>Avant/après natif, par un rôle sur le lien</li>
+          <li>Galerie par zone, par système ou par période</li>
+          <li>Les PDF de garantie entrent dans le même modèle</li>
+          <li>Une seule table à indexer pour la recherche</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Une table de liaison de plus, et des liens polymorphes</li>
+          <li>Il faut décider quoi faire des liens quand un objet est supprimé</li>
+          <li>L'écran de rattachement doit rester très rapide, sinon personne ne lie rien</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Le dossier est un journal</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="ph">
+        <div class="ph-bar">Journal &middot; 214 observations</div>
+        <div class="ph-body">
+          <div class="tl">
+            <div class="tl-row"><div class="tl-rail"><span class="tl-dot"></span><span class="tl-line"></span></div><div class="tl-card"><div class="tl-date">12 mars 2026</div><div class="tl-txt">Mur bureau ouvert &middot; 3 conduites</div></div></div>
+            <div class="tl-row"><div class="tl-rail"><span class="tl-dot"></span><span class="tl-line"></span></div><div class="tl-card"><div class="tl-date">4 février 2026</div><div class="tl-txt">Filtre VMC remplacé</div></div></div>
+            <div class="tl-row"><div class="tl-rail"><span class="tl-dot"></span><span class="tl-line"></span></div><div class="tl-card"><div class="tl-date">18 nov. 2025</div><div class="tl-txt">Chaudière &middot; entretien annuel</div></div></div>
+            <div class="tl-row"><div class="tl-rail"><span class="tl-dot"></span></div><div class="tl-card"><div class="tl-date">2 sept. 2025</div><div class="tl-txt">Vanne d'arrêt cuisine remplacée</div></div></div>
+          </div>
+        </div>
+        <div class="ph-cap">Les fiches sont <strong>déduites</strong> du flux. <em>« Combien de vannes ai-je ? » devient un calcul.</em></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      On renverse le modèle : la vérité, c'est le flux d'observations datées, et les fiches ne sont que des vues calculées sur ce flux. C'est très cohérent avec ta capture opportuniste, et ça donne gratuitement l'historique complet de chaque objet, y compris ses états successifs. C'est aussi le modèle le plus élégant sur le papier et le plus coûteux à vivre : chaque affichage d'une fiche devient une reconstitution, la correction d'une erreur ancienne demande de réécrire l'histoire, et une question banale comme « quelles vannes possède cette maison » n'a plus de réponse directe en base.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Historique complet et gratuit de chaque objet</li>
+          <li>Épouse parfaitement la capture opportuniste</li>
+          <li>La chronologie de ton brief sort toute seule</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Chaque fiche affichée est une reconstitution</li>
+          <li>« Combien de vannes » devient un calcul, pas une requête</li>
+          <li>Corriger une vieille erreur demande de réécrire le flux</li>
+          <li>Contredit le modèle validé en décision 2</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Photo annotée par points</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="ph">
+        <div class="ph-bar">Photo annotée &middot; 3 points</div>
+        <div class="ph-body">
+          <div class="wall">
+            <span class="pipe pw" style="left:22%;top:8%;width:5px;height:84%"></span>
+            <span class="pipe pe" style="left:52%;top:8%;width:4px;height:84%"></span>
+            <span class="pipe pn" style="left:74%;top:8%;width:3px;height:84%"></span>
+            <span class="ppin" style="left:19%;top:34%;background:#4a90c2">1</span>
+            <span class="ppin" style="left:49%;top:52%;background:#d97b3a">2</span>
+            <span class="ppin" style="left:71%;top:22%;background:#5aa86a">3</span>
+          </div>
+          <div class="legend">
+            <div class="lg"><b style="background:#4a90c2">1</b> Conduite eau froide &middot; cuivre 15mm</div>
+            <div class="lg"><b style="background:#d97b3a">2</b> Gaine élec. &middot; circuit prises bureau</div>
+            <div class="lg"><b style="background:#5aa86a">3</b> Câble RJ45 &middot; vers baie cave</div>
+          </div>
+        </div>
+        <div class="ph-cap">Le point est <strong>sur l'image</strong>. Même mécanisme que le plan.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tu ne relies pas seulement la photo à des objets, tu poses les objets <em>sur</em> la photo, à leur emplacement exact. C'est précisément le mécanisme construit en décision 4 pour le plan, réappliqué à une image quelconque : deux coordonnées en pourcentage et une clé étrangère. Le résultat est spectaculaire sur les murs ouverts, parce que six mois plus tard tu ne te demandes plus « laquelle des trois conduites est la mienne », tu la vois désignée. Ce n'est pas vraiment un concurrent de B, c'est une couche par-dessus, et c'est pour ça qu'elle est présentée à part : seule, elle ne dit rien des PDF de garantie ni des avant/après.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Réutilise le composant du plan, coût très faible</li>
+          <li>Lève l'ambiguïté quand plusieurs objets se ressemblent</li>
+          <li>La photo devient un document consultable, pas un souvenir</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Incomplète seule : ne gère ni PDF ni avant/après</li>
+          <li>Annoter demande du temps au moment de la capture</li>
+          <li>Viser un point sur une photo au téléphone reste fastidieux</li>
+          <li>Suppose un modèle de fichier déjà en place, donc B</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Pièce jointe</th>
+          <th class="col-b col-chosen">B : Fichier autonome</th>
+          <th class="col-c">C : Journal</th>
+          <th class="col-d">D : Photo annotée</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Photo montrant 3 objets</td>
+          <td>En choisit un</td>
+          <td class="col-chosen">Les relie tous</td>
+          <td>Les relie tous</td>
+          <td>Les localise sur l'image</td>
+        </tr>
+        <tr>
+          <td>Avant/après de chantier</td>
+          <td>Impossible</td>
+          <td class="col-chosen">Natif, par un rôle</td>
+          <td>Natif, par les dates</td>
+          <td>Ne traite pas</td>
+        </tr>
+        <tr>
+          <td>PDF de garantie</td>
+          <td>Table séparée</td>
+          <td class="col-chosen">Même modèle</td>
+          <td>Même modèle</td>
+          <td>Ne traite pas</td>
+        </tr>
+        <tr>
+          <td>« Toutes les photos de la cave »</td>
+          <td>Impossible</td>
+          <td class="col-chosen">Immédiat</td>
+          <td>Immédiat</td>
+          <td>Hérité de B</td>
+        </tr>
+        <tr>
+          <td>Cohérent avec la décision 2</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui</td>
+          <td>Non, la contredit</td>
+          <td>Oui</td>
+        </tr>
+        <tr>
+          <td>Réutilise le composant du plan</td>
+          <td>Non</td>
+          <td class="col-chosen">Non</td>
+          <td>Non</td>
+          <td>Entièrement</td>
+        </tr>
+        <tr>
+          <td>Effort au moment de la capture</td>
+          <td>Minimal</td>
+          <td class="col-chosen">Faible</td>
+          <td>Minimal</td>
+          <td>Notable</td>
+        </tr>
+        <tr>
+          <td>Se suffit à lui-même</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui</td>
+          <td>Oui</td>
+          <td>Non, exige B</td>
+        </tr>
+        <tr>
+          <td>Temps de développement</td>
+          <td>1 jour</td>
+          <td class="col-chosen">4 à 6 jours</td>
+          <td>2 à 3 semaines</td>
+          <td>+2 jours par-dessus B</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option B plus D »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-005 je veux l'option D finalement »</strong></p>
+</div>
+
+</body>
+</html>

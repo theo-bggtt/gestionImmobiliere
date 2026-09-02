@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 7 : Stack et hébergement — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; background: #ede9fe; color: #6d28d9; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.locked-banner { max-width: 1200px; margin: 0 auto 1.25rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #059669; border-radius: 10px; padding: 0.85rem 1.25rem; }
+.locked-banner .tag { background: #059669; color: white; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; margin-right: 0.5rem; }
+.locked-banner p { font-size: 0.85rem; color: #065f46; margin: 0; display: inline; }
+.locked-banner code { background: #d1fae5; border-radius: 3px; padding: 1px 5px; font-size: 0.78rem; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #e11d48; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #be123c; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #9f1239; line-height: 1.6; }
+.context-box p + p { margin-top: 0.45rem; }
+.context-box ul { margin: 0.4rem 0 0 1rem; }
+.context-box li { font-size: 0.82rem; color: #9f1239; line-height: 1.55; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.35rem; background: #f8fafc; min-height: 235px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.option-summary code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem; font-family: 'SF Mono','Fira Code',monospace; color: #0f172a; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono','Fira Code',monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.arch { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; max-width: 262px; }
+.arch-layer { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; width: 100%; }
+.arch-box { background: white; border: 2px solid #e2e8f0; border-radius: 7px; padding: 6px 9px; font-size: 0.58rem; font-weight: 700; color: #334155; text-align: center; flex: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); line-height: 1.25; }
+.arch-box em { display: block; font-style: normal; font-size: 0.5rem; color: #94a3b8; font-weight: 600; margin-top: 1px; }
+.arch-box.front { border-color: #7c3aed; color: #6d28d9; }
+.arch-box.back { border-color: #0891b2; color: #0e7490; }
+.arch-box.db { border-color: #059669; color: #047857; }
+.arch-box.file { border-color: #d97706; color: #b45309; }
+.arch-box.off { border-color: #6366f1; background: #eff6ff; color: #1d4ed8; }
+.arch-box.warn { border-color: #e11d48; background: #fff1f2; color: #be123c; }
+.arch-arrow { font-size: 0.85rem; color: #94a3b8; line-height: 1; }
+.arch-split { width: 100%; border-top: 1px dashed #cbd5e1; margin: 4px 0 2px; padding-top: 5px; }
+.arch-split-lbl { font-size: 0.46rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; text-align: center; margin-bottom: 4px; }
+.arch-note { font-size: 0.56rem; color: #64748b; text-align: center; line-height: 1.4; margin-top: 6px; }
+.arch-note strong { color: #334155; }
+.arch-note em { font-style: normal; color: #be123c; font-weight: 700; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 7 sur 8</span>
+  <h1>Stack et hébergement</h1>
+  <span class="category-badge">Technique</span>
+  <p class="decision-description">
+    Le serveur est déjà largement décidé par les décisions précédentes : <code>jsonb</code>, index plein texte français et filtre de permissions dans la requête pointent tous vers PostgreSQL. La vraie question restante est <strong>ce qui tourne sur le téléphone</strong>, parce que tu as exigé une capture qui marche hors ligne.
+  </p>
+  <p class="decision-description">
+    Deuxième point, structurel : <strong>ton locataire Airbnb n'installera jamais rien.</strong> Le lien de partage doit ouvrir une page immédiate. Tu as donc deux façades très différentes, et les schémas le montrent.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option B mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="locked-banner">
+  <span class="tag">Contraintes accumulées</span>
+  <p>PostgreSQL imposé par les décisions 2 et 5 &middot; capture <strong>hors ligne</strong> imposée par la décision 3 &middot; stockage de fichiers volumineux par la décision 6 &middot; filtrage <code>niveau</code> et <code>portée</code> <strong>côté serveur</strong> par la décision 1.</p>
+</div>
+
+<div class="context-box">
+  <h3>Ce que j'ai vérifié sur le hors ligne, et ça change le dimensionnement</h3>
+  <p>Trois sources concordent sur l'état des PWA sur iOS en 2026 :</p>
+  <ul>
+    <li>L'<strong>API Background Sync n'existe pas sur iOS</strong>. La synchronisation ne peut se déclencher qu'au retour au premier plan de l'app.</li>
+    <li>Le quota par origine tourne autour de <strong>50 à 200 Mo</strong>, partagé entre Cache et IndexedDB. Quelques photos pleine résolution le remplissent.</li>
+    <li>Les caches iOS sont <strong>purgés après quelques jours d'inactivité</strong>.</li>
+  </ul>
+  <p>
+    Conséquence concrète : la file d'attente locale doit être une <strong>boîte d'envoi éphémère, jamais un stockage</strong>. On compresse avant d'écrire, on téléverse dès le retour du réseau ou à la réouverture, et on purge aussitôt. Pour toi qui descends à la cave et remontes deux minutes plus tard, la file vit quelques minutes : c'est parfaitement tenable. Pour un professionnel qui documente un chantier toute une journée sans réseau, ça ne l'est pas.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Monolithe rendu serveur</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="arch">
+        <div class="arch-layer"><div class="arch-box front">Navigateur<em>HTML rendu serveur</em></div></div>
+        <div class="arch-arrow">&updownarrow;</div>
+        <div class="arch-layer"><div class="arch-box back">Django / Rails / Laravel<em>vues + gabarits + admin</em></div></div>
+        <div class="arch-arrow">&updownarrow;</div>
+        <div class="arch-layer"><div class="arch-box db">PostgreSQL</div><div class="arch-box file">Fichiers</div></div>
+        <div class="arch-layer" style="margin-top:5px"><div class="arch-box warn">Capture hors ligne<em>impossible</em></div></div>
+        <div class="arch-note">Le plus rapide à écrire. <em>Et il contredit la décision 3.</em></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Un cadre classique qui rend le HTML côté serveur. C'est de très loin le plus rapide à construire, tu obtiens une interface d'administration gratuite, la recherche plein texte et les permissions vivent naturellement dans les requêtes, et le déploiement est un conteneur plus une base. Pour tout ce qui est consultation, partage et gestion, c'est excellent. Le problème est unique mais rédhibitoire : un formulaire rendu serveur ne se soumet pas hors ligne. Tu es dans la cave, tu photographies, tu valides, et tu perds la saisie. Or tu as décidé en décision 3 que la capture est le cœur du produit.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Le plus rapide à construire, de loin</li>
+          <li>Interface d'administration offerte par le cadre</li>
+          <li>Une seule application à déployer et surveiller</li>
+          <li>Parfait pour les pages de partage</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Capture hors ligne impossible, ce qui tue la décision 3</li>
+          <li>Confort mobile inférieur, chaque geste passe par le réseau</li>
+          <li>Poser un point sur un plan demande du JS de toute façon</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">PWA + boîte d'envoi locale<br><span style="font-size:0.8rem;font-weight:500;color:#64748b">puis enrobage Capacitor</span></h2>
+    </div>
+    <div class="visual-preview">
+      <div class="arch">
+        <div class="arch-layer"><div class="arch-box off">PWA installée<em>IndexedDB = boîte d'envoi</em></div></div>
+        <div class="arch-arrow">&updownarrow;</div>
+        <div class="arch-layer"><div class="arch-box back">API<em>auth, permissions, vignettes</em></div></div>
+        <div class="arch-arrow">&updownarrow;</div>
+        <div class="arch-layer"><div class="arch-box db">PostgreSQL</div><div class="arch-box file">Stockage objet</div></div>
+        <div class="arch-split">
+          <div class="arch-split-lbl">Deuxième façade &middot; le partage</div>
+          <div class="arch-layer"><div class="arch-box front">Page rendue serveur<em>lien locataire, zéro install</em></div></div>
+        </div>
+        <div class="arch-note">Une seule base de code applicative, <strong>plus une page publique légère</strong>.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Une application web installable sur l'écran d'accueil, avec IndexedDB utilisé comme <strong>boîte d'envoi</strong> et non comme base locale. Tu captures hors ligne, ça part au retour du réseau ou à la réouverture. Une seule base de code sert le téléphone et l'ordinateur, aucun magasin d'applications, aucune validation Apple, et tu déploies quand tu veux. Le point élégant est la séparation : le propriétaire utilise la PWA, tandis que le <strong>lien de partage ouvre une page rendue serveur</strong>, légère, filtrée côté serveur, sans installation ni démarrage d'application. Ton locataire clique et voit la page.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Capture hors ligne réelle, dans la limite décrite plus haut</li>
+          <li>Une base de code pour tous les appareils</li>
+          <li>Aucun magasin d'applications, déploiement libre</li>
+          <li>Le partage reste une page instantanée, sans install</li>
+          <li>Se déploie aussi bien sur ton Pi que chez un hébergeur suisse</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Pas de Background Sync sur iOS, synchro au premier plan seulement</li>
+          <li>Quota serré : compresser avant d'écrire, purger après envoi</li>
+          <li>Installation manuelle sur iOS, à expliquer à l'utilisateur</li>
+          <li>Deux façades à maintenir, même si la seconde est minuscule</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Application native ou hybride</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="arch">
+        <div class="arch-layer"><div class="arch-box off">App iOS + Android<em>SQLite local, envoi en tâche de fond</em></div></div>
+        <div class="arch-arrow">&updownarrow;</div>
+        <div class="arch-layer"><div class="arch-box back">API</div></div>
+        <div class="arch-arrow">&updownarrow;</div>
+        <div class="arch-layer"><div class="arch-box db">PostgreSQL</div><div class="arch-box file">Stockage objet</div></div>
+        <div class="arch-split">
+          <div class="arch-split-lbl">Et il faut quand même</div>
+          <div class="arch-layer"><div class="arch-box front">Page de partage web</div><div class="arch-box front">App web bureau</div></div>
+        </div>
+        <div class="arch-note">Le meilleur hors ligne. <em>Trois façades à maintenir, seul.</em></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Une vraie application mobile, native ou via un cadre hybride. Tu obtiens le meilleur accès à l'appareil photo, un stockage local sans quota mesquin, et surtout l'envoi en tâche de fond, qui règle proprement le cas du professionnel documentant un chantier une journée entière sans réseau. Le prix est lourd pour quelqu'un qui travaille seul : il te faut quand même une page de partage web et une interface de bureau, donc trois façades. À quoi s'ajoutent les cycles de validation des magasins, la signature, et l'impossibilité de corriger un bug en dix minutes.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Hors ligne sans compromis, envoi en tâche de fond</li>
+          <li>Accès appareil photo optimal, y compris rafales</li>
+          <li>Notifications fiables pour les rappels d'entretien</li>
+          <li>Nécessaire si tu vises un jour l'usage chantier</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Trois façades à maintenir en solo</li>
+          <li>Validation des magasins à chaque correction</li>
+          <li>Compte développeur Apple, signature, provisioning</li>
+          <li>Rythme d'itération divisé par trois ou quatre</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Local-first et base répliquée</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="arch">
+        <div class="arch-layer"><div class="arch-box off">Client<em>réplique locale complète</em></div></div>
+        <div class="arch-arrow">&updownarrow;</div>
+        <div class="arch-layer"><div class="arch-box back">Moteur de synchro<em>résolution de conflits incluse</em></div></div>
+        <div class="arch-arrow">&updownarrow;</div>
+        <div class="arch-layer"><div class="arch-box db">PostgreSQL</div></div>
+        <div class="arch-layer" style="margin-top:5px"><div class="arch-box warn">Filtrage par niveau et portée<em>en tension avec la réplication</em></div></div>
+        <div class="arch-note">La synchro est offerte. <em>Mais le client détient les données.</em></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Un moteur de réplication tient une copie locale de la base et résout les conflits pour toi. Sur le papier c'est la réponse idéale à la décision 3 : le hors ligne n'est plus une fonction à écrire, c'est une propriété de l'architecture. Le problème est direct et sérieux : la réplication suppose que le client détient les données, or ta décision 1 exige que le filtrage par niveau et par portée se fasse <strong>côté serveur</strong>. Un lien de partage ne peut pas répliquer une base filtrée sans que tu réintroduises exactement le travail que le moteur était censé t'épargner. Ajoute que ces outils sont jeunes et couplent fortement ton modèle à leur mécanique.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Hors ligne et synchro offerts par l'architecture</li>
+          <li>Résolution de conflits déjà pensée et testée</li>
+          <li>Interface très réactive, tout est local</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>En tension directe avec le filtrage serveur de la décision 1</li>
+          <li>Les partages ne se répliquent pas, il faut une seconde voie</li>
+          <li>Outils jeunes, couplage fort au modèle de données</li>
+          <li>Répliquer des photos volumineuses reste à résoudre à la main</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Monolithe</th>
+          <th class="col-b col-chosen">B : PWA + boîte d'envoi</th>
+          <th class="col-c">C : App native</th>
+          <th class="col-d">D : Local-first</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Capture hors ligne (décision 3)</td>
+          <td>Non</td>
+          <td class="col-chosen">Oui, quelques minutes</td>
+          <td>Oui, sans limite</td>
+          <td>Oui, sans limite</td>
+        </tr>
+        <tr>
+          <td>Filtrage serveur (décision 1)</td>
+          <td>Naturel</td>
+          <td class="col-chosen">Naturel</td>
+          <td>Naturel</td>
+          <td>En tension</td>
+        </tr>
+        <tr>
+          <td>Lien de partage sans installation</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui, page dédiée</td>
+          <td>Façade en plus</td>
+          <td>Façade en plus</td>
+        </tr>
+        <tr>
+          <td>Nombre de façades à maintenir</td>
+          <td>1</td>
+          <td class="col-chosen">2, dont une minuscule</td>
+          <td>3</td>
+          <td>2 à 3</td>
+        </tr>
+        <tr>
+          <td>Corriger un bug en production</td>
+          <td>Immédiat</td>
+          <td class="col-chosen">Immédiat</td>
+          <td>Validation du magasin</td>
+          <td>Immédiat</td>
+        </tr>
+        <tr>
+          <td>S'héberge sur ton Pi 5</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui</td>
+          <td>Le serveur oui</td>
+          <td>Oui</td>
+        </tr>
+        <tr>
+          <td>Migration vers un hébergeur suisse</td>
+          <td>Triviale</td>
+          <td class="col-chosen">Triviale</td>
+          <td>Triviale côté serveur</td>
+          <td>Dépend du moteur</td>
+        </tr>
+        <tr>
+          <td>Usage chantier toute une journée</td>
+          <td>Non</td>
+          <td class="col-chosen">Non</td>
+          <td>Oui</td>
+          <td>Oui</td>
+        </tr>
+        <tr>
+          <td>Vitesse d'itération en solo</td>
+          <td>Excellente</td>
+          <td class="col-chosen">Bonne</td>
+          <td>Faible</td>
+          <td>Moyenne</td>
+        </tr>
+        <tr>
+          <td>Premier écran utile</td>
+          <td>1 semaine</td>
+          <td class="col-chosen">2 à 3 semaines</td>
+          <td>5 à 8 semaines</td>
+          <td>3 à 5 semaines</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option B mais [ta variante] »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-006 je veux l'option D en plus »</strong></p>
+</div>
+
+</body>
+</html>

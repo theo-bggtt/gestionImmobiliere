@@ -1,0 +1,305 @@
+{
+  "projectName": "gestionImmobiliere",
+  "projectDescription": "Mémoire technique d'une maison, consultable par le propriétaire et partageable en vues filtrées (locataire Airbnb, artisan)",
+  "createdAt": "2026-08-29T08:00:00+02:00",
+  "revisedAt": "2026-08-29T10:30:00+02:00",
+  "context": {
+    "sequence": "D'abord une app qui marche pour une maison. Vendre l'accès plus tard.",
+    "marche": "Suisse, à terme",
+    "appetit": "Long cours, plusieurs mois",
+    "pivotCadrage": "Théo a précisé le 2026-08-29 que le propriétaire doit pouvoir donner un accès en lecture filtrée à des tiers (locataires Airbnb notamment). Le produit passe d'archive privée à base unique projetée par audience. L'ancienne feuille de route (modèle économique, wedge) est archivée dans archive/."
+  },
+  "decisions": [
+    {
+      "id": "decision-001",
+      "slug": "audiences",
+      "title": "Les audiences et ce que chacune voit",
+      "category": "technical",
+      "status": "chosen",
+      "chosenOption": "B",
+      "chosenTitle": "Niveaux + portée (B modifiée)",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "recommended": "B",
+      "htmlFile": "decision-001-audiences.html",
+      "decidedAt": "2026-08-29T11:15:00+02:00",
+      "summary": "Le modèle de permissions. Commande tous les écrans et la structure des fiches.",
+      "modification": "Théo a demandé d'ajouter la portée dès le départ : chaque lien de partage porte un plafond de niveau ET une liste de zones/systèmes autorisés. Cas de référence : le jardinier voit l'extérieur en niveau usage, rien d'autre.",
+      "consequences": [
+        "Toute fiche DOIT être rattachée à une zone. Une fiche sans zone échappe au filtre de portée : à interdire au niveau du schéma, pas seulement de l'UI.",
+        "À trancher en décision 2 : la portée s'exprime sur les zones, sur les systèmes, ou les deux, et comment les deux se combinent (union retenue par défaut).",
+        "Un partage a besoin d'un nom, d'une date d'expiration et d'une révocation."
+      ],
+      "regles": [
+        "L'extérieur est une zone comme une autre. Le filtre de portée d'un lien jardinier s'exprime sur des zones de type 'exterieur', sans mécanique particulière."
+      ]
+    },
+    {
+      "id": "decision-002",
+      "slug": "modele-donnees",
+      "title": "Modèle de données",
+      "category": "technical",
+      "status": "chosen",
+      "chosenOption": "C",
+      "chosenTitle": "Table unique + types définis en base (C modifiée)",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "recommended": "C",
+      "htmlFile": "decision-002-modele-donnees.html",
+      "decidedAt": "2026-08-29T11:40:00+02:00",
+      "summary": "Les tables : pièces, systèmes, éléments, événements.",
+      "modification": "Théo veut que l'utilisateur puisse créer lui-même un type d'objet et sa structure depuis l'app. Les définitions de types passent du code vers une table type_element(id, nom, icone, origine, champs jsonb).",
+      "regles": [
+        "Catalogue de types SYSTÈME livré et non modifiable, plus des types PERSO créés par l'utilisateur. Personne ne démarre devant une page blanche.",
+        "Ajouter un champ à un type système est possible sans dupliquer le type. C'est le geste le plus fréquent, il doit être le plus facile.",
+        "Genres de champ = liste fermée : texte, nombre (+unité), date, booléen, liste de choix, fichier. Rien d'autre, sinon le produit devient un constructeur de formulaires.",
+        "La clé d'un champ est immuable une fois créée. Seul le libellé se renomme.",
+        "Un champ ajouté après coup est toujours optionnel. Un champ supprimé est masqué, jamais effacé (les données restent dans le JSON).",
+        "Chaque champ porte un niveau_min : le n° de série reste caché sous le niveau technique même si la fiche est visible en usage.",
+        "zone.type : interieur | exterieur | annexe | technique. Hiérarchie via parent_id."
+      ],
+      "aTrancherPlusTard": "Promotion d'un type perso vers le catalogue système quand plusieurs maisons créent le même. Sans intérêt tant qu'il n'y a qu'un utilisateur."
+    },
+    {
+      "id": "decision-003",
+      "slug": "remplissage",
+      "title": "Comment ça se remplit",
+      "category": "interaction",
+      "status": "chosen",
+      "chosenOption": "B",
+      "chosenTitle": "La capture opportuniste",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "recommended": "B",
+      "htmlFile": "decision-003-remplissage.html",
+      "decidedAt": "2026-08-29T12:05:00+02:00",
+      "summary": "L'écran de saisie, et ce qui fait que tu n'abandonnes pas à la troisième pièce.",
+      "regles": [
+        "Jamais de pourcentage de complétude, ni barre, ni score, ni compte de ce qui manque. On affiche ce qui est noté.",
+        "La capture mobile doit tenir en 30 secondes maximum, sinon B se comporte comme A.",
+        "La saisie doit fonctionner hors ligne : cave, vide sanitaire, local technique.",
+        "La photo porte 80% de la saisie (marque, modèle, plaque signalétique, n° de série)."
+      ],
+      "complements": [
+        "Option C (squelette RegBL) retenue comme écran d accueil, ~2 jours de travail, évite la page blanche.",
+        "Option D (reprise du classeur par OCR) reportée en v2 comme accélérateur ponctuel."
+      ],
+      "aVerifier": "Étendue exacte des attributs RegBL librement accessibles (adresse vers EGID confirmé public, le reste non)."
+    },
+    {
+      "id": "decision-004",
+      "slug": "plan-interactif",
+      "title": "Le plan interactif",
+      "category": "visual",
+      "status": "chosen",
+      "chosenOption": "custom",
+      "chosenTitle": "Plan en couches : image + géométrie + points (A+B+D fusionnés)",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ],
+      "recommended": "B",
+      "htmlFile": "decision-004-plan-interactif.html",
+      "decidedAt": "2026-08-29T12:35:00+02:00",
+      "summary": "Comment le plan est fabriqué et comment on clique dessus.",
+      "modification": "Théo veut intégrer A, B et D. Constat : ce ne sont pas trois fonctions mais trois sources pour deux couches. Le modèle retenu a trois couches indépendantes et optionnelles.",
+      "modele": {
+        "plan": "id, etage, image (optionnelle), echelle",
+        "zone_geom": "zone_id, plan_id, polygone, source = tracé | importé (optionnelle)",
+        "point": "element_id, plan_id, x%, y% (toujours)"
+      },
+      "degradation": "Avec géométrie l'app déduit la zone d'un point. Sans géométrie l'utilisateur indique la zone, comportement de l'option B. Chaque écran doit gérer le cas sans polygone.",
+      "phases": [
+        "1 - Scan + points posés (ex-B) : 3 à 4 jours",
+        "2 - Tracé des pièces par-dessus le scan (ex-A allégé) : ~1 semaine, 5 clics par pièce, aucune mesure",
+        "3 - Éditeur complet sans fond (ex-A) : +2 à 3 semaines, seulement si le tracé ne suffit pas",
+        "4 - Import IFC/DXF (ex-D) : 4 à 8 semaines, quand un besoin réel apparaît"
+      ],
+      "alerte": "Tout construire d'un bloc = environ 2,5 mois avant le premier écran utile, sans recherche ni photos ni chronologie pendant ce temps.",
+      "complement": "Option C (cartes de pièces en photo) retenue en plus comme navigation courante sur téléphone, coût nul.",
+      "planSituation": "plan.type = etage | situation. Les zones extérieures portent leurs points sur un plan de situation (orthophoto swisstopo ou cadastre), pas sur un plan d'étage."
+    },
+    {
+      "id": "decision-005",
+      "slug": "recherche",
+      "title": "Recherche et découverte",
+      "category": "interaction",
+      "status": "chosen",
+      "chosenOption": "B",
+      "chosenTitle": "Plein texte + alias",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "recommended": "B",
+      "htmlFile": "decision-005-recherche.html",
+      "decidedAt": "2026-08-29T13:00:00+02:00",
+      "summary": "La barre de recherche et ce qu'elle indexe.",
+      "regles": [
+        "Index plein texte en configuration française sur : nom, type, zone, système, details jsonb (champs des types perso inclus), texte des documents, légendes de photos.",
+        "Champ alias sur le type ET sur la fiche. Catalogue d alias prérempli dans les types système. Corrigeable par l utilisateur.",
+        "Le filtre niveau + portée s applique DANS la requête, avant le classement. Un locataire cherchant 'facture' obtient zéro résultat, jamais un accès refusé."
+      ],
+      "complement": "Option D (navigation par facettes) retenue en plus, ~2 jours. Barre de recherche pour l accès direct, facettes pour explorer un système entier.",
+      "ecarte": "Option C (sémantique) écartée : sur ~200 fiches d un même domaine les scores se tassent (0.67 à 0.81), le classement devient arbitraire, et la sémantique est mauvaise sur l exact (n° de série, référence)."
+    },
+    {
+      "id": "decision-006",
+      "slug": "photos-fichiers",
+      "title": "Photos, documents et fichiers",
+      "category": "technical",
+      "status": "chosen",
+      "chosenOption": "B",
+      "chosenTitle": "Fichier autonome, liens multiples",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "recommended": "B",
+      "htmlFile": "decision-006-photos-fichiers.html",
+      "decidedAt": "2026-08-29T13:25:00+02:00",
+      "summary": "Le stockage, les avant/après, les fiches de garantie.",
+      "modele": "fichier(id, url, type_mime, date_prise, zone_id, niveau, legende) + table de liaison vers element / evenement / zone, avec un champ role sur le lien (avant, apres, plaque, general).",
+      "regles": [
+        "Effacer l EXIF sur toute image servie par un lien de partage (GPS, date, modele d appareil). Appliquer l orientation AVANT de supprimer l EXIF, sinon les photos partent de travers.",
+        "Previsualisation obligatoire 'voici ce que verra le locataire' avant d emettre un lien : le niveau protege la fiche, pas le contenu visible dans l image.",
+        "Avant/apres = deux fichiers lies au meme evenement avec les roles avant et apres."
+      ],
+      "reporte": "Option D (points annotes sur la photo) non retenue pour l instant. ~2 jours par-dessus B, reutilise le composant du plan de la decision 4. Reste disponible a tout moment."
+    },
+    {
+      "id": "decision-007",
+      "slug": "stack-hebergement",
+      "title": "Stack et hébergement",
+      "category": "technical",
+      "status": "chosen",
+      "chosenOption": "B",
+      "chosenTitle": "PWA + boîte d envoi locale, puis enrobage natif",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "recommended": "B",
+      "htmlFile": "decision-007-stack-hebergement.html",
+      "decidedAt": "2026-08-29T13:55:00+02:00",
+      "summary": "Ce qui tourne où, et sur quoi tu codes.",
+      "sequence": "Théo veut un site d abord, une app mobile ensuite. Cette séquence RENFORCE le choix B : une PWA EST le site, et c est la seule des quatre options qui donne quelque chose de correct à enrober plus tard.",
+      "correctionCordova": "Cordova n est pas archivé mais en déclin marqué : adoption développeurs 29% (2019) -> 10% (2023), 1% souhaitant l utiliser en 2024, téléchargements -25% sur un an, ~1% de part parmi les frameworks mobiles. Plugins tiers souvent obsolètes. Capacitor (Ionic) est le successeur désigné et n est plus basé sur Cordova depuis mai 2021. Cibler Capacitor, pas Cordova.",
+      "appStore": "Guideline 4.2 (minimum functionality) : un simple site enrobé dans un webview est rejeté. Il faut une navigation native (barre d onglets), une intégration appareil réelle (notifications push surtout, appareil photo), un écran de démarrage et une gestion d erreur soignés. Un monolithe rendu serveur (option A) ne donne rien de valable à enrober.",
+      "gainEnrobage": "L enrobage Capacitor corrige exactement les faiblesses iOS de la PWA : appareil photo natif, envoi en tâche de fond, système de fichiers réel, notifications push. Le quota de 50-200 Mo et la purge après inactivité disparaissent.",
+      "regles": [
+        "La file locale est une boîte d envoi éphémère, jamais un stockage. Compresser avant d écrire, téléverser au retour du réseau ou à la réouverture, purger aussitôt.",
+        "Le lien de partage est une page rendue serveur, légère, filtrée côté serveur. Ni PWA ni installation : le locataire clique depuis WhatsApp et voit la page.",
+        "Postgres + conteneur + stockage objet : démarre sur le Pi 5, migre chez Infomaniak ou Exoscale en une soirée."
+      ],
+      "frameworkRetenu": {
+        "choix": "React Router v7 en mode framework (ex-Remix), TypeScript, serveur Node",
+        "date": "2026-08-29",
+        "raison": "Théo a demandé React. React Router v7 est l'option React la plus proche de ce que le projet demande : couche fine, loader/action collé à HTTP, rendu serveur et client dans un seul projet, auto-hébergement Docker direct. Bundle client ~45 Ko contre 85-95 Ko pour Next.js.",
+        "ecarte": "Next.js écarté : RSC + couches de cache + runtime d'optimisation d'images = charge opérationnelle inutile sur Raspberry Pi. SvelteKit était le choix initial, comparable techniquement, abandonné au profit de l'écosystème React et de la densité d'exemples pour les agents de code.",
+        "inchange": "PostgreSQL, Drizzle, argon2, sessions maison, Docker compose : identiques quel que soit le framework."
+      }
+    },
+    {
+      "id": "decision-008",
+      "slug": "navigation-visuel",
+      "title": "Navigation et direction visuelle",
+      "category": "ia",
+      "status": "chosen",
+      "chosenOption": "B",
+      "chosenTitle": "Recherche d abord, style sobre",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "recommended": "B",
+      "htmlFile": "decision-008-navigation-visuel.html",
+      "decidedAt": "2026-08-29T14:20:00+02:00",
+      "summary": "À quoi ça ressemble et comment on circule.",
+      "complement": "Grille de pièces en photo (option D) retenue comme corps de page sous le champ de recherche. Plan dans l onglet voisin.",
+      "ecarte": "Option C (fil éditorial) écartée malgré sa qualité visuelle : 2 à 3 événements par mois ne remplissent pas un fil. Les rappels d entretien sont conservés mais placés ailleurs.",
+      "bonus": "Le style sobre se réutilise directement pour la page de partage du locataire : on retire des éléments, on ne redessine rien.",
+      "vocabulaire": "Jamais le mot « pièce » dans l'interface : « zone » ou « lieu ». La grille d'accueil mélange intérieur et extérieur."
+    }
+  ],
+  "archived": [
+    {
+      "id": "decision-001-v1",
+      "title": "Qui paie, et par quel canal",
+      "chosenOption": "B",
+      "chosenTitle": "Le pro livre le dossier",
+      "raison": "Choix fait avant que Théo précise la séquence app-d'abord et le partage locataire. Ne colle plus. Recherche Houzy conservée en mémoire projet."
+    },
+    {
+      "id": "decision-002-v1",
+      "title": "Le wedge produit",
+      "chosenOption": null,
+      "chosenTitle": null,
+      "raison": "Décision de stratégie mal posée, sans effet visible sur le produit. Abandonnée."
+    }
+  ],
+  "amendements": [
+    {
+      "date": "2026-08-29",
+      "source": "Théo, après relecture complète du plan",
+      "titre": "L'extérieur est une zone comme une autre",
+      "constat": "Le cas du jardinier ne marche que si le jardin existe en base au même titre qu'une pièce. Le modèle le permettait déjà (zone générique) mais rien ne le disait, et l'interface parlait de « pièces » partout, ce qui aurait conduit à ne jamais créer les zones extérieures.",
+      "portee": [
+        "decision-001",
+        "decision-002",
+        "decision-004",
+        "decision-008"
+      ],
+      "changements": [
+        "zone.type explicite : interieur | exterieur | annexe | technique. Hiérarchie via parent_id (parcelle > jardin > potager).",
+        "Vocabulaire d'interface : jamais « pièce », toujours « zone » ou « lieu ». Ajouté comme onzième règle du plan.",
+        "plan.type : etage | situation. Les zones extérieures vivent sur un plan de situation, pas sur un plan d'étage.",
+        "Le plan de situation est une orthophoto swisstopo ou une image cadastrale : même mécanique image + points, autre source d'image. Avance l'usage de swisstopo de « plus tard » à l'étape 4.",
+        "Catalogue de types système étendu à l'extérieur : arrosage, éclairage extérieur, portail, clôture, regard, fosse, PAC extérieure.",
+        "Grille d'accueil : zones intérieures et extérieures mélangées."
+      ]
+    },
+    {
+      "date": "2026-08-29",
+      "source": "Théo, après relecture",
+      "titre": "Bâtiments à plusieurs niveaux, caves et dépendances",
+      "constat": "Le multi-niveaux n'était couvert qu'à moitié : plan.etage existait comme champ libre, mais aucune entité niveau, donc une zone ne savait pas à quel étage elle était. Impossible de répondre à « montre-moi tout le sous-sol ». Et rien ne disait comment représenter un objet qui traverse les niveaux.",
+      "portee": [
+        "decision-002",
+        "decision-004",
+        "decision-008"
+      ],
+      "changements": [
+        "Nouvelle hiérarchie : propriete > batiment > niveau > zone. Une parcelle peut porter plusieurs bâtiments (maison, garage, abri).",
+        "niveau.ordinal est un entier signé (-2 sous-sol, 0 rez, 2 combles). Le nom est libre, l'ordinal sert au tri et au sélecteur. Ajouté comme onzième règle.",
+        "zone.niveau_id nullable : NULL uniquement pour les zones extérieures, rattachées à la parcelle.",
+        "plan rattaché à niveau_id (type etage) ou NULL (type situation).",
+        "Objet traversant plusieurs niveaux : pas de contrainte d'unicité sur point.element_id, donc un point par niveau traversé pour un seul objet en base. Aucune table supplémentaire.",
+        "Le multi-LOGEMENT (immeuble à plusieurs appartements indépendants) reste explicitement hors périmètre, ajouté à la liste en attente."
+      ]
+    }
+  ]
+}

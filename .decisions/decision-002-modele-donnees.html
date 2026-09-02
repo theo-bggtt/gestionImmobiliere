@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 2 : Modèle de données — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; background: #ede9fe; color: #6d28d9; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.locked-banner { max-width: 1200px; margin: 0 auto 1.25rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #059669; border-radius: 10px; padding: 0.85rem 1.25rem; }
+.locked-banner .tag { background: #059669; color: white; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; margin-right: 0.5rem; }
+.locked-banner p { font-size: 0.85rem; color: #065f46; margin: 0; display: inline; }
+.locked-banner code { background: #d1fae5; border-radius: 3px; padding: 1px 5px; font-size: 0.78rem; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #475569; line-height: 1.6; }
+.context-box code { background: #e2e8f0; border-radius: 3px; padding: 1px 5px; font-size: 0.8rem; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.35rem; background: #f8fafc; min-height: 230px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.option-summary code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem; font-family: 'SF Mono','Fira Code',monospace; color: #0f172a; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono','Fira Code',monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.schema { display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 288px; }
+.tbl { background: white; border: 2px solid #e2e8f0; border-radius: 7px; overflow: hidden; }
+.tbl-name { background: #f1f5f9; font-size: 0.55rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; padding: 3px 8px; border-bottom: 1px solid #e8edf3; }
+.tbl.sys { border-color: #f59e0b; }
+.tbl.sys .tbl-name { background: #fffbeb; color: #b45309; }
+.tbl-cols { padding: 5px 8px; font-size: 0.55rem; color: #64748b; font-family: 'SF Mono','Fira Code',monospace; line-height: 1.55; word-break: break-word; }
+.tbl-cols b { color: #0f172a; font-weight: 700; }
+.tbl.accent { border-color: #6366f1; }
+.tbl.accent .tbl-name { background: #eff6ff; color: #1d4ed8; }
+.tbl.bad { border-color: #fda4af; }
+.tbl.bad .tbl-name { background: #fff1f2; color: #be123c; }
+.schema-more { text-align: center; color: #cbd5e1; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; }
+.schema-note { font-size: 0.6rem; color: #64748b; text-align: center; line-height: 1.45; margin-top: 6px; }
+.schema-note strong { color: #334155; }
+.schema-note em { font-style: normal; color: #be123c; font-weight: 700; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 2 sur 8</span>
+  <h1>Modèle de données</h1>
+  <span class="category-badge">Technique</span>
+  <p class="decision-description">
+    Ta maison contient des choses très hétérogènes : une prise 230V, une chaudière 12 kW Viessmann de 2023, une vanne d'arrêt, une porte, un lave-linge, une gaine RJ45. Elles n'ont presque aucun champ en commun, et pourtant elles doivent toutes apparaître dans la même recherche et le même plan.
+  </p>
+  <p class="decision-description">
+    La question : <strong>combien de tables, et où vont les champs qui ne concernent qu'un seul type d'objet ?</strong> C'est le choix le plus irréversible des huit. Les quatre visuels montrent le schéma réel et où atterrit la même chaudière.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option C »</strong> &middot; <strong>« Option A mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="locked-banner">
+  <span class="tag">Hérité de la décision 1</span>
+  <p>Chaque objet doit porter un <code>niveau</code> et être rattaché à une <code>zone</code> non nulle, sinon ton filtre de portée a des trous. Les options se jugent aussi là-dessus : est-ce que le schéma <strong>garantit</strong> cette contrainte, ou est-ce qu'il compte sur ta discipline ?</p>
+</div>
+
+<div class="context-box">
+  <h3>Ce qui n'est pas en jeu ici</h3>
+  <p>
+    Les <code>événements</code> (rénovations, entretiens, remplacements), les <code>documents</code> (garanties, factures, notices), les <code>intervenants</code> et les <code>photos</code> ont leur propre table dans les quatre options, avec les mêmes liens vers les objets. Ce n'est pas l'axe du choix. Ce qui se décide ici, c'est uniquement la forme des <strong>choses qui composent la maison</strong>, parce que c'est elle qui contamine tout le reste.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Une table par type</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="schema">
+        <div class="tbl"><div class="tbl-name">prise</div><div class="tbl-cols">id, <b>zone_id</b>, <b>niveau</b>, tension, nb_poles, protégée</div></div>
+        <div class="tbl accent"><div class="tbl-name">chaudiere</div><div class="tbl-cols">id, <b>zone_id</b>, <b>niveau</b>, <b>puissance_kw</b>, <b>marque</b>, <b>annee</b>, no_serie</div></div>
+        <div class="tbl"><div class="tbl-name">vanne</div><div class="tbl-cols">id, <b>zone_id</b>, <b>niveau</b>, diametre, type_fluide</div></div>
+        <div class="schema-more">+ porte, luminaire, gaine, appareil&hellip;</div>
+        <div class="schema-note">Champs bien typés. <em>Chaque nouveau type = une migration.</em></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Le réflexe scolaire : une table par nature d'objet, chacune avec ses vraies colonnes. C'est ce qui donne la meilleure validation et les plus beaux formulaires. C'est aussi ce qui te condamne à écrire une migration le jour où tu veux enregistrer un adoucisseur d'eau, puis un puits canadien, puis un portail motorisé. Et ta recherche par mot-clé doit interroger dix-huit tables et fusionner les résultats, ce qui est exactement le genre de dette qu'on ne rembourse jamais.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Validation forte, contraintes garanties par la base</li>
+          <li>Formulaires précis et naturels pour chaque type</li>
+          <li>Requêtes typées simples à écrire et rapides</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Une migration par type d'objet, indéfiniment</li>
+          <li>Recherche globale = union de dix-huit requêtes</li>
+          <li>Le plan doit savoir dessiner dix-huit sortes de points</li>
+          <li>Tu freineras à saisir un objet plutôt qu'ajouter une table</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Attributs clé/valeur</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="schema">
+        <div class="tbl accent"><div class="tbl-name">element</div><div class="tbl-cols">id, nom, <b>zone_id</b>, <b>niveau</b></div></div>
+        <div class="tbl bad"><div class="tbl-name">attribut</div><div class="tbl-cols">element_id, cle, valeur<br><br>&rarr; puissance_kw = "12"<br>&rarr; marque = "Viessmann"<br>&rarr; annee = "2023"<br>&rarr; no_serie = "7A44&hellip;"</div></div>
+        <div class="schema-note">Une chaudière = 1 ligne + 4 lignes. <em>« Tout ce qui fait plus de 10 kW » devient un enfer.</em></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Un seul objet générique, et tous les champs spécifiques deviennent des lignes clé/valeur. On ne fait plus jamais de migration, et c'est le seul argument. Tout le reste se paie : les valeurs sont des chaînes, donc <code>12</code> et <code>"12"</code> et <code>"12 kW"</code> cohabitent joyeusement, et une comparaison numérique demande un transtypage qui peut planter sur une seule ligne mal saisie. C'est le motif <em>EAV</em>, qui a une réputation méritée : il paraît génial le premier mois et devient ingérable au sixième.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Aucune migration, jamais, quoi que tu ajoutes</li>
+          <li>Deux tables et c'est tout, très rapide à démarrer</li>
+          <li>Zone et niveau restent de vraies colonnes garanties</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Zéro typage : tout est une chaîne de caractères</li>
+          <li>Filtrer ou trier sur un attribut devient acrobatique</li>
+          <li>Rien n'empêche « marque », « Marque » et « fabricant » de coexister</li>
+          <li>Motif connu pour mal vieillir, et tu le sais déjà</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C &middot; modifiée</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Table unique + types définis en base</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="schema">
+        <div class="tbl sys"><div class="tbl-name">type_element &nbsp;<span style="text-transform:none;font-weight:600">&larr; nouveau</span></div><div class="tbl-cols">id, nom, icone, <b>origine</b> <span style="color:#94a3b8">(système | perso)</span>, <b>champs jsonb</b><br><br>champs = [<br>&nbsp;{cle:"durete_entree", label:"Dureté<br>&nbsp;&nbsp;d'entrée", type:"nombre",<br>&nbsp;&nbsp;unite:"°fH", niveau_min:"usage"},<br>&nbsp;{cle:"no_serie", type:"texte",<br>&nbsp;&nbsp;niveau_min:"technique"} ]</div></div>
+        <div class="tbl accent"><div class="tbl-name">element</div><div class="tbl-cols">id, nom, <b>type_id</b>, <b>zone_id NOT NULL</b>,<br>systeme_id, <b>niveau</b>, <b>details jsonb</b></div></div>
+        <div class="tbl"><div class="tbl-name">zone &nbsp;&middot;&nbsp; systeme</div><div class="tbl-cols">id, nom, parent_id&nbsp;&hellip;</div></div>
+        <div class="schema-note">L'utilisateur crée l'<strong>adoucisseur</strong> depuis l'app. Le formulaire se génère tout seul.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Comme l'option C d'origine, avec une table de plus : <code>type_element</code>. Un type n'est plus une définition figée dans ton code, c'est une ligne en base, avec sa liste de champs décrite en JSON. Tu livres un <strong>catalogue de types système</strong> (chaudière, prise, vanne, porte, lave-linge&hellip;) que l'utilisateur ne peut pas casser, et il peut créer ses propres types ou <strong>ajouter un champ</strong> à un type existant sans le dupliquer. Chaque champ porte son libellé, son genre, son unité, et un <code>niveau_min</code> qui décide à partir de quel niveau d'accès il s'affiche. Le formulaire de saisie et la fiche sont générés depuis cette description, donc ajouter un adoucisseur d'eau ne demande ni déploiement ni migration.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>L'utilisateur n'est jamais bloqué par un type manquant</li>
+          <li><code>zone_id NOT NULL</code> tient toujours ta portée</li>
+          <li><code>niveau_min</code> par champ : le n&deg; de série se masque tout seul</li>
+          <li>Catalogue système livré : personne ne démarre devant une page blanche</li>
+          <li>Argument de vente réel, chaque maison est différente</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Prolifération de types quasi identiques si rien ne l'encadre</li>
+          <li>Modifier un type après coup casse les objets déjà saisis</li>
+          <li>Les genres de champ doivent être une liste fermée, sinon tu bâtis Airtable</li>
+          <li>Une clé de champ ne doit jamais être renommée, seulement son libellé</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Choisi : types définis en base, catalogue système + types perso</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Graphe de nœuds et relations</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="schema">
+        <div class="tbl accent"><div class="tbl-name">noeud</div><div class="tbl-cols">id, type, nom, <b>niveau</b>, details</div></div>
+        <div class="tbl"><div class="tbl-name">relation</div><div class="tbl-cols">source_id, cible_id, type<br><br>chaudière &mdash;situé_dans&rarr; cave<br>chaudière &mdash;alimente&rarr; radiateur ch.2<br>vanne 3 &mdash;coupe&rarr; circuit ECS</div></div>
+        <div class="schema-note">Sait dire « cette vanne coupe ce circuit ». <em>Mais « quelle zone ? » devient un parcours.</em></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Tout est un nœud, tout lien est une relation typée. C'est le seul modèle qui exprime nativement ce que ton brief laisse entendre sans le dire : quelle vanne coupe quel circuit, quel disjoncteur protège quelle prise, quelle gaine dessert quelle chambre. C'est intellectuellement le plus juste et c'est très tentant. Le problème pour toi est précis : l'appartenance à une zone devient une <em>relation</em>, donc quelque chose qu'on peut oublier de créer, alors que la décision 1 exige que ce soit garanti. Tu perds ton filet de sécurité au moment même où tu en as le plus besoin.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Exprime les dépendances réelles entre équipements</li>
+          <li>« Qu'est-ce que je coupe si je ferme cette vanne » devient possible</li>
+          <li>Aucune structure à casser, quoi que tu veuilles modéliser</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>La zone devient une relation oubliable, pas une contrainte</li>
+          <li>Chaque question banale devient un parcours de graphe</li>
+          <li>Aucun formulaire évident ne découle du modèle</li>
+          <li>Sur-dimensionné pour une maison de quarante objets</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Table par type</th>
+          <th class="col-b">B : Clé/valeur</th>
+          <th class="col-c col-chosen">C : Types définis en base</th>
+          <th class="col-d">D : Graphe</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Nombre de tables au départ</td>
+          <td>15 à 20</td>
+          <td>2</td>
+          <td class="col-chosen">3</td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td>Ajouter un type d'objet</td>
+          <td>Une migration</td>
+          <td>Rien à faire</td>
+          <td class="col-chosen">Une définition de type</td>
+          <td>Rien à faire</td>
+        </tr>
+        <tr>
+          <td>Zone garantie par la base (décision 1)</td>
+          <td>Oui, par table</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui, un seul NOT NULL</td>
+          <td>Non, c'est une relation</td>
+        </tr>
+        <tr>
+          <td>Recherche par mot-clé (décision 5)</td>
+          <td>Union de 18 requêtes</td>
+          <td>Deux tables à joindre</td>
+          <td class="col-chosen">Une table, un index</td>
+          <td>Une table, mais bruitée</td>
+        </tr>
+        <tr>
+          <td>Filtrer « plus de 10 kW »</td>
+          <td>Immédiat</td>
+          <td>Transtypage risqué</td>
+          <td class="col-chosen">Opérateur JSON, correct</td>
+          <td>Opérateur JSON, correct</td>
+        </tr>
+        <tr>
+          <td>Formulaire de saisie par type</td>
+          <td>Écrit à la main, 18 fois</td>
+          <td>Générique et pauvre</td>
+          <td class="col-chosen">Généré depuis le type</td>
+          <td>À inventer</td>
+        </tr>
+        <tr>
+          <td>« Cette vanne coupe ce circuit »</td>
+          <td>Table de liaison à ajouter</td>
+          <td>Bricolable</td>
+          <td class="col-chosen">Table de liaison à ajouter</td>
+          <td>Natif</td>
+        </tr>
+        <tr>
+          <td>Alimenter le plan cliquable</td>
+          <td>Pénible</td>
+          <td>Simple</td>
+          <td class="col-chosen">Simple</td>
+          <td>Simple</td>
+        </tr>
+        <tr>
+          <td>Risque de se peindre dans un coin</td>
+          <td>Élevé</td>
+          <td>Élevé</td>
+          <td class="col-chosen">Faible</td>
+          <td>Moyen</td>
+        </tr>
+        <tr>
+          <td>Premier écran utile</td>
+          <td>3 à 4 semaines</td>
+          <td>1 semaine</td>
+          <td class="col-chosen">1 à 2 semaines</td>
+          <td>3 semaines</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option C »</strong>, <strong>« Option A mais [ta variante] »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-001 je veux l'option A finalement »</strong></p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décision 5 : Recherche et découverte — gestionImmobiliere</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1a1a2e; min-height: 100vh; padding: 2rem; line-height: 1.6; }
+header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.decision-number { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin-top: 0.25rem; }
+.category-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; background: #e0f2fe; color: #0369a1; }
+.decision-description { font-size: 1rem; color: #475569; margin-top: 0.75rem; max-width: 760px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.decision-description + .decision-description { margin-top: 0.6rem; }
+.instruction { margin-top: 1rem; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; padding: 0.6rem 1.25rem; border-radius: 8px; display: inline-block; border: 1px solid #bfdbfe; }
+.locked-banner { max-width: 1200px; margin: 0 auto 1.25rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #059669; border-radius: 10px; padding: 0.85rem 1.25rem; }
+.locked-banner .tag { background: #059669; color: white; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; margin-right: 0.5rem; }
+.locked-banner p { font-size: 0.85rem; color: #065f46; margin: 0; display: inline; }
+.locked-banner code { background: #d1fae5; border-radius: 3px; padding: 1px 5px; font-size: 0.78rem; }
+.context-box { max-width: 1200px; margin: 0 auto 2rem; background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 1rem 1.25rem; }
+.context-box h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #b45309; margin-bottom: 0.4rem; }
+.context-box p { font-size: 0.85rem; color: #78350f; line-height: 1.6; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto 3rem; }
+.option-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); border: 2px solid #e2e8f0; transition: all 0.2s ease; display: flex; flex-direction: column; }
+.option-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 0.2rem; }
+.card-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.option-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.option-card.option-a .option-label { color: #7c3aed; }
+.option-card.option-b .option-label { color: #0891b2; }
+.option-card.option-c .option-label { color: #059669; }
+.option-card.option-d .option-label { color: #dc2626; }
+.option-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+.recommended-badge { background: #f59e0b; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.option-card.chosen { border: 3px solid #059669; box-shadow: 0 4px 20px rgba(5,150,105,0.15); }
+.option-card.chosen:hover { border-color: #059669; }
+.card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chosen-badge { background: #059669; color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; display: none; }
+.option-card.chosen .chosen-badge { display: inline-block; }
+.option-card.not-chosen { opacity: 0.55; filter: grayscale(20%); }
+.option-card.not-chosen:hover { opacity: 0.8; filter: none; }
+.visual-preview { padding: 1.35rem; background: #eef2f6; min-height: 250px; display: flex; align-items: center; justify-content: center; flex: 1; }
+.option-summary { padding: 1rem 1.25rem; font-size: 0.875rem; color: #334155; line-height: 1.65; border-top: 1px solid #f1f5f9; }
+.option-summary code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem; font-family: 'SF Mono','Fira Code',monospace; color: #0f172a; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; }
+.pros, .cons { padding: 1rem 1.25rem; }
+.pros { border-right: 1px solid #f1f5f9; }
+.pros h3, .cons h3 { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.pros h3 { color: #059669; }
+.cons h3 { color: #e11d48; }
+.verdict ul { list-style: none; padding: 0; }
+.verdict li { font-size: 0.8rem; color: #475569; line-height: 1.5; padding: 0.15rem 0; padding-left: 1rem; position: relative; }
+.pros li::before { content: "\2713 "; color: #059669; font-weight: 700; position: absolute; left: 0; }
+.cons li::before { content: "! "; color: #e11d48; font-weight: 700; position: absolute; left: 0; }
+.card-footer { padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+.tell-claude { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 0.35rem 0.65rem; border-radius: 6px; display: block; font-family: 'SF Mono','Fira Code',monospace; }
+.comparison-section { max-width: 1200px; margin: 0 auto 3rem; }
+.comparison-section h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+.comparison-table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+.comparison-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
+.comparison-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; white-space: nowrap; position: sticky; top: 0; background: white; }
+.comparison-table th:first-child { position: sticky; left: 0; z-index: 2; background: #f8fafc; color: #64748b; }
+.comparison-table th.col-a { color: #7c3aed; }
+.comparison-table th.col-b { color: #0891b2; }
+.comparison-table th.col-c { color: #059669; }
+.comparison-table th.col-d { color: #dc2626; }
+.comparison-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.comparison-table td:first-child { font-weight: 600; color: #475569; position: sticky; left: 0; background: #f8fafc; }
+.comparison-table tr:nth-child(even) td { background: #fafbfc; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f1f5f9; }
+.comparison-table .col-recommended { background: #fffbeb !important; }
+.comparison-table .col-chosen { background: #ecfdf5 !important; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.page-footer { max-width: 1200px; margin: 0 auto; text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.page-footer p { font-size: 0.85rem; color: #64748b; margin: 0.3rem 0; }
+.page-footer strong { color: #334155; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6366f1; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+/* maquette recherche */
+.srch { width: 100%; max-width: 268px; background: white; border: 1px solid #d7dee7; border-radius: 9px; overflow: hidden; box-shadow: 0 2px 10px rgba(15,23,42,0.09); }
+.srch-bar { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-bottom: 1px solid #e8edf3; background: #fbfcfd; }
+.srch-ico { color: #94a3b8; font-size: 0.72rem; }
+.srch-q { font-size: 0.72rem; font-weight: 600; color: #0f172a; }
+.srch-cur { width: 1px; height: 11px; background: #6366f1; display: inline-block; vertical-align: -1px; }
+.srch-body { padding: 7px; display: flex; flex-direction: column; gap: 5px; }
+.res { display: flex; align-items: center; gap: 7px; border: 1px solid #eef2f6; border-radius: 6px; padding: 5px 7px; background: white; }
+.res-ico { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; flex-shrink: 0; }
+.res-txt { flex: 1; min-width: 0; }
+.res-name { font-size: 0.62rem; font-weight: 700; color: #334155; line-height: 1.2; }
+.res-meta { font-size: 0.5rem; color: #94a3b8; line-height: 1.3; }
+.res-why { font-size: 0.44rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 5px; border-radius: 999px; flex-shrink: 0; }
+.why-nom { background: #ecfdf5; color: #047857; }
+.why-alias { background: #eff6ff; color: #1d4ed8; }
+.why-type { background: #f5f3ff; color: #6d28d9; }
+.why-doc { background: #fffbeb; color: #b45309; }
+.why-sim { background: #f1f5f9; color: #64748b; }
+.res.faint { opacity: .5; }
+.srch-empty { text-align: center; padding: 22px 10px; }
+.srch-empty .big { font-size: 0.78rem; font-weight: 700; color: #be123c; }
+.srch-empty .small { font-size: 0.56rem; color: #94a3b8; margin-top: 3px; line-height: 1.4; }
+.srch-cap { font-size: 0.52rem; color: #94a3b8; text-align: center; padding: 4px 9px 8px; line-height: 1.35; }
+.srch-cap strong { color: #475569; }
+/* facettes */
+.facets { padding: 8px; display: flex; flex-direction: column; gap: 7px; }
+.facet-grp { }
+.facet-lbl { font-size: 0.48rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 3px; }
+.facet-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.fchip { font-size: 0.52rem; font-weight: 600; border: 1px solid #e2e8f0; background: white; color: #475569; border-radius: 999px; padding: 2px 7px; }
+.fchip.on { background: #6366f1; border-color: #6366f1; color: white; }
+@media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Toutes les décisions</a>
+
+<header>
+  <span class="decision-number">Décision 5 sur 8</span>
+  <h1>Recherche et découverte</h1>
+  <span class="category-badge">Interaction</span>
+  <p class="decision-description">
+    C'est la fonction que tu utiliseras le plus, et de loin. Tes exemples étaient « compteur », « panneau », « robinet », « porte », « lave-linge ». Le piège est caché dedans : <strong>tu tapes « robinet » et ta fiche s'appelle « vanne d'arrêt »</strong>. Tu ne te souviens jamais du nom que tu as saisi il y a trois ans.
+  </p>
+  <p class="decision-description">
+    Les quatre maquettes montrent la <strong>même recherche « robinet »</strong> et ce que chaque option renvoie réellement.
+  </p>
+  <p class="instruction">
+    Dis-moi : <strong>« Option B »</strong> &middot; <strong>« Option B mais [ta variante] »</strong> &middot; <strong>« plus d'options »</strong>
+  </p>
+</header>
+
+<div class="locked-banner">
+  <span class="tag">Hérité des décisions 1 et 2</span>
+  <p>La recherche doit filtrer par <code>niveau</code> et par <code>portée</code> avant de classer. Un locataire qui tape « facture » doit obtenir <strong>zéro résultat</strong>, pas « accès refusé » : afficher qu'une correspondance existe est déjà une fuite. Et l'index doit couvrir le <code>details jsonb</code>, y compris les champs des types créés par l'utilisateur.</p>
+</div>
+
+<div class="context-box">
+  <h3>Le problème que la capture opportuniste te crée</h3>
+  <p>
+    Tu as choisi de saisir vite, depuis le téléphone. Conséquence directe : beaucoup de tes fiches vont s'appeler « Photo du 12 mars » ou « Truc sous l'évier ». <strong>Chercher sur le nom seul sera faible pendant les premiers mois.</strong> Ce qui porte l'information au début, c'est le type, la zone, le système et la légende de la photo. Une option qui ne sait chercher que dans le nom part avec un handicap majeur.
+  </p>
+</div>
+
+<main class="options-grid">
+
+  <article class="option-card option-a not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option A</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Correspondance exacte</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="srch">
+        <div class="srch-bar"><span class="srch-ico">&#128269;</span><span class="srch-q">robinet<span class="srch-cur"></span></span></div>
+        <div class="srch-empty">
+          <div class="big">Aucun résultat</div>
+          <div class="small">La fiche existe. Elle s'appelle<br>« Vanne d'arrêt &mdash; sous évier ».</div>
+        </div>
+        <div class="srch-cap"><strong>Une heure de développement</strong>, et ça échoue sur ton propre exemple.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Un <code>ILIKE '%robinet%'</code> sur le nom, le type et la zone. Une heure de travail, aucune dépendance, comportement totalement prévisible. Et ça échoue sur le premier exemple de ton propre brief, parce que la chaîne « robinet » n'apparaît nulle part dans une fiche nommée « vanne d'arrêt ». Ça ne gère ni les accents, ni les pluriels, ni les fautes de frappe, et ça ne classe rien : trente résultats arrivent dans l'ordre de la base. Utilisable comme rustine d'une semaine, pas comme réponse.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Une heure de travail, zéro dépendance</li>
+          <li>Comportement parfaitement prévisible</li>
+          <li>Suffit pour retrouver un numéro de série exact</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Échoue sur « robinet » vers « vanne », ton propre exemple</li>
+          <li>Ni accents, ni pluriels, ni fautes de frappe</li>
+          <li>Aucun classement, les résultats arrivent en vrac</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option A »</code></div>
+  </article>
+
+  <article class="option-card option-b chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option B</span>
+        <div class="card-badges"><span class="recommended-badge">Recommandé</span><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Plein texte + synonymes</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="srch">
+        <div class="srch-bar"><span class="srch-ico">&#128269;</span><span class="srch-q">robinet<span class="srch-cur"></span></span></div>
+        <div class="srch-body">
+          <div class="res"><span class="res-ico" style="background:#e0f2fe">&#128167;</span><div class="res-txt"><div class="res-name">Vanne d'arrêt</div><div class="res-meta">Cuisine &middot; sous évier</div></div><span class="res-why why-alias">alias</span></div>
+          <div class="res"><span class="res-ico" style="background:#e0f2fe">&#128167;</span><div class="res-txt"><div class="res-name">Robinet extérieur</div><div class="res-meta">Jardin &middot; façade est</div></div><span class="res-why why-nom">nom</span></div>
+          <div class="res"><span class="res-ico" style="background:#f5f3ff">&#128295;</span><div class="res-txt"><div class="res-name">Mitigeur thermostatique</div><div class="res-meta">Salle de bain</div></div><span class="res-why why-type">type</span></div>
+          <div class="res"><span class="res-ico" style="background:#fffbeb">&#128196;</span><div class="res-txt"><div class="res-name">Facture Sanitaire Dupont</div><div class="res-meta">2023 &middot; remplacement robinetterie</div></div><span class="res-why why-doc">document</span></div>
+        </div>
+        <div class="srch-cap">« robinet » trouve « vanne » <strong>par un alias que tu contrôles</strong>.</div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Index plein texte de la base en configuration française : les accents sont ignorés, les pluriels ramenés au singulier, les résultats classés par pertinence. L'index couvre le nom, le type, la zone, le système, le contenu du <code>details jsonb</code> et le texte des documents. Le trou restant, c'est le pont « robinet vers vanne », et il se bouche pour presque rien : un champ <code>alias</code> sur le type et sur la fiche, prérempli dans ton catalogue de types système. « Vanne d'arrêt » porte les alias <em>robinet, arrêt d'eau, stop-eau</em>. C'est explicable, corrigeable par l'utilisateur, et ça ne demande aucun modèle ni aucun service externe.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Accents, pluriels et classement réglés d'office</li>
+          <li>Les alias résolvent le cas « robinet » de façon explicable</li>
+          <li>Aucune infrastructure ni service en plus de ta base</li>
+          <li>Le filtre de permissions s'applique dans la même requête</li>
+          <li>L'utilisateur peut ajouter ses propres alias</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Les alias sont un catalogue à construire et à entretenir</li>
+          <li>Ne comprend pas « ça fuit sous l'évier », seulement des mots</li>
+          <li>Les fautes de frappe demandent un module en plus</li>
+          <li>Index à rafraîchir à chaque écriture</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option B »</code></div>
+  </article>
+
+  <article class="option-card option-c not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option C</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Recherche sémantique</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="srch">
+        <div class="srch-bar"><span class="srch-ico">&#10024;</span><span class="srch-q">robinet<span class="srch-cur"></span></span></div>
+        <div class="srch-body">
+          <div class="res"><span class="res-ico" style="background:#e0f2fe">&#128167;</span><div class="res-txt"><div class="res-name">Vanne d'arrêt</div><div class="res-meta">Cuisine</div></div><span class="res-why why-sim">0.81</span></div>
+          <div class="res"><span class="res-ico" style="background:#e0f2fe">&#128167;</span><div class="res-txt"><div class="res-name">Mitigeur thermostatique</div><div class="res-meta">Salle de bain</div></div><span class="res-why why-sim">0.78</span></div>
+          <div class="res faint"><span class="res-ico" style="background:#f1f5f9">&#128703;</span><div class="res-txt"><div class="res-name">Chasse d'eau WC</div><div class="res-meta">SdB &middot; étage</div></div><span class="res-why why-sim">0.71</span></div>
+          <div class="res faint"><span class="res-ico" style="background:#f1f5f9">&#127914;</span><div class="res-txt"><div class="res-name">Lave-vaisselle</div><div class="res-meta">Cuisine</div></div><span class="res-why why-sim">0.69</span></div>
+          <div class="res faint"><span class="res-ico" style="background:#f1f5f9">&#128295;</span><div class="res-txt"><div class="res-name">Siphon lavabo</div><div class="res-meta">SdB</div></div><span class="res-why why-sim">0.67</span></div>
+        </div>
+        <div class="srch-cap">Trouve la vanne. <strong>Et quatre autres choses presque aussi proches.</strong></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Chaque fiche est transformée en vecteur, la requête aussi, et on classe par proximité. « Robinet » trouve « vanne » sans que tu aies rien déclaré, et « ça fuit sous l'évier » fonctionne aussi. C'est séduisant, et c'est un mauvais choix à ton échelle. Sur deux cents fiches d'une même maison, tout est plombier ou électricien, donc tout se ressemble : les scores se tassent entre 0,65 et 0,85 et le classement devient arbitraire. Pire, la sémantique est mauvaise pour les recherches exactes, précisément celles où tu as le plus besoin d'elle : un numéro de série ou une référence de pièce n'ont aucun sens vectoriel.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Aucun alias à déclarer, ça marche tout seul</li>
+          <li>Comprend les questions en langage naturel</li>
+          <li>Devient pertinent à très grande échelle</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Sur 200 fiches d'un même domaine, tout se ressemble</li>
+          <li>Mauvaise sur l'exact : n&deg; de série, référence, modèle</li>
+          <li>Résultats inexplicables, donc impossibles à corriger</li>
+          <li>Ré-encodage à chaque modification, coût et latence</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option C »</code></div>
+  </article>
+
+  <article class="option-card option-d not-chosen">
+    <div class="card-header">
+      <div class="card-header-top">
+        <span class="option-label">Option D</span>
+        <div class="card-badges"><span class="chosen-badge">Choisi</span></div>
+      </div>
+      <h2 class="option-title">Navigation par facettes</h2>
+    </div>
+    <div class="visual-preview">
+      <div class="srch">
+        <div class="srch-bar"><span class="srch-ico">&#9776;</span><span class="srch-q" style="color:#94a3b8">Filtrer &middot; 14 résultats</span></div>
+        <div class="facets">
+          <div class="facet-grp"><div class="facet-lbl">Système</div><div class="facet-chips"><span class="fchip on">Sanitaire</span><span class="fchip">Élec</span><span class="fchip">Chauffage</span><span class="fchip">Ventilation</span></div></div>
+          <div class="facet-grp"><div class="facet-lbl">Zone</div><div class="facet-chips"><span class="fchip">Cuisine</span><span class="fchip">SdB</span><span class="fchip">Cave</span><span class="fchip">Extérieur</span><span class="fchip">Buanderie</span></div></div>
+          <div class="facet-grp"><div class="facet-lbl">Type</div><div class="facet-chips"><span class="fchip">Vanne</span><span class="fchip">Robinet</span><span class="fchip">Siphon</span><span class="fchip">Compteur</span></div></div>
+        </div>
+        <div class="srch-cap">Aucun mot à deviner. <strong>Mais trois clics au lieu d'un.</strong></div>
+      </div>
+    </div>
+    <div class="option-summary">
+      Pas de barre de recherche en premier rôle. Tu filtres par système, zone, type et état, et tu descends jusqu'à l'objet. L'énorme avantage est qu'il n'y a <em>aucun mot à deviner</em> : le problème « robinet contre vanne » n'existe pas, puisque tu cliques sur ce qui est proposé. C'est aussi la meilleure réponse à « montre-moi tout ce qui touche à l'électricité », qu'aucune recherche textuelle ne traite bien. Le défaut est symétrique : quand tu sais exactement ce que tu cherches, trois clics valent moins qu'un mot tapé, et sur un téléphone à une main, c'est nettement plus lent.
+    </div>
+    <div class="verdict">
+      <div class="pros">
+        <h3>Marche bien si</h3>
+        <ul>
+          <li>Aucun vocabulaire à deviner, tout est proposé</li>
+          <li>Excellent pour explorer un système entier</li>
+          <li>Fait découvrir des objets qu'on avait oubliés</li>
+          <li>Le filtre de permissions s'y applique naturellement</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h3>Attention à</h3>
+        <ul>
+          <li>Lent quand tu sais déjà ce que tu veux</li>
+          <li>Pénible à une main sur téléphone</li>
+          <li>Les facettes s'écroulent si les types prolifèrent</li>
+          <li>Ne cherche pas dans les documents ni les détails</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-footer"><code class="tell-claude">Dis à Claude : « Option D »</code></div>
+  </article>
+
+</main>
+
+<section class="comparison-section">
+  <h2>Comparaison</h2>
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-a">A : Exacte</th>
+          <th class="col-b col-chosen">B : Plein texte + alias</th>
+          <th class="col-c">C : Sémantique</th>
+          <th class="col-d">D : Facettes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>« robinet » trouve « vanne »</td>
+          <td>Non</td>
+          <td class="col-chosen">Oui, par alias</td>
+          <td>Oui, tout seul</td>
+          <td>Sans objet</td>
+        </tr>
+        <tr>
+          <td>Accents et pluriels</td>
+          <td>Non</td>
+          <td class="col-chosen">Oui</td>
+          <td>Oui</td>
+          <td>Sans objet</td>
+        </tr>
+        <tr>
+          <td>Recherche exacte (n&deg; de série)</td>
+          <td>Excellente</td>
+          <td class="col-chosen">Excellente</td>
+          <td>Mauvaise</td>
+          <td>Impossible</td>
+        </tr>
+        <tr>
+          <td>Explorer « tout l'électrique »</td>
+          <td>Mal</td>
+          <td class="col-chosen">Moyennement</td>
+          <td>Mal</td>
+          <td>Excellent</td>
+        </tr>
+        <tr>
+          <td>Cherche dans les documents</td>
+          <td>Non</td>
+          <td class="col-chosen">Oui</td>
+          <td>Oui</td>
+          <td>Non</td>
+        </tr>
+        <tr>
+          <td>Résultat explicable et corrigeable</td>
+          <td>Oui</td>
+          <td class="col-chosen">Oui</td>
+          <td>Non</td>
+          <td>Oui</td>
+        </tr>
+        <tr>
+          <td>Infrastructure en plus</td>
+          <td>Aucune</td>
+          <td class="col-chosen">Aucune</td>
+          <td>Modèle + stockage vectoriel</td>
+          <td>Aucune</td>
+        </tr>
+        <tr>
+          <td>Coût récurrent</td>
+          <td>Nul</td>
+          <td class="col-chosen">Nul</td>
+          <td>Par requête et par écriture</td>
+          <td>Nul</td>
+        </tr>
+        <tr>
+          <td>Temps de développement</td>
+          <td>1 heure</td>
+          <td class="col-chosen">3 à 5 jours</td>
+          <td>1 à 2 semaines</td>
+          <td>2 à 3 jours</td>
+        </tr>
+        <tr>
+          <td>Tient à 200 fiches</td>
+          <td>Mal</td>
+          <td class="col-chosen">Très bien</td>
+          <td>Mal, tout se ressemble</td>
+          <td>Bien</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="page-footer">
+  <p>Dis à Claude : <strong>« Option B »</strong>, <strong>« Option B mais [ta variante] »</strong>, ou <strong>« plus d'options »</strong></p>
+  <p>Pour revenir sur un choix : <strong>« pour decision-004 je veux l'option B seule finalement »</strong></p>
+</div>
+
+</body>
+</html>
