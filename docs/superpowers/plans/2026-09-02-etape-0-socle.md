@@ -1420,6 +1420,7 @@ const CATALOGUE: Entree[] = [
     champ({ cle: "volume", label: "Volume", genre: "nombre", unite: "L" }),
   ]},
 ];
+```
 
 ```ts
 async function main() {
