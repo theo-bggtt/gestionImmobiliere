@@ -1,4 +1,5 @@
 // scripts/seed-catalogue.ts
+import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import pg from "pg";
@@ -203,4 +204,7 @@ async function main() {
   await pool.end();
 }
 
-main();
+// Only run main() when the script is executed directly, not when imported
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}
