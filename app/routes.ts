@@ -14,7 +14,9 @@ export default [
         index("routes/_app/batiments._index.tsx"),
         route("nouveau", "routes/_app/batiments.nouveau.tsx"),
         route(":batimentId/modifier", "routes/_app/batiments.$batimentId.modifier.tsx"),
+        route(":batimentId/niveaux/nouveau", "routes/_app/batiments.$batimentId.niveaux.nouveau.tsx"),
       ]),
+      route("niveaux/:niveauId/modifier", "routes/_app/niveaux.$niveauId.modifier.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;
