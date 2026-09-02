@@ -10,6 +10,11 @@ export default [
     index("routes/_app/proprietes._index.tsx"),
     ...prefix("proprietes/:proprieteId", [
       index("routes/_app/proprietes.$proprieteId._index.tsx"),
+      ...prefix("batiments", [
+        index("routes/_app/batiments._index.tsx"),
+        route("nouveau", "routes/_app/batiments.nouveau.tsx"),
+        route(":batimentId/modifier", "routes/_app/batiments.$batimentId.modifier.tsx"),
+      ]),
     ]),
   ]),
 ] satisfies RouteConfig;
