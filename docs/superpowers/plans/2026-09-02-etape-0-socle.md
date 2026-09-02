@@ -600,16 +600,12 @@ export const typeElement = pgTable("type_element", {
     "type_element_origine_propriete_coherente",
     sql`(${table.origine} = 'systeme' AND ${table.proprieteId} IS NULL) OR (${table.origine} = 'perso' AND ${table.proprieteId} IS NOT NULL)`
   ),
-  // Liste fermée de six genres (règle non négociable #4), imposée en base.
-  champsValides: check(
-    "type_element_champs_genres_valides",
-    sql`NOT EXISTS (
-      SELECT 1 FROM jsonb_array_elements(${table.champs}) elem
-      WHERE (elem->>'genre') NOT IN ('texte','nombre','date','booleen','choix','fichier')
-         OR elem->>'cle' IS NULL
-         OR elem->>'label' IS NULL
-    )`
-  ),
+  // La contrainte de genres fermés (règle non négociable #4) n'est PAS
+  // déclarée ici : PostgreSQL interdit toute sous-requête (SELECT) dans un
+  // CHECK, et valider les éléments d'un tableau jsonb en demande une. Elle
+  // est ajoutée par une migration écrite à la main (voir Step 3 bis) via une
+  // fonction SQL IMMUTABLE — c'est la contrainte elle-même qui devient un
+  // simple appel de fonction, ce que CHECK autorise.
   // Idempotence du seed catalogue (décision verrouillée #10) : un seul type
   // système par nom. Les types perso, eux, peuvent partager un nom entre
   // propriétés différentes (pas de contrainte).
@@ -878,10 +874,42 @@ export default defineConfig({
 ```bash
 docker compose up -d postgres
 # attendre le healthcheck (docker compose ps)
-node --env-file=.env node_modules/.bin/drizzle-kit generate
+set -a && source .env && set +a && npx drizzle-kit generate
 ```
 
-Expected: un dossier `drizzle/0000_*.sql` est créé, contenant `CREATE TYPE` pour les enums, `CREATE TABLE` pour les 16 tables, les `CHECK`, les index nommés, l'index unique partiel.
+`npx <outil>` plutôt qu'un appel direct à `node_modules/.bin/<outil>` : sur certains systèmes (dont Git Bash sous Windows), le fichier dans `.bin/` est un script shell que `node` ne peut pas exécuter directement en argument. `npx` résout le bon binaire pour la plateforme. `set -a && source .env && set +a` charge les variables de `.env` dans l'environnement du shell avant l'appel (`npx` ne comprend pas le flag Node `--env-file`).
+
+Expected: un dossier `drizzle/0000_*.sql` est créé, contenant `CREATE TYPE` pour les enums, `CREATE TABLE` pour les 16 tables, les `CHECK`, les index nommés, l'index unique partiel — **sans** la contrainte sur les genres de `champs` (voir Step 8 bis).
+
+- [ ] **Step 8 bis : contrainte des genres de `champs`, par une migration écrite à la main**
+
+PostgreSQL interdit toute sous-requête dans un `CHECK` — `NOT EXISTS (SELECT ...)` ne peut pas être déclaré directement sur la colonne. La sous-requête doit vivre dans une fonction `IMMUTABLE`, et le `CHECK` se contente d'appeler cette fonction.
+
+```bash
+set -a && source .env && set +a && npx drizzle-kit generate --custom --name=champs_valides_check
+```
+
+Contenu du fichier généré (vide) :
+
+```sql
+CREATE FUNCTION champs_valides(champs jsonb) RETURNS boolean AS $$
+  SELECT NOT EXISTS (
+    SELECT 1 FROM jsonb_array_elements(champs) elem
+    WHERE (elem->>'genre') NOT IN ('texte','nombre','date','booleen','choix','fichier')
+       OR elem->>'cle' IS NULL
+       OR elem->>'label' IS NULL
+  );
+$$ LANGUAGE sql IMMUTABLE;
+
+ALTER TABLE type_element
+  ADD CONSTRAINT type_element_champs_genres_valides CHECK (champs_valides(champs));
+```
+
+```bash
+npm run db:migrate
+```
+
+Expected: les deux migrations s'appliquent sans erreur ; `\d type_element` dans `psql` montre bien la contrainte `type_element_champs_genres_valides`.
 
 - [ ] **Step 9: `scripts/migrate.mjs`**
 
@@ -1048,7 +1076,7 @@ git commit -m "feat: schéma Drizzle complet, migration initiale, tests zone_id 
 ### Task 3: Déclencheur `recherche` (tsvector), index GIN
 
 **Files:**
-- Create: `drizzle/0001_recherche_trigger.sql` (migration custom, écrite à la main)
+- Create: `drizzle/000N_recherche_trigger.sql` (migration custom, écrite à la main — `drizzle-kit` choisit le numéro suivant disponible automatiquement, ce sera `0002` si Task 2 a bien consommé `0001` pour sa propre migration custom du Step 8 bis)
 - Test: `tests/schema/recherche-trigger.test.ts`
 
 **Interfaces:**
@@ -1062,15 +1090,15 @@ Limite assumée : le déclencheur ne se redéclenche que sur `INSERT OR UPDATE` 
 - [ ] **Step 1: Générer un fichier de migration custom vide**
 
 ```bash
-node --env-file=.env node_modules/.bin/drizzle-kit generate --custom --name=recherche_trigger
+set -a && source .env && set +a && npx drizzle-kit generate --custom --name=recherche_trigger
 ```
 
-Expected: `drizzle/0001_recherche_trigger.sql` créé (vide), entrée ajoutée à `drizzle/meta/_journal.json`.
+Expected: `drizzle/000N_recherche_trigger.sql` créé (vide, le numéro suit automatiquement), entrée ajoutée à `drizzle/meta/_journal.json`.
 
-- [ ] **Step 2: Écrire le déclencheur dans `drizzle/0001_recherche_trigger.sql`**
+- [ ] **Step 2: Écrire le déclencheur dans le fichier généré**
 
 ```sql
--- drizzle/0001_recherche_trigger.sql
+-- drizzle/000N_recherche_trigger.sql
 CREATE OR REPLACE FUNCTION maj_recherche_element() RETURNS trigger AS $$
 DECLARE
   v_type_nom text;
@@ -1469,7 +1497,7 @@ Ce test suppose le catalogue déjà chargé dans la base de test. Ajouter au REA
 - [ ] **Step 4: Charger le catalogue dans la base de test puis lancer les tests**
 
 ```bash
-node --env-file=.env.test node_modules/.bin/tsx scripts/seed-catalogue.ts
+set -a && source .env.test && set +a && npx tsx scripts/seed-catalogue.ts
 npm test
 ```
 
@@ -3931,7 +3959,7 @@ Identifiants de démonstration créés par `seed:exemple` : `demo@gestion-immobi
 \`\`\`bash
 docker compose exec postgres createdb -U gestion gestion_immobiliere_test   # une fois
 cp .env.test.example .env.test
-node --env-file=.env.test node_modules/.bin/tsx scripts/seed-catalogue.ts    # une fois, requis par le test d'alias
+set -a && source .env.test && set +a && npx tsx scripts/seed-catalogue.ts    # une fois, requis par le test d'alias
 npm test
 \`\`\`
 
