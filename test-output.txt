@@ -1,0 +1,33 @@
+
+> test
+> vitest run
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/leroy/Documents/ubuntu-autosync/gestionImmobiliere[39m
+
+ [32m✓[39m tests/schema/recherche-trigger.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 229[2mms[22m[39m
+ [32m✓[39m tests/schema/zone-obligatoire.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 246[2mms[22m[39m
+ [31m❯[39m tests/schema/catalogue-alias.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[90m 47[2mms[22m[39m
+[31m   [31m×[31m recherche par alias du catalogue[2m > [22m« robinet » remonte un élément de type « Vanne d'arrêt »[90m 19[2mms[22m[31m[39m
+[31m     → le catalogue doit avoir été chargé avant ce test (npm run seed:catalogue): expected undefined to be defined[39m
+ [32m✓[39m tests/schema/niveau-tri.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 125[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/schema/catalogue-alias.test.ts[2m > [22mrecherche par alias du catalogue[2m > [22m« robinet » remonte un élément de type « Vanne d'arrêt »
+[31m[1mAssertionError[22m: le catalogue doit avoir été chargé avant ce test (npm run seed:catalogue): expected undefined to be defined[39m
+[36m [2m❯[22m tests/schema/catalogue-alias.test.ts:[2m16:95[22m[39m
+    [90m 14| [39m
+    [90m 15| [39m    [35mconst[39m [type] [33m=[39m [35mawait[39m db[33m.[39m[34mselect[39m()[33m.[39m[35mfrom[39m(typeElement)[33m.[39m[34mwhere[39m(sql[32m`[39m[36m${[39mtyp…
+    [90m 16| [39m    [34mexpect[39m(type[33m,[39m [32m"le catalogue doit avoir été chargé avant ce test (np[39m…
+    [90m   | [39m                                                                                              [31m^[39m
+    [90m 17| [39m
+    [90m 18| [39m    [35mawait[39m db[33m.[39m[34minsert[39m(element)[33m.[39m[34mvalues[39m({ proprieteId[33m:[39m p[33m.[39mid[33m,[39m nom[33m:[39m [32m"Arrivée[39m…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 20:26:10
+[2m   Duration [22m 3.47s[2m (transform 89ms, setup 1.89s, collect 33ms, tests 647ms, environment 1ms, prepare 318ms)[22m
+
