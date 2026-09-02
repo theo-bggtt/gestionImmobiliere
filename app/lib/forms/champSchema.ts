@@ -34,6 +34,10 @@ export function schemaPourChamps(champs: ChampDefinition[]) {
         base = z.enum(champ.options as [string, ...string[]]);
         break;
       }
+      default: {
+        const _exhaustive: never = champ.genre;
+        throw new Error(`Genre inconnu pour le champ "${champ.cle}": ${_exhaustive}`);
+      }
     }
 
     forme[champ.cle] = champ.obligatoire ? base : base.optional().nullable();

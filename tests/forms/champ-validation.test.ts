@@ -33,6 +33,9 @@ describe("validerDetails", () => {
   it("laisse passer une clé d'un champ retiré du type (passthrough)", () => {
     const resultat = validerDetails(champsChaudiere, { puissance: 24, type_energie: "gaz", ancien_champ_retire: "valeur historique" });
     expect(resultat.success).toBe(true);
+    if (resultat.success) {
+      expect(resultat.data.ancien_champ_retire).toBe("valeur historique");
+    }
   });
 
   it("lève une erreur explicite si un champ 'choix' ne définit aucune option", () => {
