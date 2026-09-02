@@ -1,4 +1,5 @@
 // app/components/ZoneSelector.tsx
+import { Fragment } from "react";
 import type { chargerArbreZones, ZoneAvecEnfants } from "../lib/zoneTree";
 
 type Arbre = Awaited<ReturnType<typeof chargerArbreZones>>;
@@ -7,13 +8,13 @@ function OptionsZone({ zones, profondeur = 0 }: { zones: ZoneAvecEnfants[]; prof
   return (
     <>
       {zones.map((z) => (
-        <>
-          <option key={z.id} value={z.id}>
+        <Fragment key={z.id}>
+          <option value={z.id}>
             {"— ".repeat(profondeur)}
             {z.nom}
           </option>
           {z.enfants.length > 0 && <OptionsZone zones={z.enfants} profondeur={profondeur + 1} />}
-        </>
+        </Fragment>
       ))}
     </>
   );
