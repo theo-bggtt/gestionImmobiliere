@@ -8,15 +8,15 @@ import type { ChampDefinition } from "../app/db/schema/types";
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool, { schema });
 
-type Entree = { nom: string; icone: string; champs: ChampDefinition[]; alias: string[] };
+export type Entree = { nom: string; icone: string; champs: ChampDefinition[]; alias: string[] };
 
-const champ = (partial: Omit<ChampDefinition, "niveauMin" | "obligatoire"> & { niveauMin?: number; obligatoire?: boolean }): ChampDefinition => ({
+export const champ = (partial: Omit<ChampDefinition, "niveauMin" | "obligatoire"> & { niveauMin?: number; obligatoire?: boolean }): ChampDefinition => ({
   niveauMin: partial.niveauMin ?? 1,
   obligatoire: partial.obligatoire ?? false,
   ...partial,
 });
 
-const CATALOGUE: Entree[] = [
+export const CATALOGUE: Entree[] = [
   // ── Intérieur ──────────────────────────────────────────────────────
   { nom: "Prise 230V", icone: "power-plug", alias: ["prise", "prise électrique", "prise de courant"], champs: [
     champ({ cle: "emplacement", label: "Emplacement", genre: "texte" }),

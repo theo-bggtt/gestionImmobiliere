@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 import { readFileSync } from "fs";
 import pg from "pg";
 import * as schema from "../../app/db/schema/index";
-import type { ChampDefinition } from "../../app/db/schema/types";
+import { CATALOGUE } from "../../scripts/seed-catalogue";
 
 // Ensure .env.test is loaded
 try {
@@ -25,20 +25,8 @@ try {
 export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
 
-const champ = (partial: Omit<ChampDefinition, "niveauMin" | "obligatoire"> & { niveauMin?: number; obligatoire?: boolean }): ChampDefinition => ({
-  niveauMin: partial.niveauMin ?? 1,
-  obligatoire: partial.obligatoire ?? false,
-  ...partial,
-});
-
-// Catalogue de test (seul "Vanne d'arrêt" est strictement nécessaire pour le test alias)
-const CATALOGUE_TEST: Array<{ nom: string; icone: string; champs: ChampDefinition[]; alias: string[] }> = [
-  { nom: "Vanne d'arrêt", icone: "droplet", alias: ["robinet", "arrêt d'eau", "stop-eau", "vanne"], champs: [
-    champ({ cle: "reseau", label: "Réseau", genre: "choix", options: ["eau froide", "eau chaude", "gaz"] }),
-    champ({ cle: "coupe_quoi", label: "Coupe quoi", genre: "texte", niveauMin: 2 }),
-    champ({ cle: "notes", label: "Notes", genre: "texte" }),
-  ]},
-];
+// Extract only "Vanne d'arrêt" from the shared catalogue (avoids duplication)
+const CATALOGUE_TEST = CATALOGUE.filter((e) => e.nom === "Vanne d'arrêt");
 
 let catalogueLoadedOnce = false;
 
