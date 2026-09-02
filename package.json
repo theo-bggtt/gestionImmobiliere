@@ -23,7 +23,8 @@
     "drizzle-orm": "^0.44.0",
     "pg": "^8.13.0",
     "@node-rs/argon2": "^2.0.0",
-    "zod": "^3.24.0"
+    "zod": "^3.24.0",
+    "isbot": "^5"
   },
   "devDependencies": {
     "@react-router/dev": "^7.9.0",
