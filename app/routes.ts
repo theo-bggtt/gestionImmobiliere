@@ -17,6 +17,11 @@ export default [
         route(":batimentId/niveaux/nouveau", "routes/_app/batiments.$batimentId.niveaux.nouveau.tsx"),
       ]),
       route("niveaux/:niveauId/modifier", "routes/_app/niveaux.$niveauId.modifier.tsx"),
+      ...prefix("zones", [
+        index("routes/_app/zones._index.tsx"),
+        route("nouveau", "routes/_app/zones.nouveau.tsx"),
+        route(":zoneId/modifier", "routes/_app/zones.$zoneId.modifier.tsx"),
+      ]),
     ]),
   ]),
 ] satisfies RouteConfig;
