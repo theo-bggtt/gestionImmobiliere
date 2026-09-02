@@ -27,6 +27,11 @@ export default [
         route("nouveau", "routes/_app/systemes.nouveau.tsx"),
         route(":systemeId/modifier", "routes/_app/systemes.$systemeId.modifier.tsx"),
       ]),
+      ...prefix("elements", [
+        index("routes/_app/elements._index.tsx"),
+        route("nouveau", "routes/_app/elements.nouveau.tsx"),
+        route(":elementId/modifier", "routes/_app/elements.$elementId.modifier.tsx"),
+      ]),
     ]),
   ]),
 ] satisfies RouteConfig;
