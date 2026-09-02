@@ -22,6 +22,11 @@ export default [
         route("nouveau", "routes/_app/zones.nouveau.tsx"),
         route(":zoneId/modifier", "routes/_app/zones.$zoneId.modifier.tsx"),
       ]),
+      ...prefix("systemes", [
+        index("routes/_app/systemes._index.tsx"),
+        route("nouveau", "routes/_app/systemes.nouveau.tsx"),
+        route(":systemeId/modifier", "routes/_app/systemes.$systemeId.modifier.tsx"),
+      ]),
     ]),
   ]),
 ] satisfies RouteConfig;
