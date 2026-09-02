@@ -2,29 +2,21 @@
 import { Fragment } from "react";
 import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { asc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/client";
-import { batiment, niveau, zone } from "../../db/schema/index";
+import { zone } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
-import { chargerArbreZones, type ZoneAvecEnfants } from "../../lib/zoneTree";
+import { chargerArbreZones, niveauAppartientALaPropriete, zoneParenteValide, type ZoneAvecEnfants } from "../../lib/zoneTree";
 
 const TYPES = ["interieur", "exterieur", "annexe", "technique"] as const;
-
-async function chargerNiveauxAvecBatiment(proprieteId: number) {
-  const batiments = await db.select().from(batiment).where(eq(batiment.proprieteId, proprieteId)).orderBy(asc(batiment.ordre));
-  const ids = batiments.map((b) => b.id);
-  const niveaux = ids.length
-    ? await db.select().from(niveau).where(inArray(niveau.batimentId, ids)).orderBy(asc(niveau.ordinal))
-    : [];
-  return niveaux.map((n) => ({ ...n, batimentNom: batiments.find((b) => b.id === n.batimentId)!.nom }));
-}
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
   const propriete = await requireProprieteAccess(utilisateurId, params.proprieteId);
-  const niveaux = await chargerNiveauxAvecBatiment(propriete.id);
   const { arbre, zonesExterieures } = await chargerArbreZones(propriete.id);
+  // Dérivé de `arbre` plutôt que requêté à part : chargerArbreZones a déjà
+  // fait la jointure bâtiment/niveau, la même requête deux fois serait du gâchis.
+  const niveaux = arbre.flatMap(({ batiment: b, niveaux: ns }) => ns.map(({ niveau: n }) => ({ ...n, batimentNom: b.nom })));
   return { propriete, niveaux, arbre, zonesExterieures };
 }
 
@@ -40,12 +32,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!nom) return { erreur: "Le nom est obligatoire." };
   if (!TYPES.includes(type as (typeof TYPES)[number])) return { erreur: "Type de zone invalide." };
 
+  const niveauId = niveauIdBrut ? Number(niveauIdBrut) : null;
+  if (niveauId !== null && !(await niveauAppartientALaPropriete(propriete.id, niveauId))) {
+    return { erreur: "Niveau invalide." };
+  }
+
+  const parentId = parentIdBrut ? Number(parentIdBrut) : null;
+  if (parentId !== null && !(await zoneParenteValide(propriete.id, parentId, niveauId))) {
+    return { erreur: "Zone parente invalide (doit être sur le même niveau)." };
+  }
+
   await db.insert(zone).values({
     proprieteId: propriete.id,
     nom,
     type: type as (typeof TYPES)[number],
-    niveauId: niveauIdBrut ? Number(niveauIdBrut) : null,
-    parentId: parentIdBrut ? Number(parentIdBrut) : null,
+    niveauId,
+    parentId,
   });
 
   return redirect(`/proprietes/${propriete.id}/zones`);

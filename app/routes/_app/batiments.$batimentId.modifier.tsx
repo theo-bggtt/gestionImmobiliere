@@ -6,13 +6,16 @@ import { db } from "../../db/client";
 import { batiment } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
+import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
 
 const TYPES = ["principal", "annexe", "garage", "abri"] as const;
 
 async function chargerBatiment(proprieteId: number, batimentId: string | undefined) {
-  const [b] = await db.select().from(batiment).where(and(eq(batiment.id, Number(batimentId)), eq(batiment.proprieteId, proprieteId)));
-  if (!b) throw new Response("Bâtiment introuvable", { status: 404 });
-  return b;
+  return chargerRessourceOu404(
+    batiment,
+    and(eq(batiment.id, Number(batimentId)), eq(batiment.proprieteId, proprieteId)),
+    "Bâtiment introuvable",
+  );
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

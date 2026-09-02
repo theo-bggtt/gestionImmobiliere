@@ -6,11 +6,14 @@ import { db } from "../../db/client";
 import { systeme } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
+import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
 
 async function chargerSysteme(proprieteId: number, systemeId: string | undefined) {
-  const [s] = await db.select().from(systeme).where(and(eq(systeme.id, Number(systemeId)), eq(systeme.proprieteId, proprieteId)));
-  if (!s) throw new Response("Système introuvable", { status: 404 });
-  return s;
+  return chargerRessourceOu404(
+    systeme,
+    and(eq(systeme.id, Number(systemeId)), eq(systeme.proprieteId, proprieteId)),
+    "Système introuvable",
+  );
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

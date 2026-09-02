@@ -7,11 +7,12 @@ import { db } from "../../db/client";
 import { element, typeElement, systeme } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
+import { zoneAppartientALaPropriete, systemeAppartientALaPropriete } from "../../lib/db/elementRefs.server";
 import { chargerArbreZones } from "../../lib/zoneTree";
 import { validerDetails } from "../../lib/forms/champSchema";
+import { extraireDetails } from "../../lib/forms/extraireDetails";
 import { ZoneSelector } from "../../components/ZoneSelector";
 import { DynamicElementFields } from "../../components/DynamicElementFields";
-import type { ChampDefinition } from "../../db/schema/types";
 
 // Types disponibles pour un élément : le catalogue système (proprieteId NULL)
 // + les types perso de cette propriété.
@@ -19,27 +20,14 @@ async function chargerTypesDisponibles(proprieteId: number) {
   return db.select().from(typeElement).where(or(isNull(typeElement.proprieteId), eq(typeElement.proprieteId, proprieteId)));
 }
 
-function extraireDetails(form: FormData, champs: ChampDefinition[]) {
-  const details: Record<string, unknown> = {};
-  for (const champ of champs) {
-    if (champ.genre === "fichier") continue;
-    if (champ.genre === "booleen") {
-      details[champ.cle] = form.get(`details.${champ.cle}`) === "true";
-      continue;
-    }
-    const valeur = form.get(`details.${champ.cle}`);
-    if (valeur === null || valeur === "") continue;
-    details[champ.cle] = valeur;
-  }
-  return details;
-}
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
   const propriete = await requireProprieteAccess(utilisateurId, params.proprieteId);
-  const types = await chargerTypesDisponibles(propriete.id);
-  const arbre = await chargerArbreZones(propriete.id);
-  const systemes = await db.select().from(systeme).where(eq(systeme.proprieteId, propriete.id));
+  const [types, arbre, systemes] = await Promise.all([
+    chargerTypesDisponibles(propriete.id),
+    chargerArbreZones(propriete.id),
+    db.select().from(systeme).where(eq(systeme.proprieteId, propriete.id)),
+  ]);
   return { propriete, types, arbre, systemes };
 }
 
@@ -55,6 +43,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!nom) return { erreur: "Le nom est obligatoire." };
   if (!zoneId) return { erreur: "La zone est obligatoire." };
+  if (!(await zoneAppartientALaPropriete(propriete.id, zoneId))) return { erreur: "Zone invalide." };
+
+  let systemeId: number | null = null;
+  if (systemeIdBrut) {
+    systemeId = Number(systemeIdBrut);
+    if (!(await systemeAppartientALaPropriete(propriete.id, systemeId))) return { erreur: "Système invalide." };
+  }
 
   // Le type est rechargé et revalidé côté serveur : ne jamais faire
   // confiance aux champs envoyés par le client pour décider quels details
@@ -74,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     nom,
     typeId: type.id,
     zoneId,
-    systemeId: systemeIdBrut ? Number(systemeIdBrut) : null,
+    systemeId,
     details: resultat.data,
   });
 

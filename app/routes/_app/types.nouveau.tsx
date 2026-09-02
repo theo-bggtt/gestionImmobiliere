@@ -4,6 +4,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { typeElement } from "../../db/schema/index";
+import { CHAMP_GENRES } from "../../db/schema/types";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { ChampEditor } from "../../components/ChampEditor";
@@ -12,7 +13,7 @@ const champDefinitionSchema = z
   .object({
     cle: z.string().min(1),
     label: z.string().min(1),
-    genre: z.enum(["texte", "nombre", "date", "booleen", "choix", "fichier"]),
+    genre: z.enum(CHAMP_GENRES),
     unite: z.string().optional(),
     niveauMin: z.number().int().min(0).max(3),
     obligatoire: z.boolean(),

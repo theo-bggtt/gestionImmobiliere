@@ -5,7 +5,11 @@ import { propriete } from "./core";
 
 export const typeElementOrigine = pgEnum("type_element_origine", ["systeme", "perso"]);
 
-export type ChampGenre = "texte" | "nombre" | "date" | "booleen" | "choix" | "fichier";
+// Liste fermée de six genres (règle non négociable #4) — seule source de
+// vérité, dérivée par ChampEditor.tsx et types.nouveau.tsx pour éviter que
+// les deux littéraux divergent.
+export const CHAMP_GENRES = ["texte", "nombre", "date", "booleen", "choix", "fichier"] as const;
+export type ChampGenre = (typeof CHAMP_GENRES)[number];
 
 export type ChampDefinition = {
   cle: string;

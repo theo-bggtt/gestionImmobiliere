@@ -1,9 +1,7 @@
 // app/components/ChampEditor.tsx
 import { useState } from "react";
+import { CHAMP_GENRES } from "../db/schema/types";
 import type { ChampDefinition, ChampGenre } from "../db/schema/types";
-
-// Liste fermée de six genres (règle non négociable #4) — ne jamais l'étendre.
-const GENRES: ChampGenre[] = ["texte", "nombre", "date", "booleen", "choix", "fichier"];
 
 type ChampBrouillon = ChampDefinition & { optionsTexte?: string };
 
@@ -42,8 +40,17 @@ export function ChampEditor({ nomChamp = "champs" }: { nomChamp?: string }) {
           </label>
           <label>
             Genre
-            <select value={champ.genre} onChange={(e) => modifier(i, { genre: e.target.value as ChampGenre })}>
-              {GENRES.map((g) => (
+            <select
+              value={champ.genre}
+              onChange={(e) => {
+                const genre = e.target.value as ChampGenre;
+                // "Obligatoire" n'a pas de sens pour une case à cocher : elle
+                // porte toujours une valeur (cochée ou non), il n'y a rien à
+                // rendre obligatoire.
+                modifier(i, genre === "booleen" ? { genre, obligatoire: false } : { genre });
+              }}
+            >
+              {CHAMP_GENRES.map((g) => (
                 <option key={g} value={g}>{g}</option>
               ))}
             </select>
@@ -75,10 +82,12 @@ export function ChampEditor({ nomChamp = "champs" }: { nomChamp?: string }) {
               <option value={3}>3 — privé</option>
             </select>
           </label>
-          <label>
-            Obligatoire
-            <input type="checkbox" checked={champ.obligatoire} onChange={(e) => modifier(i, { obligatoire: e.target.checked })} />
-          </label>
+          {champ.genre !== "booleen" && (
+            <label>
+              Obligatoire
+              <input type="checkbox" checked={champ.obligatoire} onChange={(e) => modifier(i, { obligatoire: e.target.checked })} />
+            </label>
+          )}
           <button type="button" onClick={() => retirer(i)}>Retirer ce champ</button>
         </fieldset>
       ))}

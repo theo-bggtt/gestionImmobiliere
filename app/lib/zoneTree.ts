@@ -1,5 +1,5 @@
 // app/lib/zoneTree.ts
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "../db/client";
 import { batiment, niveau, zone } from "../db/schema/index";
 
@@ -45,4 +45,22 @@ export async function chargerArbreZones(proprieteId: number) {
   const zonesExterieures = grouperParParent(zones.filter((z) => z.niveauId === null));
 
   return { arbre, zonesExterieures };
+}
+
+export async function niveauAppartientALaPropriete(proprieteId: number, niveauId: number) {
+  const [ligne] = await db.select({ id: niveau.id }).from(niveau)
+    .innerJoin(batiment, eq(niveau.batimentId, batiment.id))
+    .where(and(eq(niveau.id, niveauId), eq(batiment.proprieteId, proprieteId)));
+  return Boolean(ligne);
+}
+
+// Une sous-zone doit être sur le même niveau que sa zone parente (ou toutes
+// deux extérieures, niveauId NULL) : chargerArbreZones groupe les zones par
+// niveau avant de construire l'arbre, un parent d'un autre niveau serait
+// donc silencieusement affiché comme racine au lieu d'être imbriqué.
+export async function zoneParenteValide(proprieteId: number, parentId: number, niveauId: number | null) {
+  const [ligne] = await db.select({ niveauId: zone.niveauId }).from(zone)
+    .where(and(eq(zone.id, parentId), eq(zone.proprieteId, proprieteId)));
+  if (!ligne) return false;
+  return ligne.niveauId === niveauId;
 }

@@ -6,13 +6,16 @@ import { db } from "../../db/client";
 import { zone } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
+import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
 
 const TYPES = ["interieur", "exterieur", "annexe", "technique"] as const;
 
 async function chargerZone(proprieteId: number, zoneId: string | undefined) {
-  const [z] = await db.select().from(zone).where(and(eq(zone.id, Number(zoneId)), eq(zone.proprieteId, proprieteId)));
-  if (!z) throw new Response("Zone introuvable", { status: 404 });
-  return z;
+  return chargerRessourceOu404(
+    zone,
+    and(eq(zone.id, Number(zoneId)), eq(zone.proprieteId, proprieteId)),
+    "Zone introuvable",
+  );
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
