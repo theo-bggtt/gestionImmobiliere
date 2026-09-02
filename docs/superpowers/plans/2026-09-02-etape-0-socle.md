@@ -566,7 +566,8 @@ Expected: PASS (les deux fichiers compilent, pas encore de logique testable).
 
 ```ts
 // app/db/schema/types.ts
-import { pgTable, serial, text, integer, pgEnum, jsonb, check, uniqueIndex, sql } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, pgEnum, jsonb, check, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { propriete } from "./core";
 
 export const typeElementOrigine = pgEnum("type_element_origine", ["systeme", "perso"]);
@@ -623,8 +624,9 @@ export const typeElement = pgTable("type_element", {
 ```ts
 // app/db/schema/elements.ts
 import {
-  pgTable, serial, text, integer, smallint, jsonb, timestamp, check, index, customType, sql,
+  pgTable, serial, text, integer, smallint, jsonb, timestamp, check, index, customType,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { propriete, zone, systeme } from "./core";
 import { typeElement } from "./types";
 
@@ -668,8 +670,9 @@ export const element = pgTable("element", {
 ```ts
 // app/db/schema/fichiers.ts
 import {
-  pgTable, serial, integer, text, bigint, timestamp, smallint, pgEnum, boolean, check, sql,
+  pgTable, serial, integer, text, bigint, timestamp, smallint, pgEnum, boolean, check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { propriete, zone } from "./core";
 
 export const fichier = pgTable("fichier", {
@@ -746,7 +749,8 @@ export const point = pgTable("point", {
 
 ```ts
 // app/db/schema/historique.ts
-import { pgTable, serial, integer, text, date, numeric, smallint, primaryKey, check, sql } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, date, numeric, smallint, primaryKey, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { propriete } from "./core";
 import { element } from "./elements";
 import { fichier } from "./fichiers";
@@ -806,7 +810,8 @@ export const garantie = pgTable("garantie", {
 
 ```ts
 // app/db/schema/partage.ts
-import { pgTable, serial, integer, text, smallint, timestamp, check, sql } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, smallint, timestamp, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { propriete } from "./core";
 
 export const partage = pgTable("partage", {
@@ -1208,6 +1213,7 @@ git commit -m "feat: déclencheur recherche tsvector, index GIN, tests"
 ```ts
 // scripts/seed-catalogue.ts
 import { drizzle } from "drizzle-orm/node-postgres";
+import { sql } from "drizzle-orm";
 import pg from "pg";
 import * as schema from "../app/db/schema/index";
 import type { ChampDefinition } from "../app/db/schema/types";
@@ -1387,6 +1393,7 @@ const CATALOGUE: Entree[] = [
   ]},
 ];
 
+```ts
 async function main() {
   const valeurs = CATALOGUE.map((entree) => ({
     nom: entree.nom,
@@ -1396,10 +1403,14 @@ async function main() {
     alias: entree.alias,
   }));
 
+  // ON CONFLICT (nom) WHERE origine = 'systeme' cible précisément l'index
+  // unique PARTIEL de Task 2 (idx_type_element_nom_systeme_unique). Un index
+  // partiel ne peut pas être ciblé par "ON CONFLICT ON CONSTRAINT" (réservé
+  // aux contraintes) : la syntaxe target + where est la bonne ici.
   const inserees = await db
     .insert(schema.typeElement)
     .values(valeurs)
-    .onConflictDoNothing({ target: [schema.typeElement.nom], where: schema.sql`origine = 'systeme'` })
+    .onConflictDoNothing({ target: schema.typeElement.nom, where: sql`${schema.typeElement.origine} = 'systeme'` })
     .returning({ nom: schema.typeElement.nom });
 
   console.log(`Catalogue : ${inserees.length} nouveaux types sur ${CATALOGUE.length} (le reste existait déjà).`);
@@ -1408,8 +1419,6 @@ async function main() {
 
 main();
 ```
-
-Note technique : `onConflictDoNothing` avec un `target` doit correspondre exactement à l'index unique partiel défini en Task 2 (`idx_type_element_nom_systeme_unique` sur `nom` avec la même clause `WHERE`). Si `drizzle-orm` exige la clause `where` identique verbatim pour matcher l'index, vérifier au premier lancement — sinon utiliser `sql`ON CONFLICT ON CONSTRAINT idx_type_element_nom_systeme_unique DO NOTHING`` directement en SQL brut via `db.execute`.
 
 - [ ] **Step 2: Lancer le seed deux fois**
 
@@ -1799,7 +1808,9 @@ git commit -m "feat: authentification — hachage argon2, cookie de session, ses
 - Consumes: `requireUtilisateurId`, `creerSession`, `detruireSession` (Task 6).
 - Produces: `requireProprieteAccess(utilisateurId, proprieteIdParam): Promise<Propriete>` (lève une `Response` 404 si la propriété n'existe pas ou n'appartient pas à l'utilisateur — **jamais** un écran "accès refusé" qui confirmerait l'existence de la ressource à quelqu'un d'autre), utilisé par toutes les routes CRUD des tâches suivantes. Arbre de routes définitif : `_public` (connexion/inscription/déconnexion, non protégé) séparé de `_app` (tout le reste, protégé) — la future page `/p/:jeton` (étape 3) prendra place dans un troisième arbre `_share`, non protégé, non construit ici mais dont la place est réservée par cette séparation.
 
-- [ ] **Step 1: `app/routes.ts` complet**
+- [ ] **Step 1: `app/routes.ts` — uniquement les routes que CETTE tâche construit**
+
+React Router v7 résout au démarrage (`npm run dev`/`build`/`typecheck`) chaque fichier référencé dans `routes.ts` : y lister un fichier qui n'existe pas encore casse le serveur. `routes.ts` est donc rempli **progressivement** — chaque tâche CRUD suivante (9 à 14) y ajoute sa propre tranche, jamais toutes les routes d'un coup. À cette étape, seules les routes publiques et le tableau de bord existent :
 
 ```ts
 // app/routes.ts
@@ -1814,29 +1825,6 @@ export default [
     index("routes/_app/proprietes._index.tsx"),
     ...prefix("proprietes/:proprieteId", [
       index("routes/_app/proprietes.$proprieteId._index.tsx"),
-      ...prefix("batiments", [
-        index("routes/_app/batiments._index.tsx"),
-        route("nouveau", "routes/_app/batiments.nouveau.tsx"),
-        route(":batimentId/modifier", "routes/_app/batiments.$batimentId.modifier.tsx"),
-        route(":batimentId/niveaux/nouveau", "routes/_app/batiments.$batimentId.niveaux.nouveau.tsx"),
-      ]),
-      route("niveaux/:niveauId/modifier", "routes/_app/niveaux.$niveauId.modifier.tsx"),
-      ...prefix("zones", [
-        index("routes/_app/zones._index.tsx"),
-        route("nouveau", "routes/_app/zones.nouveau.tsx"),
-        route(":zoneId/modifier", "routes/_app/zones.$zoneId.modifier.tsx"),
-      ]),
-      ...prefix("systemes", [
-        index("routes/_app/systemes._index.tsx"),
-        route("nouveau", "routes/_app/systemes.nouveau.tsx"),
-        route(":systemeId/modifier", "routes/_app/systemes.$systemeId.modifier.tsx"),
-      ]),
-      ...prefix("elements", [
-        index("routes/_app/elements._index.tsx"),
-        route("nouveau", "routes/_app/elements.nouveau.tsx"),
-        route(":elementId/modifier", "routes/_app/elements.$elementId.modifier.tsx"),
-      ]),
-      route("types/nouveau", "routes/_app/types.nouveau.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;
@@ -2274,9 +2262,24 @@ git commit -m "feat: moteur de validation des champs dynamiques (zod)"
 
 **Files:**
 - Create: `app/lib/zoneTree.ts`, `app/components/ZoneSelector.tsx`, `app/routes/_app/batiments._index.tsx`, `app/routes/_app/batiments.nouveau.tsx`, `app/routes/_app/batiments.$batimentId.modifier.tsx`
+- Modify: `app/routes.ts` (ajoute le préfixe `batiments`)
 
 **Interfaces:**
 - Produces: `chargerArbreZones(proprieteId): Promise<{ arbre, zonesExterieures }>` et `<ZoneSelector arbre={...} name="zoneId" defaultValue={...} />`, réutilisés par les CRUD zone (Task 11) et élément (Task 13).
+
+- [ ] **Step 0: Ajouter le préfixe `batiments` à `app/routes.ts`**
+
+Dans le tableau `...prefix("proprietes/:proprieteId", [ ... ])` créé en Task 7, ajouter, juste après `index("routes/_app/proprietes.$proprieteId._index.tsx")` :
+
+```ts
+...prefix("batiments", [
+  index("routes/_app/batiments._index.tsx"),
+  route("nouveau", "routes/_app/batiments.nouveau.tsx"),
+  route(":batimentId/modifier", "routes/_app/batiments.$batimentId.modifier.tsx"),
+]),
+```
+
+(Les routes des niveaux, `:batimentId/niveaux/nouveau` et `niveaux/:niveauId/modifier`, sont ajoutées par la Task 10 — pas ici. Ne pas les ajouter en avance : un fichier référencé avant d'exister casse `npm run dev`.)
 
 - [ ] **Step 1: `app/lib/zoneTree.ts`**
 
@@ -2583,9 +2586,24 @@ git commit -m "feat: arbre bâtiment/niveau/zone, sélecteur de zone, CRUD bâti
 
 **Files:**
 - Create: `app/routes/_app/batiments.$batimentId.niveaux.nouveau.tsx`, `app/routes/_app/niveaux.$niveauId.modifier.tsx`
+- Modify: `app/routes.ts` (ajoute les deux routes niveau)
 
 **Interfaces:**
 - Consumes: `requireUtilisateurId`, `requireProprieteAccess` (Task 6/7). Chaque route vérifie en plus, par une jointure `niveau → batiment`, que le niveau appartient bien à un bâtiment de la propriété visée dans l'URL (l'appartenance à la propriété ne suffit pas : il faut aussi vérifier le bâtiment, sinon un `niveauId` d'une autre propriété du même utilisateur passerait le premier contrôle).
+
+- [ ] **Step 0: Ajouter les routes niveau à `app/routes.ts`**
+
+Dans le bloc `...prefix("batiments", [...])` ajouté en Task 9, ajouter une ligne après `route(":batimentId/modifier", ...)` :
+
+```ts
+route(":batimentId/niveaux/nouveau", "routes/_app/batiments.$batimentId.niveaux.nouveau.tsx"),
+```
+
+Et, dans le tableau `prefix("proprietes/:proprieteId", [...])`, au même niveau que le préfixe `batiments` (pas dedans) :
+
+```ts
+route("niveaux/:niveauId/modifier", "routes/_app/niveaux.$niveauId.modifier.tsx"),
+```
 
 - [ ] **Step 1: `app/routes/_app/batiments.$batimentId.niveaux.nouveau.tsx`**
 
@@ -2742,9 +2760,22 @@ git commit -m "feat: CRUD niveau, scopé bâtiment puis propriété"
 
 **Files:**
 - Create: `app/routes/_app/zones._index.tsx`, `app/routes/_app/zones.nouveau.tsx`, `app/routes/_app/zones.$zoneId.modifier.tsx`
+- Modify: `app/routes.ts` (ajoute le préfixe `zones`)
 
 **Interfaces:**
 - Consumes: `chargerArbreZones`, `ZoneAvecEnfants` (Task 9).
+
+- [ ] **Step 0: Ajouter le préfixe `zones` à `app/routes.ts`**
+
+Dans `prefix("proprietes/:proprieteId", [...])`, au même niveau que `batiments` :
+
+```ts
+...prefix("zones", [
+  index("routes/_app/zones._index.tsx"),
+  route("nouveau", "routes/_app/zones.nouveau.tsx"),
+  route(":zoneId/modifier", "routes/_app/zones.$zoneId.modifier.tsx"),
+]),
+```
 
 Décision de portée : l'écran "modifier" ne permet de changer que `nom` et `type` — pas de repositionner une zone (changer son niveau ou son parent). Le prompt demande "écrans de liste et de formulaire", pas un repositionnement ; en ajouter un serait construire au-delà de ce qui est demandé.
 
@@ -3014,9 +3045,22 @@ git commit -m "feat: CRUD zone, zones extérieures et sous-zones"
 
 **Files:**
 - Create: `app/routes/_app/systemes._index.tsx`, `app/routes/_app/systemes.nouveau.tsx`, `app/routes/_app/systemes.$systemeId.modifier.tsx`
+- Modify: `app/routes.ts` (ajoute le préfixe `systemes`)
 
 **Interfaces:**
 - Consumes: `requireUtilisateurId`, `requireProprieteAccess`.
+
+- [ ] **Step 0: Ajouter le préfixe `systemes` à `app/routes.ts`**
+
+Dans `prefix("proprietes/:proprieteId", [...])`, au même niveau que `batiments`/`zones` :
+
+```ts
+...prefix("systemes", [
+  index("routes/_app/systemes._index.tsx"),
+  route("nouveau", "routes/_app/systemes.nouveau.tsx"),
+  route(":systemeId/modifier", "routes/_app/systemes.$systemeId.modifier.tsx"),
+]),
+```
 
 - [ ] **Step 1: `app/routes/_app/systemes._index.tsx`**
 
@@ -3186,10 +3230,23 @@ git commit -m "feat: CRUD système"
 
 **Files:**
 - Create: `app/components/DynamicElementFields.tsx`, `app/routes/_app/elements._index.tsx`, `app/routes/_app/elements.nouveau.tsx`, `app/routes/_app/elements.$elementId.modifier.tsx`
+- Modify: `app/routes.ts` (ajoute le préfixe `elements`)
 
 **Interfaces:**
 - Consumes: `ZoneSelector`, `chargerArbreZones` (Task 9), `validerDetails` (Task 8), `ChampDefinition` (Task 2).
 - Produces: `<DynamicElementFields champs={...} valeurs={...} />`, réutilisé par Task 14 indirectement (le type perso créé y redevient sélectionnable).
+
+- [ ] **Step 0: Ajouter le préfixe `elements` à `app/routes.ts`**
+
+Dans `prefix("proprietes/:proprieteId", [...])`, au même niveau que `batiments`/`zones`/`systemes` :
+
+```ts
+...prefix("elements", [
+  index("routes/_app/elements._index.tsx"),
+  route("nouveau", "routes/_app/elements.nouveau.tsx"),
+  route(":elementId/modifier", "routes/_app/elements.$elementId.modifier.tsx"),
+]),
+```
 
 C'est le cœur de l'étape : le choix du type dans le formulaire change dynamiquement les champs affichés, et la validation des `details` contre les `champs` du type est refaite côté serveur (jamais fait confiance au client — un `typeId` ou des champs falsifiés dans la requête HTTP sont revalidés contre le type réel chargé en base).
 
@@ -3593,10 +3650,19 @@ git commit -m "feat: CRUD élément avec formulaire dynamique généré depuis t
 
 **Files:**
 - Create: `app/components/ChampEditor.tsx`, `app/routes/_app/types.nouveau.tsx`
+- Modify: `app/routes.ts` (ajoute la route `types/nouveau`)
 
 **Interfaces:**
 - Consumes: `ChampDefinition`, `ChampGenre` (Task 2).
 - Produces: un type perso complet, immédiatement sélectionnable dans le formulaire d'élément (Task 13, la liste des types est rechargée par le `loader` à chaque navigation).
+
+- [ ] **Step 0: Ajouter la route `types/nouveau` à `app/routes.ts`**
+
+Dans `prefix("proprietes/:proprieteId", [...])`, après les préfixes de ressources :
+
+```ts
+route("types/nouveau", "routes/_app/types.nouveau.tsx"),
+```
 
 Aucune UI de modification/suppression d'un type (perso ou système) n'est construite à cette étape — seule la **création** d'un type perso est demandée par le prompt ("Création d'un type perso depuis l'interface, avec l'éditeur de champs"). La garde applicative de la décision verrouillée #9 (protéger les types système) s'appliquera quand une UI de modification sera construite ; elle n'a rien à protéger tant qu'aucune route ne permet de modifier un `type_element`.
 
