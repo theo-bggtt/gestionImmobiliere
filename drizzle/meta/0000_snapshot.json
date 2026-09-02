@@ -1,0 +1,1828 @@
+{
+  "id": "8a57689c-8453-4618-a8e9-33b6dad520b6",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "utilisateur_id": {
+          "name": "utilisateur_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expire_le": {
+          "name": "expire_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "session_utilisateur_id_utilisateur_id_fk": {
+          "name": "session_utilisateur_id_utilisateur_id_fk",
+          "tableFrom": "session",
+          "tableTo": "utilisateur",
+          "columnsFrom": [
+            "utilisateur_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.utilisateur": {
+      "name": "utilisateur",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mot_de_passe_hash": {
+          "name": "mot_de_passe_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "utilisateur_email_unique": {
+          "name": "utilisateur_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.batiment": {
+      "name": "batiment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "batiment_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'principal'"
+        },
+        "ordre": {
+          "name": "ordre",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "idx_batiment_propriete": {
+          "name": "idx_batiment_propriete",
+          "columns": [
+            {
+              "expression": "propriete_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "batiment_propriete_id_propriete_id_fk": {
+          "name": "batiment_propriete_id_propriete_id_fk",
+          "tableFrom": "batiment",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.niveau": {
+      "name": "niveau",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "batiment_id": {
+          "name": "batiment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ordinal": {
+          "name": "ordinal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ordre": {
+          "name": "ordre",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "idx_niveau_batiment": {
+          "name": "idx_niveau_batiment",
+          "columns": [
+            {
+              "expression": "batiment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "niveau_batiment_id_batiment_id_fk": {
+          "name": "niveau_batiment_id_batiment_id_fk",
+          "tableFrom": "niveau",
+          "tableTo": "batiment",
+          "columnsFrom": [
+            "batiment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.propriete": {
+      "name": "propriete",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "proprietaire_id": {
+          "name": "proprietaire_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adresse": {
+          "name": "adresse",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "egid": {
+          "name": "egid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_propriete_proprietaire": {
+          "name": "idx_propriete_proprietaire",
+          "columns": [
+            {
+              "expression": "proprietaire_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "propriete_proprietaire_id_utilisateur_id_fk": {
+          "name": "propriete_proprietaire_id_utilisateur_id_fk",
+          "tableFrom": "propriete",
+          "tableTo": "utilisateur",
+          "columnsFrom": [
+            "proprietaire_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.systeme": {
+      "name": "systeme",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "icone": {
+          "name": "icone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_systeme_propriete": {
+          "name": "idx_systeme_propriete",
+          "columns": [
+            {
+              "expression": "propriete_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "systeme_propriete_id_propriete_id_fk": {
+          "name": "systeme_propriete_id_propriete_id_fk",
+          "tableFrom": "systeme",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.zone": {
+      "name": "zone",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "niveau_id": {
+          "name": "niveau_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "zone_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ordre": {
+          "name": "ordre",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "idx_zone_propriete": {
+          "name": "idx_zone_propriete",
+          "columns": [
+            {
+              "expression": "propriete_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_zone_niveau": {
+          "name": "idx_zone_niveau",
+          "columns": [
+            {
+              "expression": "niveau_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "zone_propriete_id_propriete_id_fk": {
+          "name": "zone_propriete_id_propriete_id_fk",
+          "tableFrom": "zone",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "zone_niveau_id_niveau_id_fk": {
+          "name": "zone_niveau_id_niveau_id_fk",
+          "tableFrom": "zone",
+          "tableTo": "niveau",
+          "columnsFrom": [
+            "niveau_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "zone_parent_id_fk": {
+          "name": "zone_parent_id_fk",
+          "tableFrom": "zone",
+          "tableTo": "zone",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.type_element": {
+      "name": "type_element",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "icone": {
+          "name": "icone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origine": {
+          "name": "origine",
+          "type": "type_element_origine",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "champs": {
+          "name": "champs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "alias": {
+          "name": "alias",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        }
+      },
+      "indexes": {
+        "idx_type_element_nom_systeme_unique": {
+          "name": "idx_type_element_nom_systeme_unique",
+          "columns": [
+            {
+              "expression": "nom",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"type_element\".\"origine\" = 'systeme'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "type_element_propriete_id_propriete_id_fk": {
+          "name": "type_element_propriete_id_propriete_id_fk",
+          "tableFrom": "type_element",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "type_element_origine_propriete_coherente": {
+          "name": "type_element_origine_propriete_coherente",
+          "value": "(\"type_element\".\"origine\" = 'systeme' AND \"type_element\".\"propriete_id\" IS NULL) OR (\"type_element\".\"origine\" = 'perso' AND \"type_element\".\"propriete_id\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.element": {
+      "name": "element",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type_id": {
+          "name": "type_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zone_id": {
+          "name": "zone_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "systeme_id": {
+          "name": "systeme_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "niveau": {
+          "name": "niveau",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "alias": {
+          "name": "alias",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "recherche": {
+          "name": "recherche",
+          "type": "tsvector",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "maj_le": {
+          "name": "maj_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_element_propriete": {
+          "name": "idx_element_propriete",
+          "columns": [
+            {
+              "expression": "propriete_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_element_zone_id": {
+          "name": "idx_element_zone_id",
+          "columns": [
+            {
+              "expression": "zone_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_element_niveau": {
+          "name": "idx_element_niveau",
+          "columns": [
+            {
+              "expression": "niveau",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_element_type": {
+          "name": "idx_element_type",
+          "columns": [
+            {
+              "expression": "type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_element_recherche": {
+          "name": "idx_element_recherche",
+          "columns": [
+            {
+              "expression": "recherche",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
+        "idx_element_details": {
+          "name": "idx_element_details",
+          "columns": [
+            {
+              "expression": "details",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "element_propriete_id_propriete_id_fk": {
+          "name": "element_propriete_id_propriete_id_fk",
+          "tableFrom": "element",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "element_type_id_type_element_id_fk": {
+          "name": "element_type_id_type_element_id_fk",
+          "tableFrom": "element",
+          "tableTo": "type_element",
+          "columnsFrom": [
+            "type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "element_zone_id_zone_id_fk": {
+          "name": "element_zone_id_zone_id_fk",
+          "tableFrom": "element",
+          "tableTo": "zone",
+          "columnsFrom": [
+            "zone_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "element_systeme_id_systeme_id_fk": {
+          "name": "element_systeme_id_systeme_id_fk",
+          "tableFrom": "element",
+          "tableTo": "systeme",
+          "columnsFrom": [
+            "systeme_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "element_niveau_valide": {
+          "name": "element_niveau_valide",
+          "value": "\"element\".\"niveau\" BETWEEN 0 AND 3"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.fichier": {
+      "name": "fichier",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chemin": {
+          "name": "chemin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type_mime": {
+          "name": "type_mime",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "taille": {
+          "name": "taille",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_prise": {
+          "name": "date_prise",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "zone_id": {
+          "name": "zone_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "niveau": {
+          "name": "niveau",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "legende": {
+          "name": "legende",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exif_efface": {
+          "name": "exif_efface",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fichier_propriete_id_propriete_id_fk": {
+          "name": "fichier_propriete_id_propriete_id_fk",
+          "tableFrom": "fichier",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fichier_zone_id_zone_id_fk": {
+          "name": "fichier_zone_id_zone_id_fk",
+          "tableFrom": "fichier",
+          "tableTo": "zone",
+          "columnsFrom": [
+            "zone_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "fichier_niveau_valide": {
+          "name": "fichier_niveau_valide",
+          "value": "\"fichier\".\"niveau\" BETWEEN 0 AND 3"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.fichier_lien": {
+      "name": "fichier_lien",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fichier_id": {
+          "name": "fichier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cible_type": {
+          "name": "cible_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cible_id": {
+          "name": "cible_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "fichier_lien_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'general'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fichier_lien_fichier_id_fichier_id_fk": {
+          "name": "fichier_lien_fichier_id_fichier_id_fk",
+          "tableFrom": "fichier_lien",
+          "tableTo": "fichier",
+          "columnsFrom": [
+            "fichier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.plan": {
+      "name": "plan",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "plan_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "niveau_id": {
+          "name": "niveau_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_fichier_id": {
+          "name": "image_fichier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "echelle": {
+          "name": "echelle",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordre": {
+          "name": "ordre",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "plan_propriete_id_propriete_id_fk": {
+          "name": "plan_propriete_id_propriete_id_fk",
+          "tableFrom": "plan",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "plan_niveau_id_niveau_id_fk": {
+          "name": "plan_niveau_id_niveau_id_fk",
+          "tableFrom": "plan",
+          "tableTo": "niveau",
+          "columnsFrom": [
+            "niveau_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "plan_image_fichier_id_fichier_id_fk": {
+          "name": "plan_image_fichier_id_fichier_id_fk",
+          "tableFrom": "plan",
+          "tableTo": "fichier",
+          "columnsFrom": [
+            "image_fichier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.point": {
+      "name": "point",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "element_id": {
+          "name": "element_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "x": {
+          "name": "x",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "y": {
+          "name": "y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "point_element_id_element_id_fk": {
+          "name": "point_element_id_element_id_fk",
+          "tableFrom": "point",
+          "tableTo": "element",
+          "columnsFrom": [
+            "element_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "point_plan_id_plan_id_fk": {
+          "name": "point_plan_id_plan_id_fk",
+          "tableFrom": "point",
+          "tableTo": "plan",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.zone_geom": {
+      "name": "zone_geom",
+      "schema": "",
+      "columns": {
+        "zone_id": {
+          "name": "zone_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "polygone": {
+          "name": "polygone",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "zone_geom_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "zone_geom_zone_id_zone_id_fk": {
+          "name": "zone_geom_zone_id_zone_id_fk",
+          "tableFrom": "zone_geom",
+          "tableTo": "zone",
+          "columnsFrom": [
+            "zone_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "zone_geom_plan_id_plan_id_fk": {
+          "name": "zone_geom_plan_id_plan_id_fk",
+          "tableFrom": "zone_geom",
+          "tableTo": "plan",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "zone_geom_zone_id_plan_id_pk": {
+          "name": "zone_geom_zone_id_plan_id_pk",
+          "columns": [
+            "zone_id",
+            "plan_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.evenement": {
+      "name": "evenement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titre": {
+          "name": "titre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_debut": {
+          "name": "date_debut",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_fin": {
+          "name": "date_fin",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "niveau": {
+          "name": "niveau",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cout": {
+          "name": "cout",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "evenement_propriete_id_propriete_id_fk": {
+          "name": "evenement_propriete_id_propriete_id_fk",
+          "tableFrom": "evenement",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "evenement_niveau_valide": {
+          "name": "evenement_niveau_valide",
+          "value": "\"evenement\".\"niveau\" BETWEEN 0 AND 3"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.evenement_element": {
+      "name": "evenement_element",
+      "schema": "",
+      "columns": {
+        "evenement_id": {
+          "name": "evenement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "element_id": {
+          "name": "element_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "evenement_element_evenement_id_evenement_id_fk": {
+          "name": "evenement_element_evenement_id_evenement_id_fk",
+          "tableFrom": "evenement_element",
+          "tableTo": "evenement",
+          "columnsFrom": [
+            "evenement_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "evenement_element_element_id_element_id_fk": {
+          "name": "evenement_element_element_id_element_id_fk",
+          "tableFrom": "evenement_element",
+          "tableTo": "element",
+          "columnsFrom": [
+            "element_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "evenement_element_evenement_id_element_id_pk": {
+          "name": "evenement_element_evenement_id_element_id_pk",
+          "columns": [
+            "evenement_id",
+            "element_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.evenement_intervenant": {
+      "name": "evenement_intervenant",
+      "schema": "",
+      "columns": {
+        "evenement_id": {
+          "name": "evenement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "intervenant_id": {
+          "name": "intervenant_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "evenement_intervenant_evenement_id_evenement_id_fk": {
+          "name": "evenement_intervenant_evenement_id_evenement_id_fk",
+          "tableFrom": "evenement_intervenant",
+          "tableTo": "evenement",
+          "columnsFrom": [
+            "evenement_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "evenement_intervenant_intervenant_id_intervenant_id_fk": {
+          "name": "evenement_intervenant_intervenant_id_intervenant_id_fk",
+          "tableFrom": "evenement_intervenant",
+          "tableTo": "intervenant",
+          "columnsFrom": [
+            "intervenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "evenement_intervenant_evenement_id_intervenant_id_pk": {
+          "name": "evenement_intervenant_evenement_id_intervenant_id_pk",
+          "columns": [
+            "evenement_id",
+            "intervenant_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.garantie": {
+      "name": "garantie",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "element_id": {
+          "name": "element_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evenement_id": {
+          "name": "evenement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "debut": {
+          "name": "debut",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fin": {
+          "name": "fin",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reference": {
+          "name": "reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fichier_id": {
+          "name": "fichier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "garantie_element_id_element_id_fk": {
+          "name": "garantie_element_id_element_id_fk",
+          "tableFrom": "garantie",
+          "tableTo": "element",
+          "columnsFrom": [
+            "element_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "garantie_evenement_id_evenement_id_fk": {
+          "name": "garantie_evenement_id_evenement_id_fk",
+          "tableFrom": "garantie",
+          "tableTo": "evenement",
+          "columnsFrom": [
+            "evenement_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "garantie_fichier_id_fichier_id_fk": {
+          "name": "garantie_fichier_id_fichier_id_fk",
+          "tableFrom": "garantie",
+          "tableTo": "fichier",
+          "columnsFrom": [
+            "fichier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.intervenant": {
+      "name": "intervenant",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metier": {
+          "name": "metier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tel": {
+          "name": "tel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "niveau": {
+          "name": "niveau",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "intervenant_propriete_id_propriete_id_fk": {
+          "name": "intervenant_propriete_id_propriete_id_fk",
+          "tableFrom": "intervenant",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "intervenant_niveau_valide": {
+          "name": "intervenant_niveau_valide",
+          "value": "\"intervenant\".\"niveau\" BETWEEN 0 AND 3"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.partage": {
+      "name": "partage",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "propriete_id": {
+          "name": "propriete_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jeton": {
+          "name": "jeton",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "niveau_max": {
+          "name": "niveau_max",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "portee_zones": {
+          "name": "portee_zones",
+          "type": "integer[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::integer[]"
+        },
+        "portee_systemes": {
+          "name": "portee_systemes",
+          "type": "integer[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::integer[]"
+        },
+        "expire_le": {
+          "name": "expire_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoque_le": {
+          "name": "revoque_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "partage_propriete_id_propriete_id_fk": {
+          "name": "partage_propriete_id_propriete_id_fk",
+          "tableFrom": "partage",
+          "tableTo": "propriete",
+          "columnsFrom": [
+            "propriete_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "partage_jeton_unique": {
+          "name": "partage_jeton_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "jeton"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "partage_niveau_max_valide": {
+          "name": "partage_niveau_max_valide",
+          "value": "\"partage\".\"niveau_max\" BETWEEN 0 AND 3"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.batiment_type": {
+      "name": "batiment_type",
+      "schema": "public",
+      "values": [
+        "principal",
+        "annexe",
+        "garage",
+        "abri"
+      ]
+    },
+    "public.zone_type": {
+      "name": "zone_type",
+      "schema": "public",
+      "values": [
+        "interieur",
+        "exterieur",
+        "annexe",
+        "technique"
+      ]
+    },
+    "public.type_element_origine": {
+      "name": "type_element_origine",
+      "schema": "public",
+      "values": [
+        "systeme",
+        "perso"
+      ]
+    },
+    "public.fichier_lien_role": {
+      "name": "fichier_lien_role",
+      "schema": "public",
+      "values": [
+        "avant",
+        "apres",
+        "plaque",
+        "general"
+      ]
+    },
+    "public.plan_type": {
+      "name": "plan_type",
+      "schema": "public",
+      "values": [
+        "etage",
+        "situation"
+      ]
+    },
+    "public.zone_geom_source": {
+      "name": "zone_geom_source",
+      "schema": "public",
+      "values": [
+        "trace",
+        "importe"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
