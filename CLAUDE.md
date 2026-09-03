@@ -55,3 +55,14 @@ Never distinguish "doesn't exist" from "not yours" — always 404, both in these
 - French names throughout: files, DB columns/tables, route paths (`connexion`, `proprietes`, `batiments`), variables, comments. Keep this consistent in new code.
 - No path aliases (`~/`) — relative imports everywhere, by explicit choice (README decision #13).
 - Comments explain *why*, matching this file's own style — e.g. why a CHECK constraint isn't declared at the schema level, why a helper takes a generic `PgTable` and casts once. Don't add comments that restate the code.
+
+## Gestion GitHub
+
+Projet solo (theo-bggtt/gestionImmobiliere) : gestion via issues/PR depuis le 2026-09-03, pas de push direct sur master pour du travail non trivial.
+
+- **Issues** : à créer avant tout travail non trivial (feature, bug identifié en cours de route, refactor) — titre court, contexte, critères d'acceptation, labels type + étape. Vérifier d'abord avec `gh issue list` qu'elle n'existe pas déjà. Fix trivial (typo, une ligne, pas de logique) : commit direct, pas d'issue. Fermeture uniquement via `Closes #N` dans la PR, jamais à la main.
+- **Branches/PR** : une branche par issue (`type/description-courte`), titre de PR au format `type(scope): description` comme les commits. Corps court : Contexte / Changements / Tests effectués / Closes #N. `npm run typecheck` et les tests concernés doivent passer avant l'ouverture. Squash merge, suppression de la branche après merge.
+- **Labels** : `bug` (défaut GitHub, gardé), `docs`, `feature`, `chore`, `refactor`, `bloquant` (bug qui bloque l'étape en cours uniquement), `etape-N` (un par étape du plan, créé quand l'étape démarre). Pas de labels de priorité fine ni d'équipe — inutile en solo.
+- **Milestones** : un par étape (« Étape N »), regroupe les issues de cette étape, fermé quand l'étape est terminée. Les issues ouvertes du milestone en cours (`gh issue list --milestone "Étape X"`) sont la seule source de vérité pour le backlog, pas de TODO.md ni les fichiers `.decisions/prompt-etape-*.md`.
+- **Jamais sans demande explicite** : workflow GitHub Actions, template d'issue/PR élaboré, bot de triage, CODEOWNERS, ou autre artefact d'équipe.
+- Tout en français : titres, descriptions, labels, milestones.
