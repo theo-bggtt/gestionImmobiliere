@@ -14,6 +14,7 @@ import type { FacettesActives } from "../../lib/recherche/types";
 import { BarreRecherche, useAntiRebond } from "../../components/recherche/BarreRecherche";
 import { ListeResultats } from "../../components/recherche/ListeResultats";
 import { PastillesFacettes } from "../../components/recherche/PastillesFacettes";
+import { liensPropriete } from "../../components/recherche/liens";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
@@ -74,7 +75,7 @@ export default function EcranRecherche() {
 
       {actif ? (
         <ListeResultats
-          proprieteId={propriete.id}
+          liens={liensPropriete(propriete.id)}
           donnees={donnees}
           enCours={navigation.state === "loading"}
         />

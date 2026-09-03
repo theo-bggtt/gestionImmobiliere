@@ -1,18 +1,14 @@
 // app/components/recherche/ListeResultats.tsx
 import { Link } from "react-router";
 import { LIBELLE_MOTIF, type ReponseRecherche } from "../../lib/recherche/types";
-
-// Un résultat mène à sa fiche, c'est-à-dire à l'écran où on la complète
-// (décision #22 de l'étape 1 : il n'y a pas encore d'écran de consultation).
-const lienFiche = (proprieteId: number, elementId: number) =>
-  `/proprietes/${proprieteId}/elements/${elementId}/modifier`;
+import type { Liens } from "./liens";
 
 export function ListeResultats({
-  proprieteId,
+  liens,
   donnees,
   enCours,
 }: {
-  proprieteId: number;
+  liens: Liens;
   donnees: ReponseRecherche;
   enCours: boolean;
 }) {
@@ -36,7 +32,7 @@ export function ListeResultats({
                 </li>
               ))}
             </ul>
-            <Link to={`/proprietes/${proprieteId}/elements/nouveau`}>Ajouter un objet</Link>
+            {liens.ajout && <Link to={liens.ajout}>Ajouter un objet</Link>}
           </div>
         ) : (
           <p className="resultats-vide">Essayez un autre mot, ou parcourez les zones depuis l'accueil.</p>
@@ -54,14 +50,9 @@ export function ListeResultats({
       <ul className="resultats-liste">
         {resultats.map((r) => (
           <li key={r.id}>
-            <Link to={lienFiche(proprieteId, r.id)} className="resultat">
+            <Link to={liens.fiche(r.id)} className="resultat">
               {r.fichierId ? (
-                <img
-                  className="resultat-vignette"
-                  src={`/proprietes/${proprieteId}/fichiers/${r.fichierId}?taille=vignette`}
-                  alt=""
-                  loading="lazy"
-                />
+                <img className="resultat-vignette" src={liens.image(r.fichierId)} alt="" loading="lazy" />
               ) : (
                 <span className="resultat-vignette resultat-vignette-vide" aria-hidden="true">
                   {r.nom.slice(0, 1).toUpperCase()}

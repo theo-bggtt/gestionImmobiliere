@@ -40,8 +40,26 @@ export type Portee = {
 
 export const PORTEE_PROPRIETAIRE: Portee = { niveauMax: 3, zones: null, systemes: null };
 
-/** `niveau <= :niveauMax AND (:porteeVide OR zone ∈ portée OR système ∈ portée)`. */
-function clausePortee(portee: Portee) {
+/**
+ * Une portée qui mord, c'est-à-dire tout sauf celle du propriétaire. Deux
+ * surfaces décrivent le *fonds* et non les résultats — la grille de zones et
+ * les suggestions de types de l'état vide — et toutes deux divulguent par leur
+ * seule présence : une tuile « Local technique · 0 objet » dit qu'il existe un
+ * local technique, un type perso proposé dit comment le propriétaire nomme ses
+ * affaires. Elles se coupent d'après la portée, jamais d'après un paramètre
+ * que le prochain écran de partage pourrait oublier de passer.
+ */
+export const porteeRestreinte = (portee: Portee) =>
+  portee.niveauMax < PORTEE_PROPRIETAIRE.niveauMax || portee.zones !== null || portee.systemes !== null;
+
+/**
+ * `niveau <= :niveauMax AND (:porteeVide OR zone ∈ portée OR système ∈ portée)`.
+ *
+ * Exportée : la fiche et l'image d'un partage sont deux surfaces de plus à
+ * filtrer, et elles doivent l'être par cette clause-ci, pas par une seconde
+ * écriture de la même idée qui dériverait au premier changement.
+ */
+export function clausePortee(portee: Portee) {
   const vide = portee.zones === null && portee.systemes === null;
   return sql`e.niveau <= ${portee.niveauMax}
     AND (${vide}::boolean
@@ -72,7 +90,7 @@ type LigneResultat = {
 
 // Le chemin sert à distinguer deux zones homonymes dans deux bâtiments.
 // Une zone sans niveau est extérieure — c'est le seul cas où niveauId est nul.
-const cheminZone = (l: { batimentNom: string | null; niveauNom: string | null }) =>
+export const cheminZone = (l: { batimentNom: string | null; niveauNom: string | null }) =>
   l.niveauNom ? [l.batimentNom, l.niveauNom].filter(Boolean).join(" · ") : "Extérieur";
 
 export async function rechercher(options: {
@@ -90,6 +108,21 @@ export async function rechercher(options: {
   const limite = Math.min(Math.max(options.limite ?? LIMITE_DEFAUT, 1), LIMITE_MAX);
   const decalage = Math.max(options.decalage ?? 0, 0);
   const texteVide = q.length === 0;
+  const restreinte = porteeRestreinte(portee);
+
+  // `element.recherche` indexe TOUTES les valeurs de `details`, en poids D, y
+  // compris celles des champs dont le `niveauMin` dépasse le plafond d'un
+  // partage. Les rendre cherchables serait un oracle : le porteur du lien ne
+  // voit pas le numéro de série, mais il pourrait le confirmer en le tapant,
+  // et l'étiquette « détails » le lui dirait. Sous portée restreinte, le
+  // poids D est donc retiré du vecteur avant la comparaison.
+  //
+  // C'est plus large que nécessaire — un champ de niveau « public » devient
+  // lui aussi introuvable par sa valeur — mais l'index ne sait pas de quel
+  // champ vient un lexème, et se tromper du côté large est le seul sens
+  // acceptable de l'erreur. Corollaire mesuré : `ts_filter` interdit l'index
+  // GIN, la requête d'un partage parcourt les fiches de la propriété.
+  const vecteur = restreinte ? sql`ts_filter(e.recherche, '{a,b,c}')` : sql`e.recherche`;
 
   const depart = performance.now();
 
@@ -122,7 +155,8 @@ export async function rechercher(options: {
         WHEN to_tsvector(${CONFIG}, t.nom) @@ q.tsq_ou THEN 'type'
         WHEN to_tsvector(${CONFIG}, z.nom) @@ q.tsq_ou THEN 'zone'
         WHEN to_tsvector(${CONFIG}, coalesce(s.nom, '')) @@ q.tsq_ou THEN 'systeme'
-        WHEN to_tsvector(${CONFIG}, coalesce((SELECT string_agg(value, ' ') FROM jsonb_each_text(e.details)), '')) @@ q.tsq_ou THEN 'details'
+        WHEN ${!restreinte}::boolean
+         AND to_tsvector(${CONFIG}, coalesce((SELECT string_agg(value, ' ') FROM jsonb_each_text(e.details)), '')) @@ q.tsq_ou THEN 'details'
       END AS motif
     FROM element e
     CROSS JOIN q
@@ -141,11 +175,11 @@ export async function rechercher(options: {
     ) ph ON true
     WHERE e.propriete_id = ${proprieteId}
       AND ${clausePortee(portee)}
-      AND (${texteVide}::boolean OR e.recherche @@ q.tsq)
+      AND (${texteVide}::boolean OR ${vecteur} @@ q.tsq)
       AND ${clauseFacette(sql.raw("e.zone_id"), facettes.zones)}
       AND ${clauseFacette(sql.raw("e.systeme_id"), facettes.systemes)}
       AND ${clauseFacette(sql.raw("e.type_id"), facettes.types)}
-    ORDER BY ts_rank(e.recherche, q.tsq) DESC, e.nom ASC
+    ORDER BY ts_rank(${vecteur}, q.tsq) DESC, e.nom ASC
     LIMIT ${limite} OFFSET ${decalage}
   `);
 
@@ -164,7 +198,12 @@ export async function rechercher(options: {
   }));
 
   const total = lignes.rows[0]?.total ?? 0;
-  const typesProches = resultats.length === 0 && !texteVide ? await chercherTypesProches(proprieteId, q) : [];
+  // Sous portée restreinte, aucune suggestion : le catalogue système ne dit
+  // rien de la propriété, mais les types perso, si.
+  const typesProches =
+    resultats.length === 0 && !texteVide && !porteeRestreinte(portee)
+      ? await chercherTypesProches(proprieteId, q)
+      : [];
 
   return {
     q,
@@ -239,6 +278,11 @@ export async function chargerFacettes(
  * fin de liste, avec leur nombre d'objets et la photo la plus récente
  * rattachée à l'un d'eux. Pas de photo n'est pas un cas d'erreur : la case
  * affiche alors un aplat, jamais une image cassée.
+ *
+ * Le propriétaire garde ses zones vides — c'est un fait de structure, pas un
+ * score de complétude, et il doit pouvoir y capturer. Sous portée restreinte,
+ * une zone sans objet visible disparaît : l'afficher divulguerait qu'elle
+ * existe (« compter, c'est divulguer », étape 3).
  */
 export async function chargerZonesVignettes(
   proprieteId: number,
@@ -279,6 +323,7 @@ export async function chargerZonesVignettes(
       LIMIT 1
     ) ph ON true
     WHERE z.propriete_id = ${proprieteId}
+      AND (${!porteeRestreinte(portee)}::boolean OR coalesce(c.nombre, 0) > 0)
     ORDER BY (z.niveau_id IS NULL), b.ordre NULLS FIRST, n.ordinal, z.ordre, z.nom
   `);
 

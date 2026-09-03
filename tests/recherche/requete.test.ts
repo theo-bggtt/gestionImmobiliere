@@ -150,7 +150,7 @@ describe("requête de recherche", () => {
   });
 });
 
-describe("filtre de visibilité (inerte aujourd'hui, branché à l'étape 3)", () => {
+describe("filtre de visibilité (branché sur les partages à l'étape 3)", () => {
   it("écarte ce qui dépasse niveauMax", async () => {
     const j = await creerJeu();
     await db.insert(element).values([
@@ -201,9 +201,13 @@ describe("filtre de visibilité (inerte aujourd'hui, branché à l'étape 3)", (
     const facettes = await chargerFacettes(j.p.id, portee);
     expect(facettes.zones.map((z) => z.nom)).toEqual(["Cuisine"]);
 
+    // L'étape 2 laissait « Local technique · 0 objet » dans la grille sous
+    // portée restreinte. L'étape 3 l'interdit : la tuile disait qu'il existe
+    // un local technique, et compter, c'est divulguer. Le propriétaire, lui,
+    // garde ses zones vides — vérifié plus bas, « grille de zones de l'accueil ».
     const grille = await chargerZonesVignettes(j.p.id, portee);
-    expect(grille.find((z) => z.nom === "Local technique")!.nombre).toBe(0);
-    expect(grille.find((z) => z.nom === "Cuisine")!.nombre).toBe(1);
+    expect(grille.map((z) => z.nom)).toEqual(["Cuisine"]);
+    expect(grille[0].nombre).toBe(1);
   });
 });
 
