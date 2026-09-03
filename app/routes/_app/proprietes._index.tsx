@@ -22,7 +22,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const [cree] = await db.insert(propriete).values({ proprietaireId: utilisateurId, nom }).returning();
-  return redirect(`/proprietes/${cree.id}`);
+  // Vers le démarrage, pas vers l'accueil : une propriété neuve n'a ni zone ni
+  // niveau, et l'accueil n'aurait qu'une page vide à montrer. L'écran de
+  // démarrage se dérobe de lui-même si la propriété n'est plus vierge.
+  return redirect(`/proprietes/${cree.id}/demarrer`);
 }
 
 export default function MesProprietes() {
@@ -45,8 +48,11 @@ export default function MesProprietes() {
       <Form method="post">
         <label>
           Nom
-          <input type="text" name="nom" required />
+          {/* Un surnom, pas une adresse : ce nom est le titre de toute page de
+              partage, lue par le locataire comme par le jardinier. */}
+          <input type="text" name="nom" required placeholder="Chez moi, le chalet, la maison de famille..." />
         </label>
+        <p className="champ-aide">Un surnom suffit. Ce nom apparaît en titre des liens que vous partagerez.</p>
         {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
         <button type="submit">Créer</button>
       </Form>

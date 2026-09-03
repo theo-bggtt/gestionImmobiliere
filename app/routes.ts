@@ -10,6 +10,13 @@ export default [
     index("routes/_app/proprietes._index.tsx"),
     ...prefix("proprietes/:proprieteId", [
       index("routes/_app/proprietes.$proprieteId._index.tsx"),
+      // Le démarrage. `demarrer/adresse` est une route de ressource : la
+      // recherche d'adresse ne navigue pas, sinon les réponses déjà données
+      // seraient perdues à chaque essai.
+      ...prefix("demarrer", [
+        index("routes/_app/demarrer._index.tsx"),
+        route("adresse", "routes/_app/demarrer.adresse.tsx"),
+      ]),
       ...prefix("batiments", [
         index("routes/_app/batiments._index.tsx"),
         route("nouveau", "routes/_app/batiments.nouveau.tsx"),

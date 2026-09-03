@@ -179,10 +179,12 @@ WHERE e.niveau <= :niveau_max
 
 ### Étape 7 — Accueil sans page blanche · 2 jours
 > Construite avant l'étape 5, voir la note d'ordre en tête de section.
-- [ ] Squelette de niveaux et de zones proposé, éditable, à corriger — **le chemin
-      principal, saisi à la main**, qui doit marcher sans RegBL et hors de Suisse
-- [ ] Adresse → EGID via RegBL en **enrichissement optionnel** greffé dessus,
+- [x] Squelette de niveaux et de zones proposé, éditable, à corriger — **le chemin
+      principal, saisi à la main**, qui marche sans RegBL et hors de Suisse
+- [x] Adresse → EGID via RegBL en **enrichissement optionnel** greffé dessus,
       jamais comme condition d'existence du squelette
+- [x] Ni l'adresse ni l'EGID stockés : décision #82 du README, tenue par un
+      balayage de toutes les colonnes de toutes les tables
 
 ## En attente d'un besoin réel
 
