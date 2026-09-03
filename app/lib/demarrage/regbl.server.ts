@@ -12,7 +12,7 @@
 // Les faire transiter par le navigateur pour trier ensuite, ce serait les
 // avoir déjà sortis. Ce qui remonte à l'écran est construit ici, et ne
 // contient ni EGID, ni parcelle, ni coordonnées.
-import type { CandidatBatiment, ReponsesDemarrage, ResultatRegbl } from "./types";
+import type { CandidatBatiment, ReponsesPreremplies, ResultatRegbl } from "./types";
 import { NIVEAUX_HABITABLES_MAX, NIVEAUX_HABITABLES_MIN } from "./types";
 
 export type { CandidatBatiment, ResultatRegbl };
@@ -20,8 +20,14 @@ export type { CandidatBatiment, ResultatRegbl };
 const RACINE = "https://api3.geo.admin.ch/rest/services";
 const COUCHE = "ch.bfs.gebaeude_wohnungs_register";
 
-/** Court volontairement : le chemin manuel attend derrière, il ne doit pas attendre longtemps. */
-const DELAI_MS = 3500;
+/**
+ * Budget de l'OPÉRATION ENTIÈRE, pas de chaque requête. Il en part une pour la
+ * recherche, puis une par candidat : un délai par requête laissait le pire cas
+ * au double de sa valeur, pour un module dont tout le propos est de ne pas
+ * faire attendre le chemin manuel. Un seul signal, créé à l'entrée, passé à
+ * tous les appels.
+ */
+const BUDGET_MS = 4000;
 /** Cinq candidats à résoudre, cinq requêtes. Au-delà la liste ne se lit plus. */
 const MAX_CANDIDATS = 5;
 
@@ -47,11 +53,8 @@ type AttributsRegbl = {
   gbauj?: number | null;
 };
 
-async function lireJson<T>(url: string): Promise<T | null> {
-  const reponse = await fetch(url, {
-    signal: AbortSignal.timeout(DELAI_MS),
-    headers: { accept: "application/json" },
-  });
+async function lireJson<T>(url: string, echeance: AbortSignal): Promise<T | null> {
+  const reponse = await fetch(url, { signal: echeance, headers: { accept: "application/json" } });
   if (!reponse.ok) return null;
   return (await reponse.json()) as T;
 }
@@ -85,14 +88,19 @@ function nombre(valeur: unknown): number | null {
  * comptent jamais. Déduire un sous-sol de `gastw` serait faux sur une majorité
  * de maisons ; la question est posée au propriétaire.
  */
-export function deduireReponses(attrs: AttributsRegbl): CandidatBatiment["reponses"] {
+export function deduireReponses(attrs: AttributsRegbl): ReponsesPreremplies {
   const gklas = nombre(attrs.gklas);
   const logements = nombre(attrs.ganzwhg);
 
   // 1110 est la maison individuelle. Sans classe, on retombe sur le nombre de
   // logements, et sans lui non plus sur la maison — le cas dominant du produit.
-  const forme: ReponsesDemarrage["forme"] =
+  const forme =
     gklas === 1110 ? "maison" : gklas !== null ? "appartement" : logements !== null && logements > 1 ? "appartement" : "maison";
+
+  // `gastw` est le nombre d'étages du BÂTIMENT. Pour un logement, il ne dit
+  // rien du logement : le squelette n'en fait qu'un niveau, et l'annoncer
+  // serait promettre huit niveaux pour en livrer un.
+  if (forme === "appartement") return { forme };
 
   const etages = nombre(attrs.gastw);
   const niveauxHabitables =
@@ -137,11 +145,15 @@ export async function chercherBatiments(adresse: string): Promise<ResultatRegbl>
   const saisie = adresse.trim();
   if (saisie.length < 4) return { statut: "aucun" };
 
+  // Un seul signal pour toute l'opération : la recherche et les détails se
+  // partagent le budget, ils ne l'additionnent pas.
+  const echeance = AbortSignal.timeout(BUDGET_MS);
+
   try {
     const url =
       `${RACINE}/api/SearchServer?type=locations&origin=address` +
       `&limit=${MAX_CANDIDATS}&searchText=${encodeURIComponent(saisie)}`;
-    const recherche = await lireJson<ResultatRecherche>(url);
+    const recherche = await lireJson<ResultatRecherche>(url, echeance);
     if (!recherche) return { statut: "indisponible" };
 
     // Piège 1. `fuzzy` arrive en booléen ou en chaîne "true" selon les routes.
@@ -156,11 +168,15 @@ export async function chercherBatiments(adresse: string): Promise<ResultatRegbl>
 
     if (identifiants.length === 0) return { statut: "aucun" };
 
+    // Un détail qui échoue ou qui épuise le budget retire SON candidat, pas
+    // les autres : quatre bâtiments proposés valent mieux qu'un écran vide
+    // parce que le cinquième traînait.
     const resolus = await Promise.all(
       identifiants.map(async ({ etiquette, id }) => {
         const detail = await lireJson<{ feature?: { attributes?: AttributsRegbl } }>(
           `${RACINE}/ech/MapServer/${COUCHE}/${encodeURIComponent(id)}?lang=fr`,
-        );
+          echeance,
+        ).catch(() => null);
         const attrs = detail?.feature?.attributes;
         return attrs ? { etiquette, attrs } : null;
       }),
@@ -175,7 +191,11 @@ export async function chercherBatiments(adresse: string): Promise<ResultatRegbl>
         reponses: deduireReponses(r.attrs),
       }));
 
-    return candidats.length > 0 ? { statut: "ok", candidats } : { statut: "aucun" };
+    if (candidats.length > 0) return { statut: "ok", candidats };
+    // La recherche avait trouvé des adresses et aucun détail n'est revenu :
+    // c'est le registre qui n'a pas répondu, pas l'adresse qui est inconnue.
+    // Les deux mènent aux mêmes questions, ils ne disent pas la même chose.
+    return { statut: "indisponible" };
   } catch (erreur) {
     // Réseau coupé, délai dépassé, JSON illisible. On journalise (le silence
     // rendrait une panne durable invisible) et l'écran reste utilisable.

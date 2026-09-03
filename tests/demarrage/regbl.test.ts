@@ -54,8 +54,16 @@ describe("deduireReponses", () => {
   });
 
   it("borne le nombre de niveaux : un immeuble de 8 étages ne fait pas 8 niveaux de saisie", () => {
-    expect(deduireReponses({ gastw: 59 }).niveauxHabitables).toBe(8);
-    expect(deduireReponses({ gastw: 0 }).niveauxHabitables).toBe(1);
+    expect(deduireReponses({ gastw: 59 })).toEqual({ forme: "maison", niveauxHabitables: 8 });
+    expect(deduireReponses({ gastw: 0 })).toEqual({ forme: "maison", niveauxHabitables: 1 });
+  });
+
+  it("ne pré-remplit PAS les niveaux d'un logement : gastw compte les étages de l'immeuble", () => {
+    // Le défaut corrigé : « Immeuble, 21 logements · 8 niveaux » pré-remplissait
+    // 8, et `composerSquelette` en produisait un seul (`logement ? [0]`). Pire,
+    // le 8 restait dans l'état si le propriétaire repassait sur « maison ».
+    expect(deduireReponses(ATTRS_IMMEUBLE)).toEqual({ forme: "appartement" });
+    expect(deduireReponses({ ganzwhg: 12, gastw: 8 })).toEqual({ forme: "appartement" });
   });
 
   it("ne déduit JAMAIS le sous-sol : gastw ne compte pas les caves", () => {
@@ -63,7 +71,9 @@ describe("deduireReponses", () => {
     // réponse `sousSol`. Le champ n'existe pas dans ce que le RegBL pré-remplit,
     // il est demandé au propriétaire.
     for (const attrs of [ATTRS_VILLA, ATTRS_IMMEUBLE, { gastw: 1 }, { gastw: 8 }, {}]) {
-      expect(Object.keys(deduireReponses(attrs)).sort()).toEqual(["forme", "niveauxHabitables"]);
+      const cles = Object.keys(deduireReponses(attrs));
+      expect(cles).not.toContain("sousSol");
+      expect(cles.filter((c) => c !== "forme" && c !== "niveauxHabitables")).toEqual([]);
     }
   });
 });
@@ -188,5 +198,69 @@ describe("chercherBatiments", () => {
 
     expect(await chercherBatiments("ab")).toEqual({ statut: "aucun" });
     expect(espion).not.toHaveBeenCalled();
+  });
+
+  it("dépense un seul budget pour toute l'opération, pas un par requête", async () => {
+    // Le défaut corrigé : un délai PAR requête laissait le pire cas au double,
+    // la recherche puis les détails. Le signal partagé est ce qui le tient, et
+    // c'est vérifiable sans horloge : toutes les requêtes portent le même.
+    const signaux: Array<AbortSignal | null | undefined> = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string | URL, init?: RequestInit) => {
+      signaux.push(init?.signal);
+      return String(url).includes("SearchServer")
+        ? reponse({
+            results: [
+              { attrs: { label: "Unterdorfstrasse 10 <b>3800 Matten</b>", origin: "address", links: [LIEN_REGBL] } },
+              { attrs: { label: "Alte Unterdorfstrasse 10 <b>3800 Matten</b>", origin: "address", links: [LIEN_REGBL] } },
+            ],
+          })
+        : reponse({ feature: { attributes: ATTRS_VILLA } });
+    }));
+
+    await chercherBatiments("Dorfstrasse 10 3800 Interlaken");
+    expect(signaux.length).toBe(3);
+    expect(new Set(signaux).size).toBe(1);
+  });
+
+  it("un détail qui n'arrive pas retire son candidat, pas les autres", async () => {
+    // Corollaire du budget partagé : sans ce rattrapage, le candidat le plus
+    // lent emporterait l'écran entier au moment où l'échéance tombe.
+    let detail = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: string | URL) => {
+      if (String(url).includes("SearchServer")) {
+        return reponse({
+          results: [
+            { attrs: { label: "Unterdorfstrasse 10 <b>3800 Matten</b>", origin: "address", links: [LIEN_REGBL] } },
+            { attrs: { label: "Alte Unterdorfstrasse 10 <b>3800 Matten</b>", origin: "address", links: [LIEN_REGBL] } },
+          ],
+        });
+      }
+      detail += 1;
+      if (detail === 1) throw new DOMException("The operation was aborted.", "TimeoutError");
+      return reponse({ feature: { attributes: ATTRS_VILLA } });
+    }));
+
+    const resultat = await chercherBatiments("Dorfstrasse 10 3800 Interlaken");
+    expect(resultat.statut).toBe("ok");
+    if (resultat.statut !== "ok") return;
+    expect(resultat.candidats).toHaveLength(1);
+    // Le rang est celui de la liste servie, pas celui de la recherche : c'est
+    // lui qui sert de clé à l'écran.
+    expect(resultat.candidats[0].rang).toBe(0);
+  });
+
+  it("dit « indisponible », pas « aucun », quand la recherche trouve mais qu'aucun détail ne revient", async () => {
+    // Les deux mènent aux mêmes questions et ne disent pas la même chose :
+    // « réessayez » n'est pas « votre adresse n'est pas dans le registre ».
+    vi.stubGlobal("fetch", vi.fn(async (url: string | URL) => {
+      if (String(url).includes("SearchServer")) {
+        return reponse({
+          results: [{ attrs: { label: "Rue du Rhône 14 <b>1204 Genève</b>", origin: "address", links: [LIEN_REGBL] } }],
+        });
+      }
+      throw new DOMException("The operation was aborted.", "TimeoutError");
+    }));
+
+    expect(await chercherBatiments("Rue du Rhone 14 Geneve")).toEqual({ statut: "indisponible" });
   });
 });

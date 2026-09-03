@@ -66,8 +66,23 @@ export type CandidatBatiment = {
   /** « Maison individuelle · 2 niveaux · 1962 » — pour reconnaître SON bâtiment. */
   description: string;
   /** Le pré-remplissage, et rien d'autre. Pas de `sousSol` : il se demande. */
-  reponses: Pick<ReponsesDemarrage, "forme" | "niveauxHabitables">;
+  reponses: ReponsesPreremplies;
 };
+
+/**
+ * Ce que le registre a le droit de pré-remplir. Union et non `Pick`, parce
+ * que `gastw` compte les étages de l'IMMEUBLE : pour un logement, le nombre
+ * de niveaux du bâtiment ne dit rien du nombre de niveaux du logement, et
+ * `composerSquelette` n'en tient d'ailleurs aucun compte (`logement ? [0]`).
+ * Le pré-remplir affichait « 8 niveaux » pour en produire un seul, et laissait
+ * un 8 fantôme dans l'état si le propriétaire repassait ensuite sur « maison ».
+ *
+ * Même technique que l'absence de `sousSol` : l'écrire est une erreur de
+ * compilation, pas une revue de code à espérer.
+ */
+export type ReponsesPreremplies =
+  | { forme: "maison"; niveauxHabitables: number }
+  | { forme: "appartement" };
 
 export type ResultatRegbl =
   | { statut: "ok"; candidats: CandidatBatiment[] }

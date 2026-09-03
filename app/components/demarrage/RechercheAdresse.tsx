@@ -107,6 +107,10 @@ function Resultats({
     );
   }
 
+  // Le candidat retenu, et non son seul rang : le message de confirmation
+  // dépend de ce que le registre a répondu, pas de la place dans la liste.
+  const retenu = resultat.candidats.find((c) => c.rang === choisi) ?? null;
+
   return (
     <>
       <p className="demarrage-aide" id="demarrage-choix">
@@ -127,10 +131,20 @@ function Resultats({
           </li>
         ))}
       </ul>
-      {choisi !== null && (
+      {retenu && (
         <p className="demarrage-avis" role="status">
           Réponses pré-remplies. Vérifiez-les, en particulier le sous-sol&nbsp;: le registre ne
           recense pas les caves.
+          {/* Le registre décrit l'immeuble ; la structure décrit le logement.
+              Sans cette phrase, « 8 niveaux » juste au-dessus annonce sept
+              niveaux qui ne seront jamais créés. */}
+          {retenu.reponses.forme === "appartement" && (
+            <>
+              {" "}
+              Le nombre de niveaux indiqué ci-dessus est celui de l'immeuble&nbsp;: la structure
+              proposée ne couvrira que votre logement.
+            </>
+          )}
         </p>
       )}
     </>

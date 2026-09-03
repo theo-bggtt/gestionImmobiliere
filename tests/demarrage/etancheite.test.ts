@@ -141,12 +141,16 @@ describe("le parcours complet ne stocke ni adresse ni EGID", () => {
     if (trouve.statut !== "ok") return;
 
     // 2. Il choisit un candidat, corrige, et confirme.
+    // Comme l'écran : les valeurs par défaut d'abord, le pré-remplissage
+    // par-dessus. Un logement ne pré-remplit pas le nombre de niveaux —
+    // `gastw` compte les étages de l'immeuble, pas ceux du logement.
     const squelette = composerSquelette({
-      ...trouve.candidats[0].reponses,
+      niveauxHabitables: 2,
       sousSol: true,
       combles: false,
       garage: true,
       exterieur: true,
+      ...trouve.candidats[0].reponses,
     });
     const corps = new FormData();
     corps.set("squelette", JSON.stringify(squelette));
