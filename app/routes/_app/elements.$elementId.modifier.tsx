@@ -1,6 +1,6 @@
 // app/routes/_app/elements.$elementId.modifier.tsx
 import { useState } from "react";
-import { Form, redirect, useActionData, useLoaderData } from "react-router";
+import { Form, Link, redirect, useActionData, useLoaderData } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "../../db/client";
@@ -10,6 +10,7 @@ import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
 import { zoneAppartientALaPropriete, systemeAppartientALaPropriete } from "../../lib/db/elementRefs.server";
 import { chargerArbreZones } from "../../lib/zoneTree";
+import { chargerPlans, chargerPlansDeLElement } from "../../lib/plans/plans.server";
 import { validerDetails } from "../../lib/forms/champSchema";
 import { extraireDetails } from "../../lib/forms/extraireDetails";
 import { ZoneSelector } from "../../components/ZoneSelector";
@@ -48,14 +49,27 @@ async function chargerPhotos(proprieteId: number, elementId: number) {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
   const propriete = await requireProprieteAccess(utilisateurId, params.proprieteId);
-  const [e, types, arbre, systemes, photos] = await Promise.all([
+  const [e, types, arbre, systemes, photos, plans, poses] = await Promise.all([
     chargerElement(propriete.id, params.elementId),
     chargerTypesDisponibles(propriete.id),
     chargerArbreZones(propriete.id),
     db.select().from(systeme).where(eq(systeme.proprieteId, propriete.id)),
     chargerPhotos(propriete.id, Number(params.elementId)),
+    chargerPlans(propriete.id),
+    chargerPlansDeLElement(propriete.id, Number(params.elementId)),
   ]);
-  return { propriete, element: e, types, arbre, systemes, photos };
+  // Un objet déjà placé reste plaçable ailleurs : l'écran le montre (« déjà
+  // sur Sous-sol ») plutôt que de l'interdire.
+  const posesParPlan = new Set(poses.map((p) => p.planId));
+  return {
+    propriete,
+    element: e,
+    types,
+    arbre,
+    systemes,
+    photos,
+    plans: plans.map((p) => ({ id: p.id, nom: p.nom, pose: posesParPlan.has(p.id) })),
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -107,7 +121,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ModifierElement() {
-  const { propriete, element, types, arbre, systemes, photos } = useLoaderData<typeof loader>();
+  const { propriete, element, types, arbre, systemes, photos, plans } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [typeId, setTypeId] = useState<number>(element.typeId);
   const typeChoisi = types.find((t) => t.id === typeId);
@@ -136,6 +150,26 @@ export default function ModifierElement() {
                 <a href={`/proprietes/${propriete.id}/fichiers/${photo.id}`}>
                   <img src={`/proprietes/${propriete.id}/fichiers/${photo.id}?taille=vignette`} alt="" loading="lazy" />
                 </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="fiche-plans">
+        <h2>Sur le plan</h2>
+        {plans.length === 0 ? (
+          <p className="fiche-photos-vide">
+            Aucun plan. <Link to={`/proprietes/${propriete.id}/plans/nouveau`}>En ajouter un</Link>.
+          </p>
+        ) : (
+          <ul className="fiche-plans-liste">
+            {plans.map((p) => (
+              <li key={p.id}>
+                <Link to={`/proprietes/${propriete.id}/plans?plan=${p.id}&element=${element.id}`}>
+                  {p.pose ? `Déplacer sur ${p.nom}` : `Placer sur ${p.nom}`}
+                </Link>
+                {p.pose && <span className="selecteur-secondaire"> · déjà posé</span>}
               </li>
             ))}
           </ul>

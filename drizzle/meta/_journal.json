@@ -43,6 +43,13 @@
       "when": 1788418375454,
       "tag": "0005_recherche_poids_accents",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788452668262,
+      "tag": "0006_plan_points_contraintes",
+      "breakpoints": true
     }
   ]
 }

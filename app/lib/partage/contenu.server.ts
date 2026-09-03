@@ -19,6 +19,14 @@ import {
 } from "../recherche/recherche.server";
 import type { FacettesActives, FacettesDisponibles, ReponseRecherche, ZoneVignette } from "../recherche/types";
 import { lireParamsRecherche, rechercheActive } from "../recherche/params";
+import {
+  chargerPlans,
+  chargerPointsDuPlan,
+  chargerPolygonesDuPlan,
+  clausePlanVisible,
+  etiqueter,
+} from "../plans/plans.server";
+import type { PlanEtiquete, PointPlan, PolygoneZone } from "../plans/types";
 import { champsVisibles, type ChampRendu } from "./champs";
 import { porteeDuPartage, type Partage } from "./partage.server";
 
@@ -35,6 +43,21 @@ export type DonneesPartage = {
   recherche: ReponseRecherche;
   facettesDisponibles: FacettesDisponibles;
   zones: ZoneVignette[];
+  /** Le sélecteur de niveau, vide dès qu'aucun plan n'est visible pour ce lien. */
+  plans: PlanEtiquete[];
+  plan: PlanAffiche | null;
+};
+
+/**
+ * Le plan servi à un porteur de lien. Son étiquette vient du niveau et jamais
+ * de `plan.nom` : le propriétaire y écrit ce qu'il veut, l'adresse comprise.
+ */
+export type PlanAffiche = {
+  id: number;
+  etiquette: string;
+  imageFichierId: number | null;
+  points: PointPlan[];
+  polygones: PolygoneZone[];
 };
 
 export type FichePartage = {
@@ -68,6 +91,7 @@ export async function chargerContenuPartage(
 ): Promise<DonneesPartage> {
   const portee = porteeDuPartage(p);
   const { q, facettes, decalage } = lireParamsRecherche(url.searchParams);
+  const liste = rechercheActive(q, facettes);
 
   const [recherche, facettesDisponibles, zones] = await Promise.all([
     rechercher({ proprieteId: p.proprieteId, q, portee, facettes, decalage }),
@@ -75,14 +99,56 @@ export async function chargerContenuPartage(
     chargerZonesVignettes(p.proprieteId, portee),
   ]);
 
+  // Le plan est la seconde entrée pour retrouver un objet, pas un filtre : il
+  // accompagne la grille et s'efface dès qu'on cherche. Rien n'est donc chargé
+  // pendant une recherche.
+  const plans = liste ? [] : etiqueter(await chargerPlans(p.proprieteId, portee));
+
   return {
     proprieteNom,
     q,
     facettes,
-    liste: rechercheActive(q, facettes),
+    liste,
     recherche,
     facettesDisponibles,
     zones,
+    plans,
+    plan: await chargerPlanAffiche(p, plans, url.searchParams.get("plan")),
+  };
+}
+
+/**
+ * Le plan demandé par l'URL, à condition qu'il figure dans la liste déjà
+ * filtrée — sinon le premier. Un identifiant écrit à la main dans l'URL ne
+ * peut donc pas servir un plan hors portée : il retombe sur le premier plan
+ * visible, sans dire qu'il en existait un autre.
+ */
+async function chargerPlanAffiche(
+  p: Partage,
+  plans: PlanEtiquete[],
+  demande: string | null,
+): Promise<PlanAffiche | null> {
+  if (plans.length === 0) return null;
+  const choisi = plans.find((x) => x.id === Number(demande)) ?? plans[0];
+  const portee = porteeDuPartage(p);
+
+  const [complet] = await db.execute<{ imageFichierId: number | null }>(sql`
+    SELECT image_fichier_id AS "imageFichierId"
+    FROM plan
+    WHERE id = ${choisi.id} AND propriete_id = ${p.proprieteId}
+  `).then((r) => r.rows);
+
+  const [points, polygones] = await Promise.all([
+    chargerPointsDuPlan(p.proprieteId, choisi.id, portee),
+    chargerPolygonesDuPlan(p.proprieteId, choisi.id, portee),
+  ]);
+
+  return {
+    id: choisi.id,
+    etiquette: choisi.etiquette,
+    imageFichierId: complet?.imageFichierId ?? null,
+    points,
+    polygones,
   };
 }
 
@@ -161,16 +227,14 @@ export async function chargerFichePartage(
   };
 }
 
-/**
- * Le droit de lire un octet d'image vient de la fiche à laquelle il est
- * rattaché : au moins un élément lié doit passer le filtre. Un fichier
- * rattaché à une fiche filtrée répond 404, jamais 403.
- */
-export async function chargerFichierPartage(p: Partage, fichierIdBrut: string | undefined) {
-  const fichierId = idOu404(fichierIdBrut);
-  const portee = porteeDuPartage(p);
+type FichierServi = { id: number; chemin: string; typeMime: string };
 
-  const lignes = await db.execute<{ id: number; chemin: string; typeMime: string }>(sql`
+/**
+ * Premier droit : la photo d'une fiche. L'octet est lisible parce que la
+ * FICHE à laquelle il est rattaché passe le filtre — au moins un élément lié.
+ */
+async function photoDUneFiche(p: Partage, fichierId: number): Promise<FichierServi | null> {
+  const lignes = await db.execute<FichierServi>(sql`
     SELECT f.id, f.chemin, f.type_mime AS "typeMime"
     FROM fichier f
     WHERE f.id = ${fichierId}
@@ -182,11 +246,46 @@ export async function chargerFichierPartage(p: Partage, fichierIdBrut: string | 
         WHERE fl.fichier_id = f.id
           AND fl.cible_type = 'element'
           AND e.propriete_id = ${p.proprieteId}
-          AND ${clausePortee(portee)}
+          AND ${clausePortee(porteeDuPartage(p))}
       )
   `);
+  return lignes.rows[0] ?? null;
+}
 
-  const f = lignes.rows[0];
+/**
+ * Second droit : l'image d'un plan. Un plan n'est rattaché par aucun
+ * `fichier_lien` — son image pend à `plan.image_fichier_id` — donc le premier
+ * droit lui répondrait 404. Ce qui l'autorise n'est pas une fiche mais le
+ * PLAN lui-même, s'il est listé dans la portée du partage : exactement le
+ * prédicat du sélecteur de niveau, `clausePlanVisible`, et non une seconde
+ * écriture de la même idée.
+ *
+ * Deux fonctions et pas un `OR` dans une requête : les deux droits n'ont ni
+ * la même origine ni la même durée de vie, et un `OR` rendrait impossible de
+ * dire lequel a ouvert la porte.
+ */
+async function imageDUnPlan(p: Partage, fichierId: number): Promise<FichierServi | null> {
+  const lignes = await db.execute<FichierServi>(sql`
+    SELECT f.id, f.chemin, f.type_mime AS "typeMime"
+    FROM fichier f
+    JOIN plan pl ON pl.image_fichier_id = f.id
+    WHERE f.id = ${fichierId}
+      AND f.propriete_id = ${p.proprieteId}
+      AND pl.propriete_id = ${p.proprieteId}
+      AND ${clausePlanVisible(porteeDuPartage(p), sql.raw("pl"))}
+    LIMIT 1
+  `);
+  return lignes.rows[0] ?? null;
+}
+
+/**
+ * Le droit de lire un octet d'image vient de la fiche qui le porte, ou du
+ * plan dont il est l'image. Ni l'un ni l'autre : 404, jamais 403 — un 403
+ * confirmerait l'existence du fichier.
+ */
+export async function chargerFichierPartage(p: Partage, fichierIdBrut: string | undefined) {
+  const fichierId = idOu404(fichierIdBrut);
+  const f = (await photoDUneFiche(p, fichierId)) ?? (await imageDUnPlan(p, fichierId));
   if (!f) throw new Response("Introuvable", { status: 404 });
   return f;
 }

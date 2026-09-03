@@ -20,6 +20,7 @@
     "drizzle-orm": "^0.44.0",
     "express": "^4.21.0",
     "isbot": "^5",
+    "pdfjs-dist": "^6.3.289",
     "pg": "^8.13.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

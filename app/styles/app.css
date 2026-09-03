@@ -544,3 +544,155 @@ input.partage-lien { font-size: 0.8rem; min-height: 40px; }
 @media (min-width: 560px) {
   .grille-zones { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── Le plan ──────────────────────────────────────────────────────── */
+
+.plan-bloc { margin-bottom: 24px; }
+.plan-titre { font-size: 1rem; margin: 0 0 8px; }
+
+/* Le sélecteur de niveau : des liens, y compris sur la page de partage qui
+   ne charge aucun script. */
+.plan-niveaux { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.plan-niveau {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid var(--trait);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--texte);
+  text-decoration: none;
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+.plan-niveau-actif { background: var(--accent); border-color: var(--accent); color: #fff; }
+.plan-niveau-deja { opacity: 0.7; font-size: 0.75rem; }
+
+.plan-cadre {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  /* Sans ça, le navigateur défile la page au lieu de laisser les événements
+     pointeur déplacer le plan. */
+  touch-action: none;
+}
+.plan-cadre-placement { cursor: crosshair; }
+.plan-couche { position: relative; transform-origin: 0 0; }
+.plan-image { display: block; width: 100%; height: auto; user-select: none; }
+.plan-apercu { max-width: 240px; border: 1px solid var(--trait); border-radius: var(--rayon); }
+
+/* Vide avant l'étape 6 : rien n'écrit dans zone_geom. */
+.plan-geom { position: absolute; inset: 0; width: 100%; height: 100%; }
+.plan-geom polygon { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: var(--accent); stroke-width: 0.3; }
+
+.plan-ancre { position: absolute; }
+.plan-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  color: var(--texte);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.plan-point-pastille {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+.plan-point-nom {
+  font-size: 0.7rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.plan-point-grappe {
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+.plan-grappe-liste {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+/* Sans script, une pastille numérotée et sa légende sous le plan : deux
+   points superposés restent atteignables, et rien n'est rogné par le cadre. */
+.plan-numero {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 24px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+.plan-legende { margin: 10px 0 0; padding-left: 22px; font-size: 0.9rem; }
+.plan-legende li { margin: 4px 0; }
+
+.plan-outils { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.plan-placement { font-size: 0.85rem; color: var(--accent); }
+.plan-liste { margin-top: 10px; font-size: 0.9rem; }
+.plan-liste ul { list-style: none; padding: 0; }
+.plan-liste li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--trait); }
+
+.fiche-plans-liste { list-style: none; padding: 0; margin: 0 0 16px; }
+.fiche-plans-liste li { padding: 6px 0; }
+
+/* ── Éditeur d'image de plan ──────────────────────────────────────── */
+
+.editeur-plan { margin: 12px 0; }
+.editeur-apercu { position: relative; display: inline-block; max-width: 100%; touch-action: none; }
+.editeur-canevas { display: block; max-width: 100%; height: auto; border: 1px solid var(--trait); border-radius: var(--rayon); }
+.editeur-cadre { position: absolute; border: 2px dashed var(--accent); background: rgb(31 79 70 / 0.08); cursor: move; }
+.editeur-poignee {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 4px;
+}
+.editeur-poignee-hg { top: -11px; left: -11px; cursor: nwse-resize; }
+.editeur-poignee-hd { top: -11px; right: -11px; cursor: nesw-resize; }
+.editeur-poignee-bg { bottom: -11px; left: -11px; cursor: nesw-resize; }
+.editeur-poignee-bd { bottom: -11px; right: -11px; cursor: nwse-resize; }
+.editeur-outils { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0; }
+.editeur-angle { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.85rem; }
+.editeur-angle input { width: 160px; min-height: 0; margin: 0; }
+.editeur-note { color: var(--texte-doux); font-size: 0.8rem; margin: 6px 0; }
+.editeur-fichier { display: block; }
