@@ -50,6 +50,13 @@
       "when": 1788452668262,
       "tag": "0006_plan_points_contraintes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788471777496,
+      "tag": "0007_evenement_type_ferme",
+      "breakpoints": true
     }
   ]
 }

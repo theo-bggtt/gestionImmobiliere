@@ -49,6 +49,18 @@ export default [
         route("points", "routes/_app/plans.points.tsx"),
         route(":planId/modifier", "routes/_app/plans.$planId.modifier.tsx"),
       ]),
+      // L'historique. La chronologie du propriétaire rend le même composant
+      // que celle d'un partage, avec l'autre jeu de liens.
+      ...prefix("evenements", [
+        index("routes/_app/evenements._index.tsx"),
+        route("nouveau", "routes/_app/evenements.nouveau.tsx"),
+        route(":evenementId/modifier", "routes/_app/evenements.$evenementId.modifier.tsx"),
+      ]),
+      ...prefix("intervenants", [
+        index("routes/_app/intervenants._index.tsx"),
+        route("nouveau", "routes/_app/intervenants.nouveau.tsx"),
+        route(":intervenantId/modifier", "routes/_app/intervenants.$intervenantId.modifier.tsx"),
+      ]),
       // Gestion des liens de partage. La prévisualisation rend le composant
       // et le loader réels de `/p/:jeton`, encadrés d'un bandeau.
       ...prefix("partages", [
@@ -77,6 +89,8 @@ export default [
   ...prefix("p/:jeton", [
     index("routes/_partage/page.tsx"),
     route("objets/:elementId", "routes/_partage/objet.tsx"),
+    route("historique", "routes/_partage/historique.tsx"),
+    route("evenements/:evenementId", "routes/_partage/evenement.tsx"),
     route("fichiers/:fichierId", "routes/_partage/fichiers.tsx"),
   ]),
 ] satisfies RouteConfig;

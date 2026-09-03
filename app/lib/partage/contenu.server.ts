@@ -29,6 +29,15 @@ import {
 import type { PlanEtiquete, PointPlan, PolygoneZone } from "../plans/types";
 import { champsVisibles, type ChampRendu } from "./champs";
 import { porteeDuPartage, type Partage } from "./partage.server";
+import {
+  chargerChronologie,
+  chargerEvenementDetail,
+  chargerEvenementsDeLElement,
+  clauseEvenementVisible,
+  compterEvenementsVisibles,
+} from "../historique/historique.server";
+import type { Chronologie } from "../historique/historique.server";
+import { estTypeEvenement, type EvenementDetail, type EvenementListe, type TypeEvenement } from "../historique/types";
 
 // Le nom du partage (« Jardinier Marc ») n'entre pas dans ces types : c'est
 // l'étiquette privée du propriétaire, elle n'a rien à faire sur la page du
@@ -46,6 +55,10 @@ export type DonneesPartage = {
   /** Le sélecteur de niveau, vide dès qu'aucun plan n'est visible pour ce lien. */
   plans: PlanEtiquete[];
   plan: PlanAffiche | null;
+  /** Zéro : pas d'entrée « Historique ». Une entrée vers une page vide dit
+      qu'il existe un historique, comme une tuile « 0 objet » dit qu'il existe
+      une zone. */
+  nbEvenements: number;
 };
 
 /**
@@ -70,7 +83,20 @@ export type FichePartage = {
   systemeNom: string | null;
   champs: ChampRendu[];
   photos: number[];
+  /** L'historique de l'objet, filtré par `clauseEvenementVisible`. */
+  evenements: EvenementListe[];
 };
+
+/** La chronologie servie à un lien, et le filtre par type qu'elle porte. */
+export type HistoriquePartage = {
+  proprieteNom: string;
+  types: TypeEvenement[];
+} & Chronologie;
+
+/** Un événement déplié, servi à un lien. Ni `cout`, ni `niveau`. */
+export type EvenementPartage = {
+  proprieteNom: string;
+} & EvenementDetail;
 
 function idOu404(brut: string | undefined): number {
   const id = Number(brut);
@@ -93,10 +119,11 @@ export async function chargerContenuPartage(
   const { q, facettes, decalage } = lireParamsRecherche(url.searchParams);
   const liste = rechercheActive(q, facettes);
 
-  const [recherche, facettesDisponibles, zones] = await Promise.all([
+  const [recherche, facettesDisponibles, zones, nbEvenements] = await Promise.all([
     rechercher({ proprieteId: p.proprieteId, q, portee, facettes, decalage }),
     chargerFacettes(p.proprieteId, portee),
     chargerZonesVignettes(p.proprieteId, portee),
+    compterEvenementsVisibles(p.proprieteId, portee),
   ]);
 
   // Le plan est la seconde entrée pour retrouver un objet, pas un filtre : il
@@ -114,6 +141,7 @@ export async function chargerContenuPartage(
     zones,
     plans,
     plan: await chargerPlanAffiche(p, plans, url.searchParams.get("plan")),
+    nbEvenements,
   };
 }
 
@@ -224,7 +252,38 @@ export async function chargerFichePartage(
     systemeNom: f.systemeNom,
     champs: champsVisibles(f.champs ?? [], f.details ?? {}, p.niveauMax),
     photos: photos.rows.map((l) => l.id),
+    // L'historique de l'objet passe sa PROPRE clause, et non celle de la
+    // fiche : un objet visible peut porter un événement qui déborde sur une
+    // zone masquée, et c'est justement le cas que le quantificateur universel
+    // ferme. Voir `clauseEvenementVisible`.
+    evenements: await chargerEvenementsDeLElement(p.proprieteId, elementId, portee),
   };
+}
+
+/**
+ * La chronologie d'un lien. Le filtre par type vient de l'URL, parce que la
+ * page ne charge aucun script : un formulaire GET, des liens, rien d'autre.
+ * Un type inconnu est ignoré et non rejeté — une URL bricolée ne mérite pas
+ * une erreur, elle mérite la page entière.
+ */
+export async function chargerHistoriquePartage(
+  p: Partage,
+  proprieteNom: string,
+  url: URL,
+): Promise<HistoriquePartage> {
+  const types = [...new Set(url.searchParams.getAll("type"))].filter(estTypeEvenement);
+  const chronologie = await chargerChronologie(p.proprieteId, { portee: porteeDuPartage(p), types });
+  return { proprieteNom, types, ...chronologie };
+}
+
+/** Un événement, si et seulement s'il passe le filtre. Filtré = 404. */
+export async function chargerEvenementPartage(
+  p: Partage,
+  proprieteNom: string,
+  evenementIdBrut: string | undefined,
+): Promise<EvenementPartage> {
+  const detail = await chargerEvenementDetail(p.proprieteId, idOu404(evenementIdBrut), porteeDuPartage(p));
+  return { proprieteNom, ...detail };
 }
 
 type FichierServi = { id: number; chemin: string; typeMime: string };
@@ -279,13 +338,54 @@ async function imageDUnPlan(p: Partage, fichierId: number): Promise<FichierServi
 }
 
 /**
- * Le droit de lire un octet d'image vient de la fiche qui le porte, ou du
- * plan dont il est l'image. Ni l'un ni l'autre : 404, jamais 403 — un 403
- * confirmerait l'existence du fichier.
+ * Troisième droit : la photo d'un événement. `fichier_lien` est polymorphe et
+ * porte désormais `cible_type = 'evenement'` ; ce qui autorise l'octet n'est
+ * ni une fiche ni un plan, mais l'ÉVÉNEMENT, s'il passe `clauseEvenementVisible`.
+ *
+ * Comme pour les deux autres, `fichier.niveau` est délibérément ignoré : la
+ * capture y écrit toujours 3, le lire masquerait toutes les photos de tous les
+ * partages. La permission est portée par ce à quoi le fichier est rattaché.
+ *
+ * Trois fonctions et pas un `OR` : on doit pouvoir dire lequel des trois
+ * droits a ouvert la porte, et les trois n'ont ni la même origine ni la même
+ * durée de vie.
+ *
+ * Il n'y a pas de quatrième branche pour `cible_type = 'intervenant'`, et
+ * c'est une décision : ce qu'on attache à un artisan est une carte de visite
+ * ou une facture, et une facture est du `cout` sous un autre nom. Les fichiers
+ * d'un intervenant ne sortent d'aucun lien.
+ */
+async function photoDUnEvenement(p: Partage, fichierId: number): Promise<FichierServi | null> {
+  const lignes = await db.execute<FichierServi>(sql`
+    SELECT f.id, f.chemin, f.type_mime AS "typeMime"
+    FROM fichier f
+    WHERE f.id = ${fichierId}
+      AND f.propriete_id = ${p.proprieteId}
+      AND EXISTS (
+        SELECT 1
+        FROM fichier_lien fl
+        JOIN evenement ev ON ev.id = fl.cible_id
+        WHERE fl.fichier_id = f.id
+          AND fl.cible_type = 'evenement'
+          AND ev.propriete_id = ${p.proprieteId}
+          AND ${clauseEvenementVisible(porteeDuPartage(p))}
+      )
+    LIMIT 1
+  `);
+  return lignes.rows[0] ?? null;
+}
+
+/**
+ * Le droit de lire un octet d'image vient de la fiche qui le porte, du plan
+ * dont il est l'image, ou de l'événement qu'il documente. Aucun des trois :
+ * 404, jamais 403 — un 403 confirmerait l'existence du fichier.
  */
 export async function chargerFichierPartage(p: Partage, fichierIdBrut: string | undefined) {
   const fichierId = idOu404(fichierIdBrut);
-  const f = (await photoDUneFiche(p, fichierId)) ?? (await imageDUnPlan(p, fichierId));
+  const f =
+    (await photoDUneFiche(p, fichierId)) ??
+    (await imageDUnPlan(p, fichierId)) ??
+    (await photoDUnEvenement(p, fichierId));
   if (!f) throw new Response("Introuvable", { status: 404 });
   return f;
 }

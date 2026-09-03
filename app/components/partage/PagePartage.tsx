@@ -62,6 +62,16 @@ export function PagePartage({ donnees, jeton }: { donnees: DonneesPartage; jeton
               aucun plan n'est visible pour ce lien — pas de titre orphelin. */}
           {donnees.plan && <PlanStatique plan={donnees.plan} plans={donnees.plans} liens={liens} />}
           {donnees.zones.length > 0 && <GrilleZones zones={donnees.zones} liens={liens} />}
+          {/* Pas d'entrée vers une chronologie vide : elle apprendrait qu'il
+              existe un historique, comme une tuile « 0 objet » apprend qu'il
+              existe une zone. */}
+          {donnees.nbEvenements > 0 && (
+            <p className="accueil-lien-filtres">
+              <a href={liens.historique}>
+                Historique ({donnees.nbEvenements})
+              </a>
+            </p>
+          )}
         </>
       )}
     </div>

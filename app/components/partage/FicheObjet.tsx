@@ -3,6 +3,7 @@
 // `niveauMin` : ce composant ne décide rien, et rien de ce qui est masqué
 // n'est passé jusqu'ici — sinon la valeur serait dans la source de la page.
 import type { FichePartage } from "../../lib/partage/contenu.server";
+import { Chronologie } from "../historique/Chronologie";
 import { liensPartage } from "../recherche/liens";
 
 export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: string }) {
@@ -45,6 +46,16 @@ export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: strin
           </ul>
         )}
       </section>
+
+      {/* Absente quand elle serait vide : un titre « Historique » suivi de
+          « aucun événement » dirait qu'il y en a ailleurs. Les événements
+          servis ici ont passé leur propre clause, pas celle de la fiche. */}
+      {fiche.evenements.length > 0 && (
+        <section>
+          <h2>Historique</h2>
+          <Chronologie evenements={fiche.evenements} liens={liens} />
+        </section>
+      )}
     </div>
   );
 }

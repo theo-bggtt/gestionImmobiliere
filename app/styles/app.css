@@ -822,3 +822,96 @@ input.partage-lien { font-size: 0.8rem; min-height: 40px; }
 .demarrage-actions [role="alert"] { flex-basis: 100%; color: var(--alerte); margin: 0; }
 .demarrage-passer { color: var(--texte-doux); background: none; border: none; cursor: pointer; font-size: 0.95rem; }
 .accueil-demarrer { margin: 12px 0 4px; }
+
+/* ── Historique ───────────────────────────────────────────────────── */
+
+/* La chronologie est une liste, pas une frise : sur un téléphone une frise
+   verticale coûte une colonne entière de gouttière pour un trait. */
+.chrono { list-style: none; margin: 0; padding: 0; }
+.chrono-ligne {
+  padding: 12px 0;
+  border-top: 1px solid var(--trait);
+}
+.chrono-ligne:first-child { border-top: none; }
+.chrono-date {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texte-doux);
+}
+.chrono-type {
+  padding: 1px 8px;
+  border: 1px solid var(--trait);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.chrono-titre { margin: 2px 0; font-size: 1.05rem; }
+.chrono-titre a { text-decoration: none; }
+.chrono-titre a:hover { text-decoration: underline; }
+.chrono-objets { list-style: none; margin: 4px 0 0; padding: 0; font-size: 0.9rem; }
+.chrono-objets li { padding: 1px 0; }
+.chrono-objet-zone { color: var(--texte-doux); }
+.chrono-vide { color: var(--texte-doux); margin: 12px 0; }
+
+.evenement-description { white-space: pre-wrap; margin: var(--gouttiere) 0; }
+
+.liste-intervenants { list-style: none; margin: 0; padding: 0; }
+.liste-intervenants li { padding: 12px 0; border-top: 1px solid var(--trait); }
+.liste-intervenants li:first-child { border-top: none; }
+
+/* ── Formulaires de l'historique ──────────────────────────────────── */
+
+.formulaire-evenement { display: flex; flex-direction: column; gap: var(--gouttiere); }
+.formulaire-evenement label { display: flex; flex-direction: column; gap: 4px; }
+.formulaire-evenement input[type="text"],
+.formulaire-evenement input[type="date"],
+.formulaire-evenement input[type="tel"],
+.formulaire-evenement input[type="email"],
+.formulaire-evenement select,
+.formulaire-evenement textarea {
+  min-height: 44px;
+  padding: 8px 10px;
+  font: inherit;
+  border: 1px solid var(--trait);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--texte);
+}
+.formulaire-evenement textarea { min-height: 88px; resize: vertical; }
+.formulaire-evenement button[type="submit"] { min-height: var(--cible); padding: 0 24px; font-size: 1rem; }
+.formulaire-evenement [role="alert"] { color: var(--alerte); margin: 0; }
+
+.formulaire-ligne { display: flex; gap: 12px; flex-wrap: wrap; }
+.formulaire-ligne > label { flex: 1 1 160px; }
+
+.formulaire-aide { margin: 0; font-size: 0.85rem; color: var(--texte-doux); }
+.formulaire-detail { color: var(--texte-doux); font-size: 0.9rem; }
+
+/* Un fait, pas une alarme : l'événement sans objet lié est parfaitement
+   valide, il ne sort simplement d'aucun lien. */
+.formulaire-avis { margin: 0 0 8px; font-size: 0.9rem; }
+.formulaire-avis-fort { color: var(--alerte); }
+
+.formulaire-liaisons {
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  padding: 12px;
+  margin: 0;
+}
+.formulaire-liaisons legend { padding: 0 6px; font-weight: 600; }
+/* Plafonné puis déroulant : une propriété meublée a des dizaines d'objets, et
+   la liste ne doit pas repousser le bouton d'enregistrement hors de l'écran. */
+.formulaire-cases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.formulaire-cases li { padding: 2px 0; }
+.formulaire-cases label { flex-direction: row; align-items: center; gap: 8px; min-height: 36px; }
+.formulaire-cases input[type="checkbox"] { width: 20px; height: 20px; flex: none; }

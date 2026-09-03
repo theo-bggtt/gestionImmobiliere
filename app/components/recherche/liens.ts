@@ -21,6 +21,10 @@ export type Liens = {
   image: (fichierId: number, taille?: Taille) => string;
   /** Le plan d'un niveau. Le sélecteur est une liste de liens, sans script. */
   plan: (planId: number) => string;
+  /** La chronologie. Le filtre par type y est un formulaire GET, sans script. */
+  historique: string;
+  /** Un événement. Côté propriétaire, c'est son écran de modification (décision #22). */
+  evenement: (evenementId: number) => string;
   /** Création d'un objet. Absente d'un partage : la route est protégée. */
   ajout?: string;
 };
@@ -33,6 +37,8 @@ export const liensPropriete = (proprieteId: number): Liens => ({
   zone: (id) => `/proprietes/${proprieteId}/recherche?zone=${id}`,
   image: (id, taille = "vignette") => `/proprietes/${proprieteId}/fichiers/${id}${suffixe(taille)}`,
   plan: (id) => `/proprietes/${proprieteId}/plans?plan=${id}`,
+  historique: `/proprietes/${proprieteId}/evenements`,
+  evenement: (id) => `/proprietes/${proprieteId}/evenements/${id}/modifier`,
   ajout: `/proprietes/${proprieteId}/elements/nouveau`,
 });
 
@@ -41,4 +47,6 @@ export const liensPartage = (jeton: string): Liens => ({
   zone: (id) => `/p/${jeton}?zone=${id}`,
   image: (id, taille = "vignette") => `/p/${jeton}/fichiers/${id}${suffixe(taille)}`,
   plan: (id) => `/p/${jeton}?plan=${id}`,
+  historique: `/p/${jeton}/historique`,
+  evenement: (id) => `/p/${jeton}/evenements/${id}`,
 });
