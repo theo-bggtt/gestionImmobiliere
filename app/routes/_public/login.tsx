@@ -1,4 +1,5 @@
 // app/routes/_public/login.tsx
+import { useEffect } from "react";
 import { Form, useActionData, useSearchParams } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { eq } from "drizzle-orm";
@@ -25,6 +26,14 @@ export default function Connexion() {
   const actionData = useActionData<typeof action>();
   const [searchParams] = useSearchParams();
   const depuis = searchParams.get("depuis") ?? "/";
+
+  // Passer par cet écran veut dire déconnexion ou session expirée : les pages
+  // authentifiées que le service worker garde en coquille n'ont plus rien à
+  // faire là. La boîte d'envoi, elle, est épargnée — elle contient des
+  // captures que personne n'a encore vues passer.
+  useEffect(() => {
+    if ("caches" in window) void caches.delete("coquille-v1");
+  }, []);
 
   return (
     <main>

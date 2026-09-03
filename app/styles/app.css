@@ -1,0 +1,297 @@
+/* app/styles/app.css
+   Style sobre (décision verrouillée #8). L'essentiel du fichier sert le flux
+   de capture : sur un téléphone, des cibles trop petites coûtent des secondes
+   et des reprises, c'est-à-dire le budget entier des 30 secondes. */
+
+:root {
+  --fond: #faf9f7;
+  --surface: #ffffff;
+  --texte: #1b1b19;
+  --texte-doux: #6b6b64;
+  --trait: #e3e0d9;
+  --accent: #1f4f46;
+  --accent-clair: #2c6c60;
+  --alerte: #8c2f1f;
+  --rayon: 12px;
+  --gouttiere: 16px;
+  /* Plancher de 56 px : la taille d'un pouce, pas celle d'un curseur. */
+  --cible: 56px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 var(--gouttiere); }
+h2 { font-size: 1.1rem; margin: 0 0 0.5rem; }
+a { color: var(--accent); }
+
+/* ── Charpente ────────────────────────────────────────────────────── */
+
+.app-tete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px var(--gouttiere);
+  background: var(--surface);
+  border-bottom: 1px solid var(--trait);
+}
+.app-marque { font-weight: 600; text-decoration: none; }
+.app-compte { margin-left: auto; color: var(--texte-doux); font-size: 0.85rem; }
+.app-corps {
+  padding: var(--gouttiere);
+  /* Place pour la barre de capture fixée en bas. */
+  padding-bottom: calc(var(--cible) + 48px + env(safe-area-inset-bottom));
+  max-width: 720px;
+}
+
+nav { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ── Boutons et formulaires ───────────────────────────────────────── */
+
+button, .bouton-primaire, .bouton-discret {
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--rayon);
+}
+.bouton-primaire {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  min-height: var(--cible);
+  padding: 0 24px;
+  font-weight: 600;
+  flex: 1;
+}
+.bouton-primaire:disabled { background: var(--texte-doux); }
+.bouton-discret {
+  background: transparent;
+  border: 1px solid var(--trait);
+  color: var(--texte-doux);
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+label { display: block; margin-bottom: 12px; }
+input[type="text"], input[type="email"], input[type="password"], input[type="number"],
+input[type="date"], input[type="search"], select, textarea {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  margin-top: 4px;
+  border: 1px solid var(--trait);
+  border-radius: 8px;
+  font: inherit;
+  background: var(--surface);
+}
+form button[type="submit"]:not(.bouton-discret) {
+  min-height: 44px;
+  padding: 0 20px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── Barre de capture ─────────────────────────────────────────────── */
+
+.capture-barre {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  padding: 10px var(--gouttiere) calc(10px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--fond) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--trait);
+}
+
+/* Un `label` : le clic natif atteint l'input et ouvre le viseur sans passer
+   par du JavaScript, seule façon fiable de le faire sur Safari iOS. */
+.capture-declencheur {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--cible);
+  margin: 0;
+  border-radius: var(--rayon);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.capture-principal { flex: 2; background: var(--accent); color: #fff; }
+.capture-secondaire { flex: 1; background: var(--surface); border: 1px solid var(--trait); color: var(--texte); }
+
+.capture-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Feuille de confirmation ──────────────────────────────────────── */
+
+.feuille-fond {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(20, 20, 18, 0.55);
+}
+.feuille {
+  width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+  padding: 14px var(--gouttiere) calc(14px + env(safe-area-inset-bottom));
+}
+.feuille-photo { display: flex; justify-content: center; }
+.feuille-photo img {
+  max-height: 34vh;
+  max-width: 100%;
+  border-radius: var(--rayon);
+  object-fit: contain;
+}
+
+.feuille-lignes { margin: 14px 0 8px; border: 1px solid var(--trait); border-radius: var(--rayon); overflow: hidden; }
+.ligne {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--cible);
+  padding: 0 14px;
+  background: var(--surface);
+  border: none;
+  border-bottom: 1px solid var(--trait);
+  border-radius: 0;
+  text-align: left;
+}
+.ligne:last-child { border-bottom: none; }
+.ligne:disabled { opacity: 1; cursor: default; }
+.ligne-cle { color: var(--texte-doux); font-size: 0.85rem; width: 64px; flex: none; }
+.ligne-valeur { font-weight: 600; flex: 1; }
+.ligne:not(:disabled) .ligne-valeur::after { content: " ›"; color: var(--texte-doux); font-weight: 400; }
+
+.feuille-nom {
+  width: 100%;
+  min-height: 40px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 4px 2px;
+  text-align: left;
+  color: var(--texte-doux);
+  font-size: 0.9rem;
+}
+.feuille-nom-champ { margin-bottom: 8px; }
+.feuille-erreur { color: var(--alerte); margin: 4px 0; }
+.feuille-actions { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+
+/* ── Sélecteur plein écran ────────────────────────────────────────── */
+
+.selecteur { display: flex; flex-direction: column; min-height: 60vh; }
+.selecteur-tete { display: flex; align-items: center; gap: 8px; }
+.selecteur-tete h2 { margin: 0; }
+.selecteur-retour {
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+}
+.selecteur-filtre { margin: 8px 0; }
+.selecteur-liste { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+.selecteur-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-height: var(--cible);
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--trait);
+  border-radius: 0;
+  text-align: left;
+}
+.selecteur-option-active { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.selecteur-principal { font-weight: 600; }
+.selecteur-secondaire { color: var(--texte-doux); font-size: 0.82rem; }
+.selecteur-vide { padding: 16px 12px; color: var(--texte-doux); }
+
+/* ── Confirmation, file d'attente, aide ───────────────────────────── */
+
+.confirmation {
+  position: fixed;
+  left: var(--gouttiere);
+  right: var(--gouttiere);
+  bottom: calc(var(--cible) + 26px + env(safe-area-inset-bottom));
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--rayon);
+  background: var(--texte);
+  color: var(--fond);
+  font-size: 0.9rem;
+}
+.confirmation-texte { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.confirmation a { color: #9fd8c8; font-weight: 600; }
+.confirmation-attente { color: #b9b6ae; }
+
+.file-indicateur {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 0.82rem;
+}
+.file-indicateur button { border: none; background: transparent; color: var(--accent); font-weight: 600; padding: 4px; }
+.file-indicateur-erreur { background: color-mix(in srgb, var(--alerte) 14%, transparent); color: var(--alerte); }
+.file-indicateur-erreur button { color: var(--alerte); }
+
+.aide-installation {
+  position: fixed;
+  left: var(--gouttiere);
+  right: var(--gouttiere);
+  bottom: calc(var(--cible) + 26px + env(safe-area-inset-bottom));
+  z-index: 15;
+  padding: 12px 14px;
+  border-radius: var(--rayon);
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+.aide-installation p { margin: 0 0 10px; }
+
+/* ── Fiche ────────────────────────────────────────────────────────── */
+
+.fiche-photos { margin-bottom: 24px; }
+.fiche-photos-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fiche-photos-tete .capture-declencheur { min-height: 40px; padding: 0 14px; flex: none; font-size: 0.9rem; }
+.fiche-photos-vide { color: var(--texte-doux); }
+.galerie { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 12px 0 0; padding: 0; }
+.galerie img { width: 104px; height: 104px; object-fit: cover; border-radius: 8px; display: block; }

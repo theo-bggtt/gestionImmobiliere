@@ -27,8 +27,12 @@ services:
       PORT: 3000
       DATABASE_URL: postgres://${POSTGRES_USER:-gestion}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gestion_immobiliere}
       SESSION_SECRET: ${SESSION_SECRET:?définir SESSION_SECRET dans .env}
+      STOCKAGE_RACINE: /donnees/fichiers
     ports:
       - "3000:3000"
+    volumes:
+      - fichiers_data:/donnees
 
 volumes:
   postgres_data:
+  fichiers_data:

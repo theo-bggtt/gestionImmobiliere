@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { element, typeElement, systeme } from "../../db/schema/index";
+import { element, typeElement, systeme, fichier, fichierLien } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
@@ -14,6 +14,7 @@ import { validerDetails } from "../../lib/forms/champSchema";
 import { extraireDetails } from "../../lib/forms/extraireDetails";
 import { ZoneSelector } from "../../components/ZoneSelector";
 import { DynamicElementFields } from "../../components/DynamicElementFields";
+import { Capture } from "../../components/capture/Capture";
 
 async function chargerTypesDisponibles(proprieteId: number) {
   return db.select().from(typeElement).where(or(isNull(typeElement.proprieteId), eq(typeElement.proprieteId, proprieteId)));
@@ -27,16 +28,34 @@ async function chargerElement(proprieteId: number, elementId: string | undefined
   );
 }
 
+// La plus récente en premier : sur une fiche d'entretien, c'est la photo
+// qu'on vient de prendre qu'on veut voir, pas celle de l'installation.
+async function chargerPhotos(proprieteId: number, elementId: number) {
+  return db
+    .select({ id: fichier.id, datePrise: fichier.datePrise })
+    .from(fichierLien)
+    .innerJoin(fichier, eq(fichierLien.fichierId, fichier.id))
+    .where(
+      and(
+        eq(fichierLien.cibleType, "element"),
+        eq(fichierLien.cibleId, elementId),
+        eq(fichier.proprieteId, proprieteId),
+      ),
+    )
+    .orderBy(sql`${fichier.datePrise} DESC NULLS LAST`, desc(fichier.id));
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
   const propriete = await requireProprieteAccess(utilisateurId, params.proprieteId);
-  const [e, types, arbre, systemes] = await Promise.all([
+  const [e, types, arbre, systemes, photos] = await Promise.all([
     chargerElement(propriete.id, params.elementId),
     chargerTypesDisponibles(propriete.id),
     chargerArbreZones(propriete.id),
     db.select().from(systeme).where(eq(systeme.proprieteId, propriete.id)),
+    chargerPhotos(propriete.id, Number(params.elementId)),
   ]);
-  return { propriete, element: e, types, arbre, systemes };
+  return { propriete, element: e, types, arbre, systemes, photos };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -88,14 +107,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ModifierElement() {
-  const { propriete, element, types, arbre, systemes } = useLoaderData<typeof loader>();
+  const { propriete, element, types, arbre, systemes, photos } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [typeId, setTypeId] = useState<number>(element.typeId);
   const typeChoisi = types.find((t) => t.id === typeId);
 
   return (
     <main>
-      <h1>Modifier {element.nom}</h1>
+      <h1>{element.nom}</h1>
+
+      <section className="fiche-photos">
+        <div className="fiche-photos-tete">
+          <h2>Photos</h2>
+          <Capture
+            proprieteId={propriete.id}
+            mode={{ elementId: element.id, elementNom: element.nom }}
+            className="capture-declencheur capture-secondaire"
+          >
+            Ajouter une photo
+          </Capture>
+        </div>
+        {photos.length === 0 ? (
+          <p className="fiche-photos-vide">Aucune photo pour l'instant.</p>
+        ) : (
+          <ul className="galerie">
+            {photos.map((photo) => (
+              <li key={photo.id}>
+                <a href={`/proprietes/${propriete.id}/fichiers/${photo.id}`}>
+                  <img src={`/proprietes/${propriete.id}/fichiers/${photo.id}?taille=vignette`} alt="" loading="lazy" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <Form method="post">
         <label>
           Nom

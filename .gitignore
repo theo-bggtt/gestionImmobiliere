@@ -5,3 +5,6 @@ build/
 .env.test
 *.log
 .playwright-mcp/
+
+# Volume de fichiers en developpement local
+donnees/

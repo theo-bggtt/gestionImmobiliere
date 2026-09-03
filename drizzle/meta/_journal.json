@@ -29,6 +29,13 @@
       "when": 1788382420137,
       "tag": "0003_recherche_triggers_zone_systeme_type",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788413948982,
+      "tag": "0004_fichier_capture_id",
+      "breakpoints": true
     }
   ]
 }
