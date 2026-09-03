@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 66 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;66+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
+[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 78 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;78+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
 
 <br/>
 
@@ -21,7 +21,7 @@
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
-![Étape actuelle](https://img.shields.io/badge/%C3%A9tape_actuelle-3%20%E2%80%94%20partager-2563EB?style=for-the-badge)
+![Étape actuelle](https://img.shields.io/badge/%C3%A9tape_actuelle-4%20%E2%80%94%20le%20plan-2563EB?style=for-the-badge)
 ![Last commit](https://img.shields.io/github/last-commit/theo-bggtt/gestionImmobiliere?style=for-the-badge&color=0F172A&label=dernier%20commit)
 ![Issues](https://img.shields.io/github/issues/theo-bggtt/gestionImmobiliere?style=for-the-badge&color=0F172A&label=issues)
 
@@ -29,7 +29,7 @@
 
 <br/>
 
-> Mémoire technique d'un bien immobilier. L'étape 0 a posé les fondations (schéma complet, authentification, catalogue de types, CRUD avec formulaire dynamique), l'étape 1 la capture opportuniste (photo d'abord, hors ligne, boîte d'envoi), l'étape 2 la recherche plein texte classée et les facettes. Cette étape **projette** la même base différemment selon qui la regarde : un lien de partage donne à voir une partie du bien, à un plafond de visibilité et sur une portée de zones ou de systèmes, sans compte et sans installation. Pas de plan, pas de chronologie — voir [`.decisions/implementation-plan.md`](.decisions/implementation-plan.md) pour la suite.
+> Mémoire technique d'un bien immobilier. L'étape 0 a posé les fondations (schéma complet, authentification, catalogue de types, CRUD avec formulaire dynamique), l'étape 1 la capture opportuniste (photo d'abord, hors ligne, boîte d'envoi), l'étape 2 la recherche plein texte classée et les facettes, l'étape 3 la **projection** de la même base selon qui la regarde — un lien de partage donne à voir une partie du bien, à un plafond de visibilité et sur une portée de zones ou de systèmes, sans compte et sans installation. Cette étape ajoute la deuxième entrée pour retrouver un objet : le **plan**. Le propriétaire téléverse le plan de chaque niveau, y pose des points, et un point mène à une fiche — y compris au bout d'un lien de partage, où le plan est servi sans une ligne de JavaScript. Pas de chronologie, pas de tracé de zones — voir [`.decisions/implementation-plan.md`](.decisions/implementation-plan.md) pour la suite.
 
 <br/>
 
@@ -55,6 +55,7 @@
 - [La capture](#la-capture)
 - [Retrouver](#retrouver)
 - [Partager](#partager)
+- [Le plan](#le-plan)
 - [Revue de fuite](#revue-de-fuite)
 - [Structure des dossiers](#structure-des-dossiers)
 - [Décisions prises](#décisions-prises-non-spécifiées-par-le-prompt-détape)
@@ -138,6 +139,10 @@ erDiagram
     TYPE_ELEMENT ||--o{ ELEMENT : type
     SYSTEME ||--o{ ELEMENT : système
     ELEMENT ||--o{ FICHIER_LIEN : photos
+    NIVEAU ||--o| PLAN : "plan d'étage"
+    PROPRIETE ||--o{ PLAN : "plan de situation"
+    PLAN ||--o{ POINT : repères
+    ELEMENT ||--o{ POINT : "un par plan traversé"
 ```
 
 `niveau.ordinal` est un entier signé (sous-sol -2, rez 0, etc.) : c'est la clé de tri, `niveau.nom` n'est qu'un libellé libre. `zone.niveauId` n'est nul que pour les zones extérieures, rattachées directement à la propriété — l'extérieur est une zone comme une autre, jamais un cas particulier dans l'interface.
@@ -568,9 +573,78 @@ Le jeton fait 32 octets encodés en base64url (43 caractères), jamais séquenti
 
 ---
 
+## Le plan
+
+Retrouver un objet passait par la recherche ou par la grille de zones : il fallait savoir comment la chose s'appelle. Le plan répond à « c'est où » sans rien demander de tel. Le propriétaire téléverse le plan de chaque niveau, y pose des points, un point mène à une fiche. L'artisan voit le tableau électrique sur le plan du sous-sol au lieu de lire une description de couloir ; le jardinier ouvre le plan de situation, et aucun plan d'étage.
+
+### `x` et `y` sont des pourcentages, et la borne est en base
+
+Un point est enregistré en **pourcentage de l'image**, jamais en pixels. C'est ce qui permet de remplacer le relevé de l'électricien par le plan propre de l'architecte, dans d'autres dimensions et une autre orientation, **sans déplacer un seul point** — `tests/plans/image.test.ts` le tient.
+
+La borne `0 ≤ x, y ≤ 100` est une contrainte `CHECK` en base (`point_x_valide`, `point_y_valide`), pas une validation de formulaire : même raisonnement que `element.zone_id NOT NULL` (règle non négociable #1). Une route qui oublierait de valider écrirait sinon un point hors de l'image, invisible et introuvable.
+
+Une seconde contrainte, `plan_type_niveau_coherent`, exige qu'un plan `etage` porte un niveau et qu'un plan `situation` n'en porte aucun. Ce n'était pas demandé, mais c'est **ce couple qui décide des zones que couvre un plan**, donc du filtre qui le sert ou non à un partage : le laisser dériver casserait le sens de ce filtre, pas seulement une ligne.
+
+Il n'y a **pas** de contrainte d'unicité sur `element_id` — un objet qui traverse les niveaux (colonne de chute, gaine technique) porte un point par plan concerné, un seul objet en base. Il n'y en a pas non plus sur `(element_id, plan_id)` : reposer un objet sur un plan où il est déjà **déplace** son point, en code applicatif. Poser et déplacer sont la même opération.
+
+### Ce qui décide qu'un plan est servi
+
+`clausePlanVisible(portee)` : un plan est listé si **au moins une zone de son niveau porte un objet visible** — le plan de situation couvrant les zones extérieures, celles dont `niveau_id` est nul. C'est exactement la règle de la grille de zones de l'étape 3 : une tuile « Local technique · 0 objet » et une entrée « Sous-sol » dans un sélecteur divulguent la même chose. Un sélecteur qui montre « Sous-sol » à un jardinier lui apprend qu'il y a un sous-sol.
+
+Corollaire assumé : un point visible posé sur un plan dont aucune zone ne l'est reste **inatteignable** (l'arrosage du jardin repéré sur le plan du sous-sol, parce que le collecteur y passe). C'est une perte, pas une fuite, et c'est le sens que demande le critère d'acceptation.
+
+Les points, eux, passent `clausePortee` comme le reste : un objet au-dessus du plafond ou hors portée n'a **ni point, ni pastille de regroupement, ni ligne de légende, ni compte**. Ce qui est filtré n'est pas chargé.
+
+### Deux droits de lire une image, jamais un `OR`
+
+`GET /p/:jeton/fichiers/:fichierId` autorisait un octet par la **fiche** à laquelle il est rattaché. Un plan n'a pas de `fichier_lien` : son image pend à `plan.image_fichier_id`, et cette route lui aurait répondu 404.
+
+Il y a donc deux fonctions nommées, `photoDUneFiche` et `imageDUnPlan`, essayées dans cet ordre :
+
+```ts
+const f = (await photoDUneFiche(p, id)) ?? (await imageDUnPlan(p, id));
+if (!f) throw new Response("Introuvable", { status: 404 });
+```
+
+Pas un `OR` glissé dans la requête existante : les deux droits n'ont ni la même origine ni la même durée de vie, et un `OR` rendrait impossible de dire lequel a ouvert la porte. `imageDUnPlan` réutilise `clausePlanVisible` — le prédicat du sélecteur de niveau — plutôt qu'une seconde écriture de la même idée.
+
+### Le plan sur la page de partage
+
+Elle ne charge toujours **aucun JavaScript** (règle non négociable #7 de l'étape 3). Le plan y est donc une `<img>` et des `<a>` positionnés en `left`/`top` en pourcentage : pas de zoom, pas de regroupement, pas de survol.
+
+Sans script, deux points proches se recouvrent sans qu'on puisse les départager, et une étiquette posée près d'un bord est rognée par le cadre. Les points sont donc des **pastilles numérotées**, avec une **légende sous le plan** — la convention du plan papier, qui règle le chevauchement et le rognage d'un coup et donne des cibles atteignables au pouce.
+
+Le sélecteur de niveau est une liste de liens (`?plan=<id>`), trié par `niveau.ordinal` — l'entier signé, jamais le nom (« Combles » passerait devant « Rez » en alphabétique) ni l'identifiant — le plan de situation à part, en fin de liste, comme les zones extérieures le sont déjà dans la grille. Un identifiant écrit à la main dans l'URL ne sert pas un plan hors portée : il retombe sur le premier plan visible, sans dire qu'il en existait un autre.
+
+**L'étiquette d'un plan est dérivée du niveau, jamais de `plan.nom`.** Le nom est saisi librement par le propriétaire, qui peut y avoir écrit l'adresse ou l'EGID (règle non négociable #7) ; il ne sort pas de ses écrans, comme `partage.nom`. Le repli, `niveau.nom`, est déjà rendu sur la page de partage par le chemin d'une zone et déjà listé comme non filtré dans la revue de fuite : on n'ouvre pas une classe de fuite, on en réutilise une documentée.
+
+### Ce que le code ne peut pas filtrer
+
+Un extrait cadastral ou un plan d'architecte porte l'adresse, le numéro de parcelle et parfois le nom du propriétaire **imprimés dans l'image**. `traiterImage` efface l'EXIF, il ne lit pas ce qui est écrit sur le papier, et aucun code raisonnable ne le fera. Le plan de situation étant précisément ce qu'on montre au jardinier, cette image part telle quelle.
+
+C'est la seule fuite d'adresse que cette étape ne ferme pas. Elle est dite à l'endroit où elle se décide — l'écran de téléversement — et listée dans la revue de fuite plutôt que passée sous silence.
+
+### Le zoom et le regroupement, sans bibliothèque
+
+Côté propriétaire seulement. `transform` CSS et les événements pointeur suffisent, pincer-zoomer compris ; une dépendance de plus se paierait sur chaque chargement.
+
+Le regroupement est une **grille en coordonnées écran** : `regrouper(points, largeurAffichée, hauteurAffichée, 44)` range chaque point dans une cellule de 44 px (la taille d'une cible tactile), fusionne ce qui tombe dans la même, et pose la pastille comptée à la moyenne des membres. Mesuré sur le jeu d'exemple : à zoom 1 (image affichée sur 672 px) deux points séparés de 1 % tombent à 6,7 px l'un de l'autre et fusionnent ; à zoom 8 (5 488 px) ils sont à 55 px et se séparent. C'est une fonction pure, triée par identifiant en entrée et par cellule en sortie, donc déterministe : deux rendus du même jeu donnent les mêmes grappes. `tests/plans/regroupement.test.ts` est ce qui empêche cette propriété de se perdre — elle ne se verrait autrement qu'à l'œil.
+
+Les pastilles portent une contre-échelle `scale(1 / échelle)` : mesurées à 18 px à l'écran au zoom 8 comme au zoom 1, au lieu de devenir des pavés.
+
+### Le redressement se fait dans `sharp`, pas dans le canevas
+
+Le navigateur envoie **les octets d'origine et cinq nombres** (l'angle, et le rectangle de recadrage en pourcentage de l'image pivotée) ; `sharp` applique la rotation puis l'extraction. Deux raisons : un seul encodage au lieu de deux, ce qui se voit sur du trait fin ; et « recadré et pivoté comme demandé » devient vérifiable sans navigateur, ce que fait `tests/images/traitement.test.ts`.
+
+L'aperçu est dessiné dans un canevas **à la boîte englobante**, avec la même formule que celle de sharp, et l'orientation EXIF y est appliquée par `createImageBitmap(blob, { imageOrientation: "from-image" })` comme `sharp.rotate()` le fera : les deux côtés parlent alors de la même image, et le rectangle a le même sens ici et là. C'est une duplication de la géométrie, assumée et signalée des deux côtés.
+
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
 ## Revue de fuite
 
-Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comment elle est filtrée. Les trois dernières lignes ne sont **pas** filtrées ; elles sont là pour être lues, pas pour être passées sous silence.
+Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comment elle est filtrée. Les lignes en gras ne le sont **pas** — ou pas indépendamment ; elles sont là pour être lues, pas pour être passées sous silence. La dernière est la seule que le code ne saurait pas fermer même en le voulant.
 
 | Surface | Origine | Filtrage |
 |---|---|---|
@@ -589,6 +663,16 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 | Fiche : champs et valeurs | `champsVisibles` | `niveauMin <= plafond`. Ce qui est masqué n'est pas envoyé au client. |
 | Fiche : photos, et leur nombre | `fichier_lien` sur la fiche | La fiche porte la permission ; elle a déjà passé le filtre. |
 | Octets d'une image | `chargerFichierPartage` | `EXISTS` sur un élément lié qui passe la clause. Filtrée = 404. Lien inactif = 404. |
+| Entrée du sélecteur de plans | `chargerPlans(portee)` | `clausePlanVisible` : il faut au moins une zone du niveau portant un objet visible. Un plan de sous-sol dont tout est masqué n'a pas d'entrée. |
+| Étiquette d'un plan | `niveau.nom` (`etiquettePlan`) | Dérivée du niveau et du rang, jamais de `plan.nom`. Même famille que le chemin d'une zone, déjà listé plus bas. |
+| Point sur un plan | `chargerPointsDuPlan(portee)` | Jointure sur `element` et la même clause de portée. Un objet filtré n'a pas de point. |
+| Numéro d'une pastille, ligne de légende | les points déjà servis | Numérotés après filtrage : la numérotation ne saute pas, donc elle ne compte pas ce qu'elle ne montre pas. |
+| Nom et zone dans la légende | `element.nom`, `zone.nom` du point | Le point a déjà passé la clause : c'est la fiche qui porte la permission, comme pour ses photos. |
+| Octets de l'image d'un plan | `imageDUnPlan` | Second droit, nommé : le plan doit passer `clausePlanVisible`. Filtré = 404, lien inactif = 404. |
+| Polygone d'une zone | `chargerPolygonesDuPlan(portee)` | Zone sans objet visible, pas de contour. La table est vide avant l'étape 6 ; le filtre est éprouvé par un test qui y insère des lignes directement. |
+| Plan demandé par `?plan=<id>` | le paramètre d'URL | Recoupé avec la liste déjà filtrée, sinon repli sur le premier plan visible. Un identifiant écrit à la main ne sert rien de plus. |
+| **Nom d'un plan** | `plan.nom` | **Jamais envoyé.** Étiquette privée du propriétaire, qui peut y avoir écrit l'adresse : même traitement que `partage.nom`. |
+| **Pixels de l'image d'un plan** | l'image elle-même | **Non filtré, et non filtrable.** Un extrait cadastral porte l'adresse, la parcelle et parfois un nom, imprimés dedans. L'EXIF est effacé, le contenu ne l'est pas. Averti sur l'écran de téléversement, où le recadrage est la seule parade. |
 | Nom du partage | `partage.nom` | Jamais envoyé : c'est l'étiquette privée du propriétaire (« Jardinier Marc »). |
 | **Chemin d'une zone** | `batiment.nom · niveau.nom` | **Non filtré indépendamment.** Un lien limité à une zone intérieure révèle le nom du bâtiment et de l'étage qui la portent. C'est l'adresse interne d'une zone déjà montrée, pas une donnée de plus — mais ce n'est pas rien, et ce n'est pas filtré. |
 | **Alias d'une fiche et d'un type** | `element.alias`, `type_element.alias` | **Cherchables (poids B), jamais rendus.** Un alias est du vocabulaire de recherche porté par une fiche déjà visible ; il n'a pas de `niveauMin`. Le jour où quelqu'un y écrit autre chose que du vocabulaire, il fuit. |
@@ -606,13 +690,15 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 - `app/lib/capture/` — instantané hors ligne (`instantane.server.ts` le produit, `instantane.ts` le recopie), boîte d'envoi IndexedDB (`file.ts`), compression (`image.ts`), synchro (`synchro.ts`), amorçage de la coquille (`coquille.ts`).
 - `app/lib/recherche/` — la requête et ses variantes (`recherche.server.ts` : recherche, facettes, grille de zones, clause de portée exportée), les types partagés client/serveur (`types.ts`), la lecture/écriture des paramètres d'URL (`params.ts`).
 - `app/lib/partage/` — jeton et état d'un lien (`partage.server.ts`), le contenu d'une page de partage (`contenu.server.ts`, le loader réel, partagé avec la prévisualisation), `niveauMin` par champ (`champs.ts`), en-têtes et marqueur « sans scripts » (`document.ts`), libellés des niveaux (`niveaux.ts`).
-- `app/lib/images/` — orientation puis effacement EXIF, vignette.
+- `app/lib/plans/` — le plan et ses points (`plans.server.ts` : listage sous portée, points, polygones, écritures), le regroupement des points en fonction pure (`regroupement.ts`), les types partagés client/serveur et les plafonds propres au plan (`types.ts`), la rasterisation d'un PDF dans le navigateur (`pdf.ts`, importé dynamiquement).
+- `app/lib/images/` — orientation puis effacement EXIF, vignette, rotation et recadrage.
 - `app/lib/stockage/` — interface `sauvegarder` / `lire` / `supprimer`, adossée au système de fichiers.
 - `app/lib/zoneTree.ts` — construction de l'arbre bâtiment → niveau → zone (+ zones extérieures).
 - `app/components/` — `ZoneSelector`, `DynamicElementFields`, `ChampEditor`, `AideInstallationIOS`.
 - `app/components/capture/` — `Capture` (déclencheur, feuille, confirmation), `Selecteur`, `IndicateurFile`.
 - `app/components/recherche/` — `BarreRecherche` (et l'anti-rebond), `ListeResultats`, `GrilleZones`, `PastillesFacettes`, et `liens.ts` : les URL fabriquées d'avance (`liensPropriete` / `liensPartage`), pour qu'une page de partage n'ait pas les moyens d'écrire une route protégée.
-- `app/components/partage/` — `PagePartage` (et `PartageInactif`), `FicheObjet`, `FacettesLiens` (les mêmes pastilles, en liens : la page ne charge aucun script).
+- `app/components/plan/` — `VuePlan` (zoom, déplacement, regroupement, glissement d'un point) et `EditeurImagePlan` (recadrage et rotation avant envoi). Aucun des deux n'est rendu par une page de partage.
+- `app/components/partage/` — `PagePartage` (et `PartageInactif`), `FicheObjet`, `FacettesLiens` (les mêmes pastilles, en liens : la page ne charge aucun script), `PlanStatique` (le plan en `<img>` et ancres numérotées).
 - `app/styles/app.css` — feuille unique, sobre, dimensionnée pour le pouce.
 - `app/routes/_public/` — connexion, inscription, déconnexion (non protégé).
 - `app/routes/_app/` — tout le reste, protégé, scopé par `proprieteId` dans l'URL.
@@ -721,11 +807,39 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 
 </details>
 
+<details>
+<summary><strong>Étape 4 — 13 décisions (plan, points, géométrie servie)</strong></summary>
+<br/>
+
+67. **Le PDF est rastérisé dans le navigateur, par pdf.js, avant l'envoi.** Le plan d'implémentation dit « PDF ou photo » ; il n'y a aucune bibliothèque PDF dans le projet et `sharp` n'en lit pas. Les trois options étaient : rasteriser côté serveur, côté navigateur, ou ne rien accepter d'autre que des images. Écarté, la rasterisation serveur : elle ajoute une dépendance native (poppler ou mupdf) à une image Docker qui ne porte que sharp, la rend sensible à l'architecture de déploiement — un Raspberry Pi en arm64 — et fait analyser un format hostile dans le processus de l'application plutôt que dans le bac à sable du navigateur. Écarté aussi, ne rien accepter : c'est l'option qui satisfait tous les critères d'acceptation et qui coûte zéro, mais en Suisse le plan d'architecte et l'extrait cadastral arrivent en PDF, et « reporter » voulait dire écrire l'éditeur de recadrage deux fois. **Coût mesuré au build** : `pdfjs-dist` sort en chunk séparé de 483 Ko (144 Ko gzip) plus un worker de 1,27 Mo, et l'import est dynamique **et gardé par le type du fichier** — téléverser une photo n'en charge pas un octet, et la page de partage, qui ne charge aucun script, encore moins. Seule la première page est rendue : les suivantes seraient un autre plan, donc un autre téléversement.
+68. **« Redressement » veut dire rotation, pas correction de perspective.** Quarts de tour plus un réglage fin de ±15°. **Ce qui n'est pas fait, et qui est dit à l'écran : aucune homographie.** Un plan photographié de biais reste trapézoïdal. `sharp` sait faire une rotation et une transformation affine, pas une homographie ; en canevas, `setTransform` est affine aussi. Un vrai redressement de perspective demanderait du WebGL ou un mapping inverse écrit à la main, plus une interface à quatre coins — une journée pleine, pour une précision que rien ne consomme : le plan est un fond pour pointer, `plan.echelle` reste NULL et il n'y a aucune mesure nulle part.
+69. **Un plan est plafonné à 3500 px, en qualité 90.** `LARGEUR_MAX` vaut 2000 px, calibré pour une photo d'objet : sur un A3 cela fait ~120 dpi, où une annotation de 2 mm tombe à 9 px de haut et devient illisible dès qu'on zoome. 3500 px font ~210 dpi, soit 16 à 20 px pour la même annotation. Au-delà, on double les octets pour du détail qu'aucun écran n'exploite — 3500 px dans un viewport de 400 px sont déjà un zoom 8,75×. La qualité passe de 82 à 90 parce que mozjpeg à 82 est calibré pour de la photo et que c'est sur du trait noir fin sur fond blanc qu'il produit son ringing le plus visible. `traiterImage` est **paramétré** (`largeurMax`, `qualite`, `rotation`, `recadrage`) plutôt que dupliqué, et les deux constantes propres au plan vivent dans `app/lib/plans/types.ts` : le module d'images traite une image, il n'a pas à savoir ce qu'elle représente, et le navigateur a besoin du même plafond pour rastériser un PDF sans importer un module qui charge sharp.
+70. **La géométrie est appliquée par `sharp`, pas par le canevas.** Le navigateur envoie les octets d'origine et cinq nombres. Un seul encodage au lieu de deux (visible sur du trait fin), et le critère « recadré et pivoté comme demandé » devient vérifiable sans navigateur. Contrepartie assumée : la formule de la boîte englobante est écrite des deux côtés, l'aperçu et le serveur devant s'accorder au pixel près.
+71. **Le nom d'un plan ne quitte jamais les écrans du propriétaire.** Il est saisi librement, et la règle non négociable #7 interdit l'adresse et l'EGID sur une page de partage — y compris écrits là. Le lien étiquette donc ses plans depuis `niveau.nom` et le rang (« Rez-de-chaussée · plan 2 »), comme `partage.nom` reste privé (décision #56). `niveau.nom` est lui aussi du texte libre, mais il est déjà rendu par le chemin d'une zone et déjà listé comme non filtré : on réutilise une fuite documentée au lieu d'en ouvrir une.
+72. **Un plan n'est servi que si une zone de son niveau porte un objet visible.** La règle de la grille de zones, appliquée à la géométrie. Corollaire assumé et testé : un point visible posé sur un plan dont aucune zone ne l'est devient inatteignable depuis ce lien. C'est une perte, et c'est ce que demande le critère — l'inverse apprendrait au jardinier qu'il y a un sous-sol.
+73. **Deux fonctions nommées pour les deux droits de lire une image, jamais un `OR`.** `photoDUneFiche` puis `imageDUnPlan`. Les deux droits n'ont ni la même origine ni la même durée de vie, et un `OR` dans la requête existante rendrait impossible de dire lequel a ouvert la porte. La seconde réutilise `clausePlanVisible`, le prédicat du sélecteur.
+74. **Aucune contrainte d'unicité sur `(element_id, plan_id)`.** Le plan d'implémentation n'écarte l'unicité que sur `element_id` seul. Reposer un objet sur un plan où il figure déjà **déplace** son point, en code applicatif : poser et déplacer sont la même opération, et l'interface montre « déjà posé » plutôt que d'interdire.
+75. **`plan_type_niveau_coherent` ajouté en base**, non demandé : un `etage` sans niveau ou une `situation` qui en porte un casserait le sens du filtre de portée, qui déduit de ce couple les zones que couvre le plan. Même raisonnement que `zone_id NOT NULL`.
+76. **Sur la page de partage, des pastilles numérotées et une légende**, pas des étiquettes posées sur le plan. Sans script il n'y a ni regroupement ni survol : deux points proches se recouvriraient sans qu'on puisse les départager, et une étiquette près d'un bord serait rognée par le cadre. La convention du plan papier règle les deux d'un coup et donne des cibles atteignables au pouce.
+77. **`zone_geom` est lue et rendue, jamais écrite.** L'éditeur de tracé est l'étape 6 (règle non négociable #6). La requête filtrée est écrite maintenant, comme le demande le prompt, et **exercée** par un test qui insère des lignes directement en base — une requête filtrée jamais exécutée est une intention, pas une garantie. Le calque SVG qui la rend fait quinze lignes des deux côtés.
+78. **Le plan disparaît pendant une recherche, et l'écran de plan est aussi l'écran de placement.** Il accompagne la grille, il ne filtre pas : dès qu'un mot est tapé, ni le sélecteur ni le plan ne sont chargés. Et on arrive dessus depuis une fiche avec `?element=<id>`, le clic posant l'objet — un second écran « placer » referait ce que celui-ci fait déjà (même raisonnement que la décision #42).
+
+</details>
+
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
 ---
 
 ## Limites connues
+
+- **Aucune correction de perspective sur un plan photographié.** La rotation redresse de quelques degrés ; une photo prise de biais reste trapézoïdale. Dit à l'écran de téléversement plutôt que sous-entendu. Sans conséquence tant qu'il n'y a aucune mesure : `plan.echelle` reste NULL.
+- **Le plan d'une page de partage n'a ni zoom ni regroupement.** C'est le prix de « aucun JavaScript ». Deux points au même endroit restent superposés ; la légende numérotée sous le plan est ce qui les rend tous atteignables.
+- **Les pixels d'un plan ne sont pas filtrés, et ne peuvent pas l'être.** Un extrait cadastral porte l'adresse imprimée dedans. L'EXIF est effacé, le contenu de l'image ne l'est pas. Seul le recadrage à l'envoi y peut quelque chose. Une portée de partage par plan, ou une colonne « ne jamais partager », serait la vraie réponse : ce n'est pas dans le périmètre de cette étape.
+- **Le regroupement est une grille, pas un vrai regroupement par distance.** Deux points séparés de trois pixels mais de part et d'autre d'une frontière de cellule ne fusionnent pas. C'est le prix du déterminisme : une grille rend la même chose à chaque image, un regroupement glouton dépend de l'ordre.
+- **La formule de la boîte englobante est écrite deux fois**, dans l'aperçu et dans `traiterImage`. Elles doivent s'accorder au pixel près, et rien ne le vérifie automatiquement : c'est le point à relire si un plan enregistré ne ressemble plus à son aperçu.
+- **Un point visible posé sur un plan hors portée est inatteignable depuis un lien.** Conséquence directe du prédicat de listage, et le bon compromis : l'inverse divulguerait l'existence du niveau.
+- **Le PDF n'est lu qu'à sa première page**, et pdf.js ne se charge que si un PDF est réellement ouvert. Un plan en plusieurs pages est plusieurs téléversements.
+- **Le plan ne fonctionne pas hors ligne.** Ni l'image ni les points ne sont mis en cache par le service worker ; l'instantané de capture ne les contient pas.
 
 - **Hors ligne, seul `start_url` est garanti.** Suivre un lien dans l'app sans réseau échoue : React Router demande alors ses données de route au serveur. La capture, elle, ne navigue pas — c'est ce qui compte à cette étape.
 - **Le chronométrage sur téléphone réel reste à faire** (voir plus haut).

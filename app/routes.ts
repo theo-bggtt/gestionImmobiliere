@@ -33,6 +33,15 @@ export default [
         route(":elementId/modifier", "routes/_app/elements.$elementId.modifier.tsx"),
       ]),
       route("types/nouveau", "routes/_app/types.nouveau.tsx"),
+      // Les plans. `plans/points` est une route de ressource : la vue
+      // interactive y enregistre un point déplacé sans naviguer, sinon le
+      // zoom et la position seraient perdus à chaque glissement.
+      ...prefix("plans", [
+        index("routes/_app/plans._index.tsx"),
+        route("nouveau", "routes/_app/plans.nouveau.tsx"),
+        route("points", "routes/_app/plans.points.tsx"),
+        route(":planId/modifier", "routes/_app/plans.$planId.modifier.tsx"),
+      ]),
       // Gestion des liens de partage. La prévisualisation rend le composant
       // et le loader réels de `/p/:jeton`, encadrés d'un bandeau.
       ...prefix("partages", [

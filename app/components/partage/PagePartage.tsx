@@ -12,6 +12,7 @@ import { GrilleZones } from "../recherche/GrilleZones";
 import { ListeResultats } from "../recherche/ListeResultats";
 import { liensPartage } from "../recherche/liens";
 import { FacettesLiens } from "./FacettesLiens";
+import { PlanStatique } from "./PlanStatique";
 
 export function PagePartage({ donnees, jeton }: { donnees: DonneesPartage; jeton: string }) {
   const base = `/p/${jeton}`;
@@ -52,10 +53,16 @@ export function PagePartage({ donnees, jeton }: { donnees: DonneesPartage; jeton
             <a href={base}>Revenir aux zones</a>
           </p>
         </>
-      ) : donnees.zones.length === 0 ? (
+      ) : donnees.zones.length === 0 && donnees.plan === null ? (
         <p className="resultats-vide">Rien à afficher pour ce lien.</p>
       ) : (
-        <GrilleZones zones={donnees.zones} liens={liens} />
+        <>
+          {/* Le plan répond « c'est où » sans qu'on ait à savoir comment
+              l'objet s'appelle : il vient donc avant la grille. Absent quand
+              aucun plan n'est visible pour ce lien — pas de titre orphelin. */}
+          {donnees.plan && <PlanStatique plan={donnees.plan} plans={donnees.plans} liens={liens} />}
+          {donnees.zones.length > 0 && <GrilleZones zones={donnees.zones} liens={liens} />}
+        </>
       )}
     </div>
   );

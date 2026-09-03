@@ -92,6 +92,7 @@ function Accueil({
         <Link to="zones">Zones</Link>
         <Link to="systemes">Systèmes</Link>
         <Link to="elements">Éléments</Link>
+        <Link to="plans">Plans</Link>
         <Link to="partages">Partages</Link>
       </nav>
     </section>
