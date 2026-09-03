@@ -53,6 +53,19 @@ async function rafraichirEtat() {
   });
 }
 
+function messageEchec(statut: number): string {
+  // Un 413 vient du proxy, jamais de nos routes : il arrive sans corps JSON,
+  // donc sans message lisible si on n'en fabrique pas un ici.
+  if (statut === 413) return "Photo refusée par le serveur : fichier trop volumineux.";
+  return `Le serveur a répondu ${statut}.`;
+}
+
+/**
+ * Une capture ne quitte la file que sur un 2xx portant un identifiant de
+ * fiche. Tout le reste — session expirée, 413, 500, réponse illisible —
+ * laisse l'entrée intacte : le seul échec inacceptable est celui qu'on ne
+ * voit pas.
+ */
 async function envoyerUne(entree: EntreeFile): Promise<"envoyee" | "reessayer" | "definitif"> {
   const corps = new FormData();
   corps.set("captureId", entree.id);
@@ -72,14 +85,20 @@ async function envoyerUne(entree: EntreeFile): Promise<"envoyee" | "reessayer" |
     body: corps,
   });
 
-  // Session expirée : la redirection vers /connexion revient en 200 HTML.
-  // Supprimer l'entrée ici perdrait la capture pour de bon.
-  if (reponse.redirected || !reponse.headers.get("Content-Type")?.includes("application/json")) {
-    await majEntree(entree.id, { echec: "Session expirée — reconnecte-toi puis réessaie." });
+  // Session expirée. Elle ne revient pas en 401 depuis nos routes :
+  // `requireUtilisateurId` redirige vers /connexion et `fetch` suit, ce qui
+  // rend un 200 HTML ; le 401 nu reste possible derrière un proxy. Les deux
+  // se réparent en se reconnectant, donc aucune tentative n'est consommée :
+  // la file repart d'elle-même au prochain déclencheur, sans rien demander.
+  if (reponse.redirected || reponse.status === 401 || reponse.status === 403) {
+    await majEntree(entree.id, { echec: "Session expirée — reconnecte-toi, l'envoi repartira tout seul." });
     return "reessayer";
   }
 
-  const charge = (await reponse.json()) as { elementId?: number; erreur?: string };
+  // Un proxy qui refuse la taille (413) ou qui tombe (502) répond en HTML :
+  // ne pas aller chercher un JSON qui n'existe pas.
+  const estJson = reponse.headers.get("Content-Type")?.includes("application/json") ?? false;
+  const charge = estJson ? ((await reponse.json()) as { elementId?: number; erreur?: string }) : {};
 
   if (reponse.ok && charge.elementId) {
     // Purger dès l'accusé de réception, pas plus tard (règle #7).
@@ -90,10 +109,12 @@ async function envoyerUne(entree: EntreeFile): Promise<"envoyee" | "reessayer" |
     return "envoyee";
   }
 
-  // 4xx : la requête ne passera jamais telle quelle, inutile d'insister.
+  // 4xx : la requête ne passera jamais telle quelle, insister ne sert à rien
+  // et l'entrée bascule en erreur visible. 5xx et réponses illisibles : c'est
+  // le serveur qui va mal, pas la capture, on retentera.
   const definitif = reponse.status >= 400 && reponse.status < 500;
   await majEntree(entree.id, {
-    echec: charge.erreur ?? `Le serveur a répondu ${reponse.status}.`,
+    echec: charge.erreur ?? messageEchec(reponse.status),
     tentatives: definitif ? TENTATIVES_MAX : entree.tentatives + 1,
   });
   return definitif ? "definitif" : "reessayer";

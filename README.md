@@ -148,7 +148,21 @@ Le quatrième n'était pas prévu. Il a été ajouté après avoir mesuré que `
 
 **Purge** dès l'accusé de réception du serveur, pas plus tard.
 
-**Une capture n'est jamais perdue en silence.** Rien n'est supprimé sans confirmation serveur. Un `fetch` qui lève (pas de connexion) n'est pas compté comme une tentative — sinon trois captures dans une cave suffiraient à faire crier au loup. Seul un refus du serveur compte : un 4xx est définitif, un 5xx incrémente. Au bout de 5 tentatives, l'entrée bascule en erreur visible avec son message et un bouton « Réessayer ». Tant que la file n'est pas vide, un indicateur « n en attente » reste dans l'en-tête, avec un envoi forçable.
+**Une capture n'est jamais perdue en silence.** Une entrée ne quitte la file que sur un **2xx portant un identifiant de fiche** — le seul accusé de réception qui prouve que la capture est en base. Tout le reste la laisse intacte :
+
+| Réponse | Entrée | Tentative comptée | Suite |
+|---|---|---|---|
+| 2xx avec `elementId` | **purgée** | — | fiche en base, lien « compléter » actif |
+| 2xx sans `elementId` (page HTML d'un proxy) | gardée | oui | retentée |
+| Redirection vers `/connexion`, 401, 403 | gardée | **non** | « Session expirée » ; repart seule après reconnexion |
+| 413 (proxy, taille refusée) | gardée | définitive | erreur visible : « fichier trop volumineux » |
+| Autre 4xx | gardée | définitive | erreur visible avec le message du serveur |
+| 5xx | gardée | oui | retentée |
+| `fetch` qui lève (pas de connexion) | gardée | **non** | retentée au prochain déclencheur |
+
+Les deux « non » comptent. Un `fetch` qui lève n'est pas une tentative ratée mais une tentative qui n'a pas eu lieu : la compter suffirait à faire crier au loup après trois captures dans une cave. Une session expirée se répare en se reconnectant, pas en réémettant la requête : brûler des tentatives obligerait l'utilisateur à retrouver un bouton « Réessayer » alors que la file serait déjà repartie toute seule.
+
+Au bout de 5 tentatives, l'entrée bascule en erreur visible avec son message et un bouton « Réessayer » qui remet le compteur à zéro. Tant que la file n'est pas vide, un indicateur « n en attente » reste dans l'en-tête, avec un envoi forçable.
 
 **Doublons.** Le client fabrique un `captureId` avant d'écrire dans la file ; il est stocké en `fichier.capture_id` sous index unique. Un réseau mobile qui coupe après l'écriture serveur mais avant la réponse fait rejouer l'envoi : le serveur reconnaît la capture et renvoie la fiche existante au lieu d'en créer une seconde.
 
@@ -238,4 +252,5 @@ L'écran d'une fiche montre ses photos, la plus récente en premier, et un bouto
 
 - **Hors ligne, seul `start_url` est garanti.** Suivre un lien dans l'app sans réseau échoue : React Router demande alors ses données de route au serveur. La capture, elle, ne navigue pas — c'est ce qui compte à cette étape.
 - **Le chronométrage sur téléphone réel reste à faire** (voir plus haut).
+- **408 et 429 sont traités comme des 4xx définitifs.** Ce sont pourtant des « retente plus tard ». Aucune de nos routes ne les émet ; un proxy ou un CDN le pourrait, et la capture serait alors gardée mais bloquée jusqu'à un « Réessayer » manuel — visible, jamais perdue, mais inutilement pénible. Le correctif tient en une condition dans `synchro.ts`, il n'a pas été fait parce qu'il sort du périmètre demandé.
 - Le sélecteur de zone du formulaire de l'étape 0 (`ZoneSelector`) est un `<select>` sans libellé visible sur l'écran de modification. Constaté, pas corrigé : hors du périmètre de cette étape.
