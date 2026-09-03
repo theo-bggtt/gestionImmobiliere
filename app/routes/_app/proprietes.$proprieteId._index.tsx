@@ -9,9 +9,11 @@ import type { LoaderFunctionArgs } from "react-router";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { chargerZonesVignettes, PORTEE_PROPRIETAIRE } from "../../lib/recherche/recherche.server";
-import type { ReponseRecherche } from "../../lib/recherche/types";
+import type { ReponseRecherche, ZoneVignette } from "../../lib/recherche/types";
 import { BarreRecherche, useAntiRebond } from "../../components/recherche/BarreRecherche";
 import { ListeResultats } from "../../components/recherche/ListeResultats";
+import { GrilleZones } from "../../components/recherche/GrilleZones";
+import { liensPropriete } from "../../components/recherche/liens";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
@@ -46,7 +48,7 @@ export default function AccueilPropriete() {
         <>
           {fetcher.data ? (
             <ListeResultats
-              proprieteId={propriete.id}
+              liens={liensPropriete(propriete.id)}
               donnees={fetcher.data}
               enCours={fetcher.state === "loading"}
             />
@@ -58,70 +60,39 @@ export default function AccueilPropriete() {
           </p>
         </>
       ) : (
-        <GrilleZones proprieteId={propriete.id} zones={zones} proprieteNom={propriete.nom} />
+        <Accueil proprieteId={propriete.id} zones={zones} proprieteNom={propriete.nom} />
       )}
     </div>
   );
 }
 
-function GrilleZones({
+function Accueil({
   proprieteId,
   proprieteNom,
   zones,
 }: {
   proprieteId: number;
   proprieteNom: string;
-  zones: Awaited<ReturnType<typeof chargerZonesVignettes>>;
+  zones: ZoneVignette[];
 }) {
-  if (zones.length === 0) {
-    return (
-      <section>
-        <h1>{proprieteNom}</h1>
-        <p className="resultats-vide">Aucune zone pour l'instant.</p>
-        <Link to="zones/nouveau">Créer une zone</Link>
-      </section>
-    );
-  }
-
   return (
     <section>
       <h1 className="accueil-titre">{proprieteNom}</h1>
-      <ul className="grille-zones">
-        {zones.map((z) => (
-          <li key={z.id}>
-            {/* Une case de zone mène à la recherche facettée sur cette zone :
-                c'est déjà l'écran qui sait lister, filtrer et compter. */}
-            <Link to={`recherche?zone=${z.id}`} className="case-zone">
-              {z.fichierId ? (
-                <img
-                  className="case-zone-image"
-                  src={`/proprietes/${proprieteId}/fichiers/${z.fichierId}?taille=vignette`}
-                  alt=""
-                  loading="lazy"
-                />
-              ) : (
-                // Pas de photo n'est pas une case vide : un aplat lisible avec
-                // l'initiale, jamais une image cassée.
-                <span className="case-zone-image case-zone-aplat" aria-hidden="true">
-                  {z.nom.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-              <span className="case-zone-texte">
-                <span className="case-zone-nom">{z.nom}</span>
-                <span className="case-zone-compte">
-                  {z.nombre} objet{z.nombre > 1 ? "s" : ""}
-                </span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {zones.length === 0 ? (
+        <>
+          <p className="resultats-vide">Aucune zone pour l'instant.</p>
+          <Link to="zones/nouveau">Créer une zone</Link>
+        </>
+      ) : (
+        <GrilleZones zones={zones} liens={liensPropriete(proprieteId)} />
+      )}
 
       <nav className="accueil-nav">
         <Link to="batiments">Bâtiments et niveaux</Link>
         <Link to="zones">Zones</Link>
         <Link to="systemes">Systèmes</Link>
         <Link to="elements">Éléments</Link>
+        <Link to="partages">Partages</Link>
       </nav>
     </section>
   );

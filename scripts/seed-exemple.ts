@@ -77,16 +77,21 @@ async function main() {
     { proprieteId: propriete.id, nom: "Chauffage", icone: "flame" },
   ]).returning();
 
+  // Le `niveau` de chaque fiche est explicite : 1 (usage) pour ce qu'un
+  // locataire doit savoir faire marcher, 2 (technique) pour ce qui relève de
+  // l'artisan. Sans cette répartition, toutes les fiches resteraient à 3
+  // (privé, la valeur par défaut) et un lien de partage de niveau « usage »
+  // — le cas le plus courant — ne montrerait rien du tout sur ce jeu.
   const elements: Array<{ nom: string; type: string; zoneNom: string; systemeId?: number; details?: Record<string, unknown>; niveau?: number }> = [
-    { nom: "Prise plan de travail", type: "Prise 230V", zoneNom: "Cuisine", systemeId: electricite.id },
-    { nom: "Interrupteur entrée cuisine", type: "Interrupteur", zoneNom: "Cuisine", systemeId: electricite.id },
-    { nom: "Four encastrable", type: "Four", zoneNom: "Cuisine", details: { marque: "Bosch" } },
-    { nom: "Hotte aspirante", type: "Hotte", zoneNom: "Cuisine" },
-    { nom: "Robinet évier", type: "Robinet", zoneNom: "Cuisine", systemeId: sanitaire.id },
-    { nom: "Prise RJ45 salon", type: "Prise RJ45", zoneNom: "Salon", systemeId: electricite.id },
-    { nom: "Luminaire suspension", type: "Luminaire", zoneNom: "Salon", systemeId: electricite.id },
-    { nom: "Radiateur salon", type: "Radiateur", zoneNom: "Salon", systemeId: chauffage.id },
-    { nom: "Porte d'entrée", type: "Porte", zoneNom: "Entrée", details: { materiau: "bois massif" } },
+    { nom: "Prise plan de travail", type: "Prise 230V", zoneNom: "Cuisine", systemeId: electricite.id, niveau: 1 },
+    { nom: "Interrupteur entrée cuisine", type: "Interrupteur", zoneNom: "Cuisine", systemeId: electricite.id, niveau: 1 },
+    { nom: "Four encastrable", type: "Four", zoneNom: "Cuisine", details: { marque: "Bosch" }, niveau: 1 },
+    { nom: "Hotte aspirante", type: "Hotte", zoneNom: "Cuisine", niveau: 1 },
+    { nom: "Robinet évier", type: "Robinet", zoneNom: "Cuisine", systemeId: sanitaire.id, niveau: 1 },
+    { nom: "Prise RJ45 salon", type: "Prise RJ45", zoneNom: "Salon", systemeId: electricite.id, niveau: 1 },
+    { nom: "Luminaire suspension", type: "Luminaire", zoneNom: "Salon", systemeId: electricite.id, niveau: 1 },
+    { nom: "Radiateur salon", type: "Radiateur", zoneNom: "Salon", systemeId: chauffage.id, niveau: 1 },
+    { nom: "Porte d'entrée", type: "Porte", zoneNom: "Entrée", details: { materiau: "bois massif" }, niveau: 1 },
     { nom: "Tableau électrique principal", type: "Tableau électrique", zoneNom: "Local technique", systemeId: electricite.id, niveau: 2 },
     { nom: "Disjoncteur général", type: "Disjoncteur", zoneNom: "Local technique", systemeId: electricite.id, niveau: 2 },
     { nom: "Chaudière", type: "Chaudière", zoneNom: "Local technique", systemeId: chauffage.id, details: { type_energie: "gaz", marque: "Viessmann" }, niveau: 2 },
@@ -94,21 +99,21 @@ async function main() {
     { nom: "Compteur d'eau", type: "Compteur d'eau", zoneNom: "Cave", systemeId: sanitaire.id, niveau: 2 },
     { nom: "Compteur électrique", type: "Compteur électrique", zoneNom: "Cave", systemeId: electricite.id, niveau: 2 },
     { nom: "Gaine technique cave-étage", type: "Gaine technique", zoneNom: "Cave", niveau: 2 },
-    { nom: "Chauffe-eau", type: "Chauffe-eau", zoneNom: "Cave", systemeId: sanitaire.id, details: { volume: 200 } },
-    { nom: "Prise établi", type: "Prise 230V", zoneNom: "Garage", systemeId: electricite.id },
-    { nom: "Interrupteur portail", type: "Interrupteur", zoneNom: "Garage", systemeId: electricite.id },
-    { nom: "Fenêtre chambre 1", type: "Fenêtre", zoneNom: "Chambre 1", details: { type_vitrage: "double" } },
-    { nom: "Radiateur chambre 1", type: "Radiateur", zoneNom: "Chambre 1", systemeId: chauffage.id },
-    { nom: "Fenêtre chambre 2", type: "Fenêtre", zoneNom: "Chambre 2" },
-    { nom: "Thermostat étage", type: "Thermostat", zoneNom: "Chambre 2", systemeId: chauffage.id },
-    { nom: "Robinet salle de bain", type: "Robinet", zoneNom: "Salle de bain", systemeId: sanitaire.id },
-    { nom: "Siphon douche", type: "Siphon", zoneNom: "Salle de bain", systemeId: sanitaire.id },
-    { nom: "Bouche VMC salle de bain", type: "Bouche de VMC", zoneNom: "Salle de bain" },
-    { nom: "Vanne d'arrosage jardin", type: "Vanne d'arrosage", zoneNom: "Jardin", systemeId: sanitaire.id },
+    { nom: "Chauffe-eau", type: "Chauffe-eau", zoneNom: "Cave", systemeId: sanitaire.id, details: { volume: 200 }, niveau: 2 },
+    { nom: "Prise établi", type: "Prise 230V", zoneNom: "Garage", systemeId: electricite.id, niveau: 1 },
+    { nom: "Interrupteur portail", type: "Interrupteur", zoneNom: "Garage", systemeId: electricite.id, niveau: 1 },
+    { nom: "Fenêtre chambre 1", type: "Fenêtre", zoneNom: "Chambre 1", details: { type_vitrage: "double" }, niveau: 1 },
+    { nom: "Radiateur chambre 1", type: "Radiateur", zoneNom: "Chambre 1", systemeId: chauffage.id, niveau: 1 },
+    { nom: "Fenêtre chambre 2", type: "Fenêtre", zoneNom: "Chambre 2", niveau: 1 },
+    { nom: "Thermostat étage", type: "Thermostat", zoneNom: "Chambre 2", systemeId: chauffage.id, niveau: 1 },
+    { nom: "Robinet salle de bain", type: "Robinet", zoneNom: "Salle de bain", systemeId: sanitaire.id, niveau: 1 },
+    { nom: "Siphon douche", type: "Siphon", zoneNom: "Salle de bain", systemeId: sanitaire.id, niveau: 2 },
+    { nom: "Bouche VMC salle de bain", type: "Bouche de VMC", zoneNom: "Salle de bain", niveau: 1 },
+    { nom: "Vanne d'arrosage jardin", type: "Vanne d'arrosage", zoneNom: "Jardin", systemeId: sanitaire.id, niveau: 1 },
     { nom: "Programmateur d'arrosage", type: "Programmateur d'arrosage", zoneNom: "Local technique", systemeId: sanitaire.id, niveau: 2 },
-    { nom: "Éclairage terrasse", type: "Éclairage extérieur", zoneNom: "Terrasse", systemeId: electricite.id },
-    { nom: "Prise extérieure terrasse", type: "Prise extérieure", zoneNom: "Terrasse", systemeId: electricite.id },
-    { nom: "Portail motorisé", type: "Portail motorisé", zoneNom: "Jardin" },
+    { nom: "Éclairage terrasse", type: "Éclairage extérieur", zoneNom: "Terrasse", systemeId: electricite.id, niveau: 1 },
+    { nom: "Prise extérieure terrasse", type: "Prise extérieure", zoneNom: "Terrasse", systemeId: electricite.id, niveau: 1 },
+    { nom: "Portail motorisé", type: "Portail motorisé", zoneNom: "Jardin", niveau: 1 },
   ];
 
   const elementsInseres: Record<string, number> = {};
