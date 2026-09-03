@@ -1,6 +1,68 @@
-# gestionImmobiliere — étape 2 : retrouver
+<a name="top"></a>
 
-Mémoire technique d'un bien immobilier. L'étape 0 a posé les fondations (schéma complet, authentification, catalogue de types, CRUD avec formulaire dynamique), l'étape 1 la capture opportuniste (photo d'abord, hors ligne, boîte d'envoi). Cette étape **expose** ce qui dormait en base depuis l'étape 0 : recherche plein texte classée, facettes, et un écran d'accueil refondu autour du champ de recherche et d'une grille de zones en photo. Pas de partage, pas de plan, pas de chronologie — voir `.decisions/implementation-plan.md` pour la suite.
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F172A,100:2563EB&height=220&section=header&text=gestionImmobiliere&fontSize=56&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=La%20m%C3%A9moire%20technique%20d%27un%20bien%20immobilier&descAlignY=55&descSize=18" width="100%" alt="gestionImmobiliere" />
+
+<img src="public/icones/icone-512.png" width="72" alt="icône de l'application" />
+
+<br/>
+
+[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, 47 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=720&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;47+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
+
+<br/>
+
+![React Router](https://img.shields.io/badge/React_Router_7-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Drizzle](https://img.shields.io/badge/Drizzle_ORM-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+
+![Étape actuelle](https://img.shields.io/badge/%C3%A9tape_actuelle-2%20%E2%80%94%20retrouver-2563EB?style=for-the-badge)
+![Last commit](https://img.shields.io/github/last-commit/theo-bggtt/gestionImmobiliere?style=for-the-badge&color=0F172A&label=dernier%20commit)
+![Issues](https://img.shields.io/github/issues/theo-bggtt/gestionImmobiliere?style=for-the-badge&color=0F172A&label=issues)
+
+</div>
+
+<br/>
+
+> Mémoire technique d'un bien immobilier. L'étape 0 a posé les fondations (schéma complet, authentification, catalogue de types, CRUD avec formulaire dynamique), l'étape 1 la capture opportuniste (photo d'abord, hors ligne, boîte d'envoi). Cette étape **expose** ce qui dormait en base depuis l'étape 0 : recherche plein texte classée, facettes, et un écran d'accueil refondu autour du champ de recherche et d'une grille de zones en photo. Pas de partage, pas de plan, pas de chronologie — voir [`.decisions/implementation-plan.md`](.decisions/implementation-plan.md) pour la suite.
+
+<br/>
+
+## Sommaire
+
+<table>
+<tr>
+<td valign="top" width="50%">
+
+**Démarrer**
+- [Prérequis](#prérequis)
+- [Démarrage (Docker)](#démarrage-docker)
+- [Démarrage (développement local)](#démarrage-développement-local-hors-docker-pour-lapp)
+- [Migrations](#migrations)
+- [Charger les données](#charger-les-données)
+- [Tests](#tests)
+- [Modèle de données](#modèle-de-données)
+
+</td>
+<td valign="top" width="50%">
+
+**Comprendre**
+- [La capture](#la-capture)
+- [Retrouver](#retrouver)
+- [Structure des dossiers](#structure-des-dossiers)
+- [Décisions prises](#décisions-prises-non-spécifiées-par-le-prompt-détape)
+- [Limites connues](#limites-connues)
+
+</td>
+</tr>
+</table>
+
+---
 
 ## Prérequis
 
@@ -16,7 +78,7 @@ cp .env.example .env
 docker compose up
 ```
 
-L'application applique ses migrations automatiquement au démarrage (`scripts/migrate.mjs`) et écoute sur `http://localhost:3000`. Les photos sont écrites dans le volume `fichiers_data`, monté sur `/donnees`. La base est vide : voir "Charger les données" ci-dessous.
+L'application applique ses migrations automatiquement au démarrage (`scripts/migrate.mjs`) et écoute sur `http://localhost:3000`. Les photos sont écrites dans le volume `fichiers_data`, monté sur `/donnees`. La base est vide : voir [Charger les données](#charger-les-données) ci-dessous.
 
 ## Démarrage (développement local, hors Docker pour l'app)
 
@@ -58,6 +120,28 @@ set -a && source .env.test && set +a && npx tsx scripts/seed-catalogue.ts    # u
 npm test
 ```
 
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
+## Modèle de données
+
+```mermaid
+erDiagram
+    PROPRIETE ||--o{ BATIMENT : contient
+    BATIMENT ||--o{ NIVEAU : contient
+    NIVEAU ||--o{ ZONE : contient
+    PROPRIETE ||--o{ ZONE : "zones extérieures"
+    ZONE ||--o{ ELEMENT : contient
+    TYPE_ELEMENT ||--o{ ELEMENT : type
+    SYSTEME ||--o{ ELEMENT : système
+    ELEMENT ||--o{ FICHIER_LIEN : photos
+```
+
+`niveau.ordinal` est un entier signé (sous-sol -2, rez 0, etc.) : c'est la clé de tri, `niveau.nom` n'est qu'un libellé libre. `zone.niveauId` n'est nul que pour les zones extérieures, rattachées directement à la propriété — l'extérieur est une zone comme une autre, jamais un cas particulier dans l'interface.
+
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
 ---
 
 ## La capture
@@ -70,6 +154,20 @@ Deux déclencheurs vivent dans une barre fixée en bas de **tous** les écrans a
 - **Objet existant** (cas B) — l'entretien : je viens de changer le filtre, je documente. Aussi accessible depuis la fiche, où l'objet est alors déjà connu.
 
 Chaque déclencheur est un `<label>` qui porte un `<input type="file" accept="image/*" capture="environment">` : **le viseur s'ouvre sur le geste lui-même**, sans navigation ni JavaScript intermédiaire. C'est la seule façon fiable sur Safari iOS, où un `click()` programmatique après un changement de route est bloqué faute de geste utilisateur.
+
+```mermaid
+flowchart LR
+    A["Tap · Nouvel objet / Objet existant"] --> B["input capture='environment'<br/>viseur natif"]
+    B --> C["Photo prise"]
+    C --> D["Feuille de confirmation<br/>zone / type / nom pré-remplis"]
+    D --> E["Enregistrer"]
+    E --> F{"Réseau disponible ?"}
+    F -->|oui| G["Envoi immédiat au serveur"]
+    F -->|non| H["Boîte d'envoi IndexedDB"]
+    H --> I["Retour réseau · 30 s · premier plan"]
+    I --> G
+    G --> J["2xx + elementId → purge"]
+```
 
 La photo prise, une feuille de confirmation se superpose à l'écran courant — toujours pas de navigation, pour ne pas perdre le `File` ni payer un aller-retour serveur qu'on n'a pas à la cave :
 
@@ -84,7 +182,9 @@ Les deux sélecteurs s'ouvrent en plein écran, récent en tête, avec un champ 
 
 ### Chronométrage
 
-#### Ce qui a été mesuré
+<details>
+<summary><strong>Ce qui a été mesuré</strong></summary>
+<br/>
 
 Build de production, Chromium piloté, viewport 414×896, **mode avion réel** (réseau coupé au niveau du navigateur, pas seulement le serveur arrêté), catalogue et arborescence de la propriété d'exemple. Photos sources : 4000×3000, orientation EXIF 6, 3,9 à 5,5 Mo.
 
@@ -98,13 +198,21 @@ Build de production, Chromium piloté, viewport 414×896, **mode avion réel** (
 
 Compression mesurée à part : **132 à 137 ms** pour une 4000×3000 sur cette machine. Elle démarre à l'instant où la photo arrive et tourne pendant que la feuille est à l'écran, donc hors du chemin critique. Sur un téléphone, compter 4 à 8 fois plus, soit 0,5 à 1,1 s — toujours terminé avant que le doigt n'atteigne « Enregistrer ».
 
-#### Ce qui n'a PAS été mesuré, et pourquoi
+</details>
+
+<details>
+<summary><strong>Ce qui n'a PAS été mesuré, et pourquoi</strong></summary>
+<br/>
 
 **Aucune de ces trois captures n'a été faite sur un vrai téléphone avec un vrai appareil photo.** Le pilotage automatique remplace `<input capture>` par un fichier local, ce qui court-circuite précisément l'étape la plus longue : ouverture de l'appareil photo natif, cadrage, déclenchement, retour à l'application. Le temps de réaction humain entre deux taps n'est pas mesuré non plus.
 
 Autrement dit, les chiffres ci-dessus disent ce que coûte le **logiciel**, pas ce que coûte la **capture**.
 
-#### Le reste du budget, annoncé comme un budget
+</details>
+
+<details>
+<summary><strong>Le reste du budget, annoncé comme un budget</strong></summary>
+<br/>
 
 | Poste | Secondes | Origine |
 |---|---|---|
@@ -119,9 +227,9 @@ Autrement dit, les chiffres ci-dessus disent ce que coûte le **logiciel**, pas 
 | **Total, valeurs acceptées** | **8,7 – 13,7** | |
 | **Total, zone changée** | **11,7 – 18,7** | |
 
-#### Verdict
+</details>
 
-La part logicielle du chronomètre est de **0,2 seconde**. Elle ne peut pas, dans son état actuel, faire échouer le critère des 30 secondes : il resterait 29,8 s au geste humain et à l'appareil photo, soit deux fois le budget estimé le plus pessimiste. Le nombre de gestes après la photo — **un seul** quand les valeurs proposées conviennent, trois quand on change de zone — est le vrai levier, et il est au plancher.
+**Verdict.** La part logicielle du chronomètre est de **0,2 seconde**. Elle ne peut pas, dans son état actuel, faire échouer le critère des 30 secondes : il resterait 29,8 s au geste humain et à l'appareil photo, soit deux fois le budget estimé le plus pessimiste. Le nombre de gestes après la photo — **un seul** quand les valeurs proposées conviennent, trois quand on change de zone — est le vrai levier, et il est au plancher.
 
 **Mais le critère demande trois captures réelles, et elles restent à faire.** Le tableau ci-dessous est à remplir sur un téléphone, chronomètre en main, avant de considérer l'étape close. Si l'une dépasse 30 secondes, c'est le flux qu'il faut retravailler, pas la mesure.
 
@@ -193,6 +301,8 @@ Vérifié : réseau coupé au niveau du navigateur, l'app démarre depuis le cac
 
 L'écran d'une fiche montre ses photos, la plus récente en premier, et un bouton « Ajouter une photo » qui relance le flux pré-lié à cet objet. Une capture partie pendant que la fiche est ouverte y apparaît toute seule.
 
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
 ---
 
 ## Retrouver
@@ -231,6 +341,15 @@ L'opérateur `@@` ignore les poids : aucune requête existante ne change de rés
 Vérifié sur le jeu d'exemple : `robinet` rend `Robinet évier` à 0,669 et `Vanne d'arrêt générale` (alias) à 0,243.
 
 ### La requête
+
+```mermaid
+flowchart TD
+    Q["Texte tapé — anti-rebond 150 ms"] --> P["plainto_tsquery('french_sans_accent', q)"]
+    P --> F["Filtre : visibilité + facettes (zone / système / type)"]
+    F --> R["Classement : ts_rank sur tsvector pondéré A · B · C · D"]
+    R --> L["LIMIT 30 (max 100) + count(*) OVER ()"]
+    L --> UI["Résultats + motif de correspondance"]
+```
 
 Une seule requête SQL, dans `app/lib/recherche/recherche.server.ts`. Elle est écrite à la main : elle mêle `tsvector` pondéré, `ts_rank`, un `LATERAL` pour la vignette et un `count` fenêtré, là où le constructeur de Drizzle n'apporterait que du bruit.
 
@@ -349,6 +468,10 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 
 **La capture n'a pas bougé.** Les deux déclencheurs vivent dans le layout (étape 1, décision #18), en barre fixe : ils restent à un tap depuis l'accueil comme depuis n'importe quel écran, y compris pendant qu'on tape dans le champ de recherche.
 
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
 ## Structure des dossiers
 
 - `app/db/schema/` — schéma Drizzle, une table (ou un petit groupe de tables liées) par fichier.
@@ -369,9 +492,15 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 - `scripts/` — migration au démarrage, seeds.
 - `tests/` — tests d'intégration base de données, traitement d'images, réception d'une capture, recherche, vocabulaire.
 
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
 ## Décisions prises (non spécifiées par le prompt d'étape)
 
-### Étape 0
+<details>
+<summary><strong>Étape 0 — 15 décisions (fondations, schéma, authentification, catalogue)</strong></summary>
+<br/>
 
 1. **Lien utilisateur ↔ propriété** : le schéma fourni ne le prévoyait pas. `propriete.proprietaire_id` (FK vers `utilisateur.id`, sans contrainte unique) a été ajouté après clarification — un compte peut posséder plusieurs propriétés. Toutes les routes CRUD sont scopées par `proprieteId` dans l'URL.
 2. **Serveur Express**, pas Hono — pattern officiel React Router v7 documenté et éprouvé.
@@ -389,7 +518,11 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 14. **npm** comme gestionnaire de paquets (aucune préférence exprimée).
 15. **Écran "modifier une zone"** ne permet de changer que `nom`/`type`, pas de repositionner (niveau/parent) — non demandé, gardé hors scope.
 
-### Étape 1
+</details>
+
+<details>
+<summary><strong>Étape 1 — 15 décisions (capture opportuniste, hors ligne)</strong></summary>
+<br/>
 
 16. **Le viseur passe par `<input type="file" capture="environment">` dans un `<label>`**, pas par `getUserMedia`. Le `label` porte le clic natif jusqu'à l'input : c'est ce qui garantit que l'appareil photo s'ouvre sur le geste, y compris sur Safari iOS, où un déclenchement programmatique après navigation serait refusé. Effet secondaire utile : on récupère la photo pleine résolution de l'appareil photo système, sans réimplémenter un viseur.
 17. **Aucune navigation pendant la capture.** La feuille de confirmation est une surcouche portée par le même composant. Changer de route perdrait le `File` et coûterait un chargement, précisément là où il n'y a pas de réseau. Corollaire : « retour à l'écran d'accueil » après enregistrement se traduit par « fermeture de la surcouche », ce qui rend l'écran d'où l'on vient, quel qu'il soit.
@@ -407,7 +540,11 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 29. **Le lien « compléter » n'est actif qu'après confirmation du serveur.** Hors ligne, la fiche n'a pas encore d'identifiant : la confirmation affiche « envoi en attente » et devient un lien dès que la capture est partie. Inventer une URL qui ne répondrait pas serait pire que d'annoncer l'attente.
 30. **Le cas B depuis l'accueil ne pré-remplit pas l'objet.** Le prompt n'impose de pré-remplissage que pour la zone et le type. Deviner l'objet d'un entretien est un pari le plus souvent perdant, et une photo rattachée au mauvais objet coûte plus cher que le tap qu'elle économise : le sélecteur d'objet s'ouvre donc directement après la photo. Depuis la fiche, où l'objet est connu, il reste un seul geste.
 
-### Étape 2
+</details>
+
+<details>
+<summary><strong>Étape 2 — 17 décisions (recherche, facettes, écran d'accueil)</strong></summary>
+<br/>
 
 31. **La mécanique de recherche de l'étape 0 a dû être modifiée**, alors que le prompt la donnait pour acquise. Deux critères d'acceptation étaient infaisables sans y toucher — l'insensibilité aux accents et le classement « nom avant détails » — et les deux sont corrigés par la migration `0005_recherche_poids_accents.sql` (configuration `french_sans_accent`, poids A/B/C/D, recalcul des lignes existantes). Le détail des mesures est plus haut. **Conséquence de déploiement** : la migration exécute `CREATE EXTENSION unaccent` et `CREATE TEXT SEARCH CONFIGURATION`, deux ordres qui demandent un rôle propriétaire de la base. C'est le cas du rôle `gestion` en local et en conteneur ; sur un hébergement géré, à vérifier avant de migrer.
 32. **Le nom de la configuration plein texte est écrit à deux endroits** : dans le SQL de la migration (qui définit le déclencheur) et dans `recherche.server.ts` (qui construit les requêtes). Une constante partagée serait impossible — le déclencheur vit en base. C'est la seule duplication, et elle est signalée en commentaire des deux côtés.
@@ -427,6 +564,12 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 46. **La recherche porte sur les éléments seuls, comme demandé.** Le prompt invitait à le contester : il n'y a pas lieu. Les zones se parcourent par la grille de l'accueil et par la facette *Zone*, les systèmes par la facette *Système* — deux surfaces qui existent déjà et qui ne demandent pas de taper. Mélanger des zones et des fiches dans une même liste de résultats obligerait à distinguer visuellement deux natures d'objet pour un gain nul.
 47. **Le test de recherche vide la base par `DELETE FROM utilisateur`, pas par `TRUNCATE ... CASCADE`.** `TRUNCATE` vide toute table qui *référence* la cible, `type_element` comprise — donc le catalogue chargé une fois par le setup, dont ces tests ont besoin. Un `DELETE` ne suit que les cascades de lignes, et les types système (`propriete_id` NULL) survivent.
 
+</details>
+
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
 ## Limites connues
 
 - **Hors ligne, seul `start_url` est garanti.** Suivre un lien dans l'app sans réseau échoue : React Router demande alors ses données de route au serveur. La capture, elle, ne navigue pas — c'est ce qui compte à cette étape.
@@ -440,3 +583,13 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 - **`count(*) OVER ()` matérialise toutes les lignes filtrées avant la limite.** Mesuré sans effet à 5 000 fiches (28 à 36 ms) ; c'est la première chose à revoir si une propriété réelle atteignait un ordre de grandeur de plus.
 - **La recherche ne fonctionne pas hors ligne.** Elle interroge le serveur à chaque frappe. L'instantané de capture, lui, reste dans IndexedDB et couvre le seul besoin hors ligne identifié (capturer à la cave). Chercher dans la copie locale serait un autre chantier, et il n'est pas demandé.
 - **La migration 0005 demande un rôle propriétaire de la base** (`CREATE EXTENSION`, `CREATE TEXT SEARCH CONFIGURATION`). Vrai en local et en conteneur, à vérifier sur un hébergement géré.
+
+<br/>
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:2563EB,100:0F172A&height=140&section=footer&animation=fadeIn" width="100%" alt="" />
+
+<sub>Projet solo · <a href="https://github.com/theo-bggtt/gestionImmobiliere/issues">issues</a> · <a href=".decisions/implementation-plan.md">plan d'implémentation</a></sub>
+
+</div>
