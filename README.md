@@ -54,7 +54,7 @@ Identifiants de démonstration créés par `seed:exemple` : `demo@gestion-immobi
 ```bash
 docker compose exec postgres createdb -U gestion gestion_immobiliere_test   # une fois
 cp .env.test.example .env.test
-set -a && source .env.test && set +a && npx tsx scripts/seed-catalogue.ts    # une fois, requis par le test d'alias
+set -a && source .env.test && set +a && npx tsx scripts/seed-catalogue.ts    # une fois, requis par les tests d'alias et de recherche
 npm test
 ```
 
@@ -297,7 +297,7 @@ Le prompt d'étape l'annonce : ce calcul « n'a pas besoin d'être exact, il doi
 
 ### Temps mesurés
 
-Build de production, PostgreSQL 16 en conteneur local, propriété d'exemple (31 fiches, 13 zones, 33 types, 94 alias). `ms` est la durée passée en base, mesurée par la requête elle-même et renvoyée dans la réponse JSON ; `http` est le temps total de bout en bout vu par le client.
+Build de production, PostgreSQL 16 en conteneur local, propriété d'exemple (31 fiches, 13 zones, 33 types, 95 alias). `ms` est la durée passée en base, mesurée par la requête elle-même et renvoyée dans la réponse JSON ; `http` est le temps total de bout en bout vu par le client.
 
 | Requête | Résultats | En base | HTTP total |
 |---|---|---|---|
