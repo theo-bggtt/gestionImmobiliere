@@ -11,7 +11,8 @@
     "seed:catalogue": "tsx --env-file=.env scripts/seed-catalogue.ts",
     "seed:exemple": "tsx --env-file=.env scripts/seed-exemple.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verifier:bundle": "node scripts/verifier-bundle.mjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.0",

@@ -11,7 +11,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { chargerPartageParJeton } from "../../lib/partage/partage.server";
 import { chargerFichierPartage } from "../../lib/partage/contenu.server";
 import { ENTETES_PARTAGE } from "../../lib/partage/document";
-import { cheminVignette, lire } from "../../lib/stockage/fichiers.server";
+import { lireTaille } from "../../lib/stockage/fichiers.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const etat = await chargerPartageParJeton(params.jeton);
@@ -21,11 +21,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (etat.statut === "inactif") throw new Response("Introuvable", { status: 404 });
 
   const f = await chargerFichierPartage(etat.partage, params.fichierId);
-  const vignette = new URL(request.url).searchParams.get("taille") === "vignette";
 
   let contenu: Buffer;
   try {
-    contenu = await lire(vignette ? cheminVignette(f.chemin) : f.chemin);
+    contenu = await lireTaille(f.chemin, new URL(request.url).searchParams.get("taille"));
   } catch {
     throw new Response("Introuvable", { status: 404 });
   }

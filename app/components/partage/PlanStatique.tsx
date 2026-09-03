@@ -45,7 +45,13 @@ export function PlanStatique({
         <p className="resultats-vide">Ce plan n'a pas encore d'image.</p>
       ) : (
         <div className="plan-cadre">
-          <img className="plan-image" src={liens.image(plan.imageFichierId, "pleine")} alt={`Plan ${plan.etiquette}`} />
+          {/* « moyenne » et non « pleine » : la mesure est dans
+              `lib/plans/types.ts`, une photo de plan sort à 2,5 Mo en pleine
+              résolution et à 456 Ko ici, pour une image affichée sur 688 px au
+              plus. La pleine reste à un clic, ci-dessous — sans script, le
+              pinch du navigateur est le seul zoom disponible, et il ne peut
+              zoomer que dans les pixels déjà chargés. */}
+          <img className="plan-image" src={liens.image(plan.imageFichierId, "moyenne")} alt={`Plan ${plan.etiquette}`} />
 
           {/* `zone_geom` n'est alimentée par aucun écran avant l'étape 6 : ce
               calque est vide aujourd'hui. Les polygones servis sont déjà
@@ -75,6 +81,12 @@ export function PlanStatique({
             </a>
           ))}
         </div>
+      )}
+
+      {plan.imageFichierId !== null && (
+        <p className="plan-pleine">
+          <a href={liens.image(plan.imageFichierId, "pleine")}>Ouvrir le plan en haute résolution</a>
+        </p>
       )}
 
       {plan.points.length === 0 ? (

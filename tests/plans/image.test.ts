@@ -16,7 +16,9 @@ import {
 // La couche de stockage résout sa racine à l'import : la fixer avant de
 // charger les modules qui écrivent, sinon le test salirait le volume de dev.
 process.env.STOCKAGE_RACINE = await mkdtemp(join(tmpdir(), "gi-plans-"));
-const { lire, cheminVignette } = await import("../../app/lib/stockage/fichiers.server");
+const { lire, lireTaille, cheminVignette, cheminMoyenne, supprimer } = await import(
+  "../../app/lib/stockage/fichiers.server"
+);
 const { creerPlan, remplacerImagePlan, supprimerPlan, poserPoint, chargerPointsDuPlan } = await import(
   "../../app/lib/plans/plans.server"
 );
@@ -90,6 +92,45 @@ describe("téléversement d'un plan", () => {
     // La vignette suit le même chemin dérivé que toute image de l'application.
     await expect(lire(cheminVignette(image.chemin))).resolves.toBeInstanceOf(Buffer);
   });
+
+  it("écrit la dérivée moyenne, bornée en largeur, sans toucher à la pleine résolution", async () => {
+    const j = await creerJeu();
+    const planId = await creerPlan({
+      proprieteId: j.p.id, type: "etage", niveauId: j.n.id, nom: "Rez", ordre: 0,
+      // Plus large que LARGEUR_MOYENNE_PLAN, sinon la borne ne se voit pas.
+      image: await photoDePlan(2000, 3000), geometrie: { rotation: 0 },
+    });
+
+    const image = await cheminDuPlan(planId);
+    const pleine = await sharp(await lire(image.chemin)).metadata();
+    const moyenne = await sharp(await lire(cheminMoyenne(image.chemin))).metadata();
+
+    // Orientation 6 : le portrait 2000x3000 est redressé en paysage 3000x2000.
+    expect(pleine.width).toBe(3000);
+    expect(moyenne.width).toBe(1400);
+    // C'est tout l'intérêt de la dérivée : le poids servi à un lien tombe.
+    expect((await lire(cheminMoyenne(image.chemin))).byteLength).toBeLessThan(
+      (await lire(image.chemin)).byteLength,
+    );
+  });
+
+  it("retombe sur la pleine résolution pour un plan enregistré avant que la moyenne existe", async () => {
+    const j = await creerJeu();
+    const planId = await creerPlan({
+      proprieteId: j.p.id, type: "etage", niveauId: j.n.id, nom: "Rez", ordre: 0,
+      image: await photoDePlan(2000, 3000), geometrie: { rotation: 0 },
+    });
+    const image = await cheminDuPlan(planId);
+
+    // L'état exact des plans de l'étape 4 : original et vignette, rien d'autre.
+    await supprimer(cheminMoyenne(image.chemin));
+
+    const servie = await lireTaille(image.chemin, "moyenne");
+    expect(servie.equals(await lire(image.chemin))).toBe(true);
+    // Le repli ne vaut que pour elle : une vignette manquante reste une erreur.
+    await supprimer(cheminVignette(image.chemin));
+    await expect(lireTaille(image.chemin, "vignette")).rejects.toBeTruthy();
+  });
 });
 
 describe("remplacement de l'image d'un plan", () => {
@@ -124,6 +165,7 @@ describe("remplacement de l'image d'un plan", () => {
     const [reste] = await db.select().from(fichier).where(eq(fichier.id, ancienne.fichierId));
     expect(reste).toBeUndefined();
     await expect(lire(ancienne.chemin)).rejects.toBeTruthy();
+    await expect(lire(cheminMoyenne(ancienne.chemin))).rejects.toBeTruthy();
   });
 
   it("emporte ses points quand le plan lui-même est supprimé, et rien d'autre", async () => {

@@ -41,3 +41,31 @@ export async function supprimer(chemin: string): Promise<void> {
 export function cheminVignette(cheminOriginal: string): string {
   return cheminOriginal.replace(/\.jpg$/, "") + ".vignette.jpg";
 }
+
+/** Même convention que la vignette. N'existe que pour les images de plan. */
+export function cheminMoyenne(cheminOriginal: string): string {
+  return cheminOriginal.replace(/\.jpg$/, "") + ".moyenne.jpg";
+}
+
+/**
+ * Lit la dérivée demandée par le paramètre d'URL `taille`.
+ *
+ * Le repli de `moyenne` sur l'original n'est pas de la prudence : les plans
+ * enregistrés avant que cette dérivée existe n'en ont pas sur le volume, et
+ * ils ne doivent pas devenir des 404. Ils redeviennent légers au prochain
+ * remplacement de leur image.
+ *
+ * Il ne vaut que pour elle. Une vignette absente reste une erreur : servir
+ * 2,5 Mo à qui demande 400 px de large serait pire que ne rien servir.
+ */
+export async function lireTaille(chemin: string, taille: string | null): Promise<Buffer> {
+  if (taille === "vignette") return lire(cheminVignette(chemin));
+  if (taille === "moyenne") {
+    try {
+      return await lire(cheminMoyenne(chemin));
+    } catch (erreur) {
+      if ((erreur as NodeJS.ErrnoException).code !== "ENOENT") throw erreur;
+    }
+  }
+  return lire(chemin);
+}

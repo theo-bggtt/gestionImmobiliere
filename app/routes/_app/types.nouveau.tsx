@@ -4,7 +4,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { typeElement } from "../../db/schema/index";
-import { CHAMP_GENRES } from "../../db/schema/types";
+import { CHAMP_GENRES } from "../../lib/forms/types";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { ChampEditor } from "../../components/ChampEditor";

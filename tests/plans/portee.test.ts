@@ -160,6 +160,31 @@ describe("sélecteur de niveau", () => {
     expect(etiquettes.join(" ")).not.toContain("chemin des Vignes");
     expect(second.id).toBeGreaterThan(0);
   });
+
+  it("nomme le bâtiment quand deux d'entre eux portent un rez, et lui seul les distingue", async () => {
+    const j = await creerJeu();
+    const [grange] = await db.insert(batiment).values({ proprieteId: j.p.id, nom: "Grange", ordre: 1 }).returning();
+    const [rezGrange] = await db
+      .insert(niveau)
+      .values({ batimentId: grange.id, nom: "Rez-de-chaussée", ordinal: 0 })
+      .returning();
+    await db.insert(plan).values({
+      proprieteId: j.p.id, type: "etage", niveauId: rezGrange.id, nom: "Grange — plan", ordre: 0,
+    });
+
+    const etiquettes = etiqueter(await chargerPlans(j.p.id, PORTEE_PROPRIETAIRE)).map((p) => p.etiquette);
+    expect(etiquettes).toContain("Maison · Rez-de-chaussée");
+    expect(etiquettes).toContain("Grange · Rez-de-chaussée");
+    // Deux entrées identiques dans le sélecteur, c'est le défaut qu'on corrige.
+    expect(new Set(etiquettes).size).toBe(etiquettes.length);
+  });
+
+  it("n'alourdit pas l'étiquette quand la propriété n'a qu'un bâtiment", async () => {
+    const j = await creerJeu();
+    const etiquettes = etiqueter(await chargerPlans(j.p.id, PORTEE_PROPRIETAIRE)).map((p) => p.etiquette);
+    expect(etiquettes).toContain("Rez-de-chaussée");
+    expect(etiquettes.join(" ")).not.toContain("Maison");
+  });
 });
 
 describe("points servis", () => {

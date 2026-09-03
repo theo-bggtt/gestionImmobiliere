@@ -17,6 +17,21 @@ export const LARGEUR_MAX_PLAN = 3500;
 // fond blanc — un plan — qu'il produit son ringing le plus visible.
 export const QUALITE_PLAN = 90;
 
+// Ce que pèsent réellement ces deux constantes : une photo de plan sur papier
+// (2971x4096) sort à 2475 Ko une fois passée par LARGEUR_MAX_PLAN et
+// QUALITE_PLAN ; une photo de téléphone (3603x2158) à 2207 Ko. Les plans de
+// vérification de l'étape 4 sont des tracés synthétiques de 40 Ko et ne
+// disaient rien de ce cas-là. Un porteur de lien recevait donc 2 à 3 Mo — le
+// jardinier en 4G, décision #71.
+//
+// 1400 px est la largeur d'affichage maximale de la page de partage doublée :
+// `.page-partage` est bornée à 720 px moins les gouttières, soit 688 px CSS,
+// et aucun agent ne dépasse un rapport de 2 à cette largeur-là (un téléphone
+// à 3x n'a que ~360 px de large). La même photo y pèse 456 Ko. La pleine
+// résolution reste servie par un lien explicite, pour qui veut zoomer dans
+// une cote.
+export const LARGEUR_MOYENNE_PLAN = 1400;
+
 /** Un plan tel que le propriétaire le voit : avec le nom qu'il a saisi. */
 export type PlanListe = {
   id: number;

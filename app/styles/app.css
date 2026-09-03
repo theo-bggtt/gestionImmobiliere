@@ -661,6 +661,10 @@ input.partage-lien { font-size: 0.8rem; min-height: 40px; }
   text-decoration: none;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
 }
+/* Le plan est servi en taille moyenne sur un partage ; ce lien rend la pleine
+   résolution à qui veut lire une cote, sans la faire payer aux autres. */
+.plan-pleine { margin: 8px 0 0; font-size: 0.85rem; }
+
 .plan-legende { margin: 10px 0 0; padding-left: 22px; font-size: 0.9rem; }
 .plan-legende li { margin: 4px 0; }
 

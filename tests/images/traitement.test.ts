@@ -140,4 +140,21 @@ describe("recadrage et rotation d'un plan", () => {
     const objet = await traiterImage(grand);
     expect(objet.largeur).toBe(LARGEUR_MAX);
   });
+
+  it("ne produit la dérivée moyenne que si elle est demandée", async () => {
+    const grand = await sharp({ create: { width: 5000, height: 3000, channels: 3, background: { r: 250, g: 250, b: 250 } } })
+      .jpeg()
+      .toBuffer();
+
+    // Une photo d'objet n'en a pas l'usage : la lui donner doublerait le
+    // volume de chaque capture pour une image que personne ne demande.
+    expect((await traiterImage(grand)).moyenne).toBeUndefined();
+
+    const plan = await traiterImage(grand, {
+      largeurMax: LARGEUR_MAX_PLAN,
+      qualite: QUALITE_PLAN,
+      largeurMoyenne: 1400,
+    });
+    expect((await sharp(plan.moyenne!).metadata()).width).toBe(1400);
+  });
 });

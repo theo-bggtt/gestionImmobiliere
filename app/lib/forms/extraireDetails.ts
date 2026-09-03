@@ -1,5 +1,5 @@
 // app/lib/forms/extraireDetails.ts
-import type { ChampDefinition } from "../../db/schema/types";
+import type { ChampDefinition } from "./types";
 
 export function extraireDetails(form: FormData, champs: ChampDefinition[]) {
   const details: Record<string, unknown> = {};

@@ -5,7 +5,7 @@
 // Le filtrage se fait côté serveur, dans le loader, et ce qui est filtré n'est
 // jamais envoyé au client : masquer à l'affichage laisserait la valeur dans le
 // HTML rendu, c'est-à-dire dans la source de la page, à un clic droit.
-import type { ChampDefinition } from "../../db/schema/types";
+import type { ChampDefinition } from "../forms/types";
 
 export type ChampRendu = { cle: string; label: string; valeur: string };
 

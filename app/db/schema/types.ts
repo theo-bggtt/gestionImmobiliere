@@ -2,26 +2,13 @@
 import { pgTable, serial, text, integer, pgEnum, jsonb, check, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { propriete } from "./core";
+// La définition d'un champ vit dans `app/lib/forms/types.ts`, un module neutre :
+// elle est lue par des composants qui tournent dans le navigateur, et importer
+// une valeur d'ici y emporterait drizzle et tout le schéma. La dépendance va
+// de la base vers la définition, jamais l'inverse.
+import type { ChampDefinition } from "../../lib/forms/types";
 
 export const typeElementOrigine = pgEnum("type_element_origine", ["systeme", "perso"]);
-
-// Liste fermée de six genres (règle non négociable #4) — seule source de
-// vérité, dérivée par ChampEditor.tsx et types.nouveau.tsx pour éviter que
-// les deux littéraux divergent.
-export const CHAMP_GENRES = ["texte", "nombre", "date", "booleen", "choix", "fichier"] as const;
-export type ChampGenre = (typeof CHAMP_GENRES)[number];
-
-export type ChampDefinition = {
-  cle: string;
-  label: string;
-  genre: ChampGenre;
-  unite?: string;
-  niveauMin: number; // 0 à 3, non encore appliqué (le partage n'existe pas à cette étape)
-  obligatoire: boolean;
-  // Requis quand genre === "choix" : liste des valeurs possibles.
-  // Extension non listée dans le prompt, nécessaire pour que "choix" valide quoi que ce soit.
-  options?: string[];
-};
 
 export const typeElement = pgTable("type_element", {
   id: serial("id").primaryKey(),
