@@ -295,3 +295,181 @@ form button[type="submit"]:not(.bouton-discret) {
 .fiche-photos-vide { color: var(--texte-doux); }
 .galerie { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 12px 0 0; padding: 0; }
 .galerie img { width: 104px; height: 104px; object-fit: cover; border-radius: 8px; display: block; }
+
+/* ── Recherche ────────────────────────────────────────────────────── */
+
+/* Épinglé : sur un écran de téléphone, la recherche ne doit jamais sortir du
+   champ de vision en descendant dans les résultats ou dans la grille. */
+.recherche-epingle {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin: calc(-1 * var(--gouttiere)) calc(-1 * var(--gouttiere)) var(--gouttiere);
+  padding: 10px var(--gouttiere);
+  background: var(--fond);
+  border-bottom: 1px solid var(--trait);
+}
+.recherche-barre { position: relative; }
+input.recherche-champ {
+  min-height: var(--cible);
+  margin-top: 0;
+  padding-right: 44px;
+  font-size: 1rem;
+}
+/* Le bouton d'effacement natif doublerait le nôtre, et il fait 12 px de large
+   là où il en faut 44 pour un pouce. */
+input.recherche-champ::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.recherche-effacer {
+  position: absolute;
+  right: 4px;
+  top: 0;
+  width: 44px;
+  height: var(--cible);
+  border: none;
+  background: transparent;
+  color: var(--texte-doux);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+/* ── Résultats ────────────────────────────────────────────────────── */
+
+.resultats-compte { color: var(--texte-doux); font-size: 0.85rem; margin: 0 0 8px; }
+.resultats-vide { color: var(--texte-doux); }
+.resultats[aria-busy="true"] { opacity: 0.6; }
+
+.resultats-liste { list-style: none; margin: 0; padding: 0; }
+.resultat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--cible);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--trait);
+  color: inherit;
+  text-decoration: none;
+}
+.resultat-vignette {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+.resultat-vignette-vide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  font-weight: 600;
+}
+.resultat-texte { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.resultat-nom { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resultat-lieu {
+  color: var(--texte-doux);
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Étiquette discrète : elle explique, elle ne réclame pas l'attention. */
+.resultat-motif {
+  flex: none;
+  padding: 2px 8px;
+  border: 1px solid var(--trait);
+  border-radius: 999px;
+  color: var(--texte-doux);
+  font-size: 0.72rem;
+}
+
+.types-proches { list-style: none; margin: 10px 0; padding: 0; }
+.types-proches li { padding: 6px 0; border-bottom: 1px solid var(--trait); }
+.types-proches-nom { font-weight: 600; color: var(--texte); }
+.types-proches-alias { display: block; color: var(--texte-doux); font-size: 0.82rem; }
+
+/* ── Facettes ─────────────────────────────────────────────────────── */
+
+.facettes { margin-bottom: var(--gouttiere); }
+.facettes-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.facettes-tete h2 { margin: 0; font-size: 0.95rem; color: var(--texte-doux); }
+.facettes-groupe { margin-top: 10px; }
+.facettes-titre { margin: 0 0 6px; font-size: 0.78rem; font-weight: 600; color: var(--texte-doux); text-transform: uppercase; letter-spacing: 0.04em; }
+.facettes-liste { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.pastille {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--trait);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--texte);
+  font-size: 0.85rem;
+}
+.pastille-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pastille-nombre { color: var(--texte-doux); font-size: 0.78rem; }
+.pastille-active .pastille-nombre { color: #cfe6df; }
+.pastille-plus { color: var(--texte-doux); }
+
+/* ── Grille de zones de l'accueil ─────────────────────────────────── */
+
+.accueil-titre { margin-bottom: 12px; }
+.grille-zones {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.case-zone {
+  display: block;
+  position: relative;
+  border-radius: var(--rayon);
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  background: var(--surface);
+  border: 1px solid var(--trait);
+}
+.case-zone-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+/* Aplat neutre à l'initiale : une zone sans photo reste lisible, elle n'est
+   ni une case vide ni une image cassée. */
+.case-zone-aplat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: color-mix(in srgb, var(--accent) 70%, var(--texte));
+  font-size: 2.4rem;
+  font-weight: 600;
+}
+.case-zone-texte {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 10px 8px;
+  color: #fff;
+  background: linear-gradient(to top, rgba(15, 15, 13, 0.82), rgba(15, 15, 13, 0));
+}
+.case-zone-nom { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case-zone-compte { font-size: 0.78rem; color: #ded9d0; }
+/* Le voile sombre sert à poser du texte sur une photo. Sur un aplat il n'a
+   rien à combattre et ne fait que salir la case. */
+.case-zone-aplat + .case-zone-texte { background: none; color: var(--texte); }
+.case-zone-aplat + .case-zone-texte .case-zone-compte { color: var(--texte-doux); }
+
+.accueil-nav { margin-top: 20px; }
+.accueil-lien-filtres { margin-top: 14px; }
+
+@media (min-width: 560px) {
+  .grille-zones { grid-template-columns: repeat(3, 1fr); }
+}

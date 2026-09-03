@@ -33,6 +33,12 @@ export default [
         route(":elementId/modifier", "routes/_app/elements.$elementId.modifier.tsx"),
       ]),
       route("types/nouveau", "routes/_app/types.nouveau.tsx"),
+      // L'écran de recherche (dont l'URL porte texte et facettes) et sa route
+      // de ressource JSON, interrogée à la frappe depuis l'accueil.
+      ...prefix("recherche", [
+        index("routes/_app/recherche.tsx"),
+        route("donnees", "routes/_app/recherche.donnees.tsx"),
+      ]),
       // Routes de ressource de la capture : l'instantané hors ligne, l'envoi
       // depuis la boîte d'envoi, et la lecture authentifiée des images.
       ...prefix("capture", [
