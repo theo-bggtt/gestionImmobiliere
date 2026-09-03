@@ -81,7 +81,13 @@ function Accueil({
       {zones.length === 0 ? (
         <>
           <p className="resultats-vide">Aucune zone pour l'instant.</p>
-          <Link to="zones/nouveau">Créer une zone</Link>
+          {/* Le squelette d'abord : créer les zones une par une suppose d'avoir
+              déjà un bâtiment et un niveau, ce qui est exactement le démarrage
+              à froid que l'écran de démarrage supprime. */}
+          <p className="accueil-demarrer">
+            <Link to="demarrer">Composer une structure en quelques questions</Link>
+          </p>
+          <Link to="zones/nouveau">ou créer une zone à la main</Link>
         </>
       ) : (
         <GrilleZones zones={zones} liens={liensPropriete(proprieteId)} />

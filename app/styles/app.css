@@ -700,3 +700,125 @@ input.partage-lien { font-size: 0.8rem; min-height: 40px; }
 .editeur-angle input { width: 160px; min-height: 0; margin: 0; }
 .editeur-note { color: var(--texte-doux); font-size: 0.8rem; margin: 6px 0; }
 .editeur-fichier { display: block; }
+
+/* ── Démarrage : l'accueil sans page blanche ──────────────────────── */
+
+.demarrage { padding: var(--gouttiere); max-width: 720px; margin: 0 auto; }
+.demarrage-intro { color: var(--texte-doux); margin: 0 0 calc(var(--gouttiere) * 1.5); }
+.demarrage-aide { color: var(--texte-doux); font-size: 0.9rem; margin: 0 0 12px; }
+.champ-aide { color: var(--texte-doux); font-size: 0.9rem; margin: 4px 0 12px; }
+
+.demarrage-regbl,
+.demarrage-questions {
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  padding: var(--gouttiere);
+  margin-bottom: var(--gouttiere);
+}
+
+.demarrage-adresse-ligne { display: flex; gap: 8px; flex-wrap: wrap; }
+.demarrage-adresse-champ { flex: 1 1 240px; min-height: var(--cible); padding: 0 12px; }
+.demarrage-adresse-ligne button { min-height: var(--cible); padding: 0 20px; }
+
+.demarrage-candidats { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+/* Une carte par candidat, jamais une sélection automatique : le registre
+   propose des adresses proches, et c'est au propriétaire de reconnaître
+   la sienne. */
+.demarrage-candidat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--cible);
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  cursor: pointer;
+}
+.demarrage-candidat.choisi { border-color: var(--accent); background: var(--surface); box-shadow: inset 0 0 0 1px var(--accent); }
+.demarrage-candidat-adresse { font-weight: 600; }
+.demarrage-candidat-detail { color: var(--texte-doux); font-size: 0.9rem; }
+
+.demarrage-avis {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  background: var(--fond);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--rayon) var(--rayon) 0;
+  font-size: 0.95rem;
+}
+.demarrage-source { color: var(--texte-doux); font-size: 0.8rem; margin: 12px 0 0; }
+
+.demarrage-questions fieldset { border: none; padding: 0; margin: 0 0 var(--gouttiere); }
+.demarrage-questions legend { font-weight: 600; padding: 0; margin-bottom: 8px; }
+.demarrage-questions fieldset label,
+.demarrage-case { display: flex; align-items: center; gap: 10px; min-height: var(--cible); cursor: pointer; }
+.demarrage-questions input[type="radio"],
+.demarrage-case input[type="checkbox"] { width: 22px; height: 22px; }
+.demarrage-champ { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.demarrage-champ input { min-height: var(--cible); padding: 0 12px; max-width: 120px; }
+
+.demarrage-batiment {
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  padding: var(--gouttiere);
+  margin-bottom: var(--gouttiere);
+}
+.demarrage-batiment-entete { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.demarrage-nom-batiment { flex: 1; font-size: 1.1rem; font-weight: 600; min-height: 44px; padding: 0 10px; }
+.demarrage-nom-batiment-fixe { flex: 1; font-size: 1.1rem; margin: 0; }
+
+.demarrage-niveau { border-left: 2px solid var(--trait); padding-left: 12px; margin-bottom: 16px; }
+.demarrage-niveau-entete { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+/* L'ordinal est montré parce que c'est lui qui range les niveaux, pas le nom
+   (règle non négociable #11). */
+.demarrage-ordinal {
+  flex: 0 0 auto;
+  min-width: 34px;
+  padding: 3px 6px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--texte-doux);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: 6px;
+}
+.demarrage-nom-niveau { flex: 1; min-height: 44px; padding: 0 10px; }
+
+.demarrage-zones { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.demarrage-zone { display: flex; gap: 6px; align-items: center; }
+.demarrage-zone input { flex: 1 1 140px; min-height: 44px; padding: 0 10px; }
+.demarrage-zone select { min-height: 44px; }
+
+.demarrage-retirer {
+  min-height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--texte-doux);
+  border: 1px solid var(--trait);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.demarrage-retirer:hover { color: var(--alerte); border-color: var(--alerte); }
+.demarrage-ajouter {
+  min-height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px dashed var(--trait);
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.demarrage-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: var(--gouttiere); }
+.demarrage-actions button[type="submit"],
+.demarrage-actions > button:first-child { min-height: var(--cible); padding: 0 24px; font-size: 1rem; }
+.demarrage-actions [role="alert"] { flex-basis: 100%; color: var(--alerte); margin: 0; }
+.demarrage-passer { color: var(--texte-doux); background: none; border: none; cursor: pointer; font-size: 0.95rem; }
+.accueil-demarrer { margin: 12px 0 4px; }
