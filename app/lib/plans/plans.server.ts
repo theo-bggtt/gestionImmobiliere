@@ -19,9 +19,10 @@ import {
   type Portee,
 } from "../recherche/recherche.server";
 import { traiterImage, type Recadrage } from "../images/traitement.server";
-import { cheminVignette, sauvegarder, supprimer } from "../stockage/fichiers.server";
+import { cheminMoyenne, cheminVignette, sauvegarder, supprimer } from "../stockage/fichiers.server";
 import {
   LARGEUR_MAX_PLAN,
+  LARGEUR_MOYENNE_PLAN,
   QUALITE_PLAN,
   type PlanEtiquete,
   type PlanListe,
@@ -135,15 +136,38 @@ export async function chargerPlans(
  * Le repli est `niveau.nom`, déjà rendu sur la page de partage par le chemin
  * d'une zone et déjà listé comme non filtré dans la revue de fuite. On
  * n'ouvre donc pas une classe de fuite, on en réutilise une documentée.
+ * `batiment.nom` est dans le même cas : `cheminZone` le joint déjà à
+ * `niveau.nom` et le rend sur la même page.
+ *
+ * `avecBatiment` n'est pas déduit du plan mais de la liste où il figure —
+ * l'ambiguïté est une propriété de la liste, pas du plan. C'est `etiqueter`
+ * qui la connaît, et lui seul.
  */
-export const etiquettePlan = (p: PlanListe): string => {
+export const etiquettePlan = (p: PlanListe, avecBatiment = false): string => {
   if (p.type === "situation") return p.rang > 1 ? `Situation ${p.rang}` : "Situation";
-  const base = p.niveauNom ?? "Niveau";
+  const niveau = p.niveauNom ?? "Niveau";
+  const base = avecBatiment && p.batimentNom ? `${p.batimentNom} · ${niveau}` : niveau;
   return p.rang > 1 ? `${base} · plan ${p.rang}` : base;
 };
 
-export const etiqueter = (plans: PlanListe[]): PlanEtiquete[] =>
-  plans.map((p) => ({ id: p.id, etiquette: etiquettePlan(p), situation: p.type === "situation" }));
+/**
+ * Le bâtiment n'entre dans l'étiquette que s'il y a de quoi désambiguïser :
+ * deux bâtiments portant chacun un rez donnaient deux « Rez » côte à côte
+ * dans le sélecteur. Sur une propriété à un seul bâtiment — le cas courant —
+ * « Rez » reste « Rez », l'étiquette ne s'alourdit pas pour rien.
+ *
+ * Le critère est le nombre de bâtiments, pas la collision de noms de niveaux :
+ * sous deux bâtiments, un « Combles » seul ne dit toujours pas lequel des deux.
+ */
+export const etiqueter = (plans: PlanListe[]): PlanEtiquete[] => {
+  const batiments = new Set(plans.map((p) => p.batimentNom).filter((nom): nom is string => nom !== null));
+  const avecBatiment = batiments.size > 1;
+  return plans.map((p) => ({
+    id: p.id,
+    etiquette: etiquettePlan(p, avecBatiment),
+    situation: p.type === "situation",
+  }));
+};
 
 /** Règle non négociable #1 de l'étape : jamais `point` sans `element` ni portée. */
 export async function chargerPointsDuPlan(
@@ -241,11 +265,15 @@ async function enregistrerImage(proprieteId: number, image: Buffer, geometrie: G
     qualite: QUALITE_PLAN,
     rotation: geometrie.rotation,
     recadrage: geometrie.recadrage,
+    // La dérivée que reçoit un porteur de lien. Le plan est la seule image
+    // qu'on sert en pleine résolution hors des écrans du propriétaire.
+    largeurMoyenne: LARGEUR_MOYENNE_PLAN,
   });
 
   const chemin = `propriete-${proprieteId}/plans/${randomUUID()}.jpg`;
   await sauvegarder(chemin, traitee.original);
   await sauvegarder(cheminVignette(chemin), traitee.vignette);
+  if (traitee.moyenne) await sauvegarder(cheminMoyenne(chemin), traitee.moyenne);
 
   try {
     const [f] = await db
@@ -268,6 +296,7 @@ async function enregistrerImage(proprieteId: number, image: Buffer, geometrie: G
     // Ne pas laisser d'image orpheline sur le volume si la base a refusé.
     await supprimer(chemin);
     await supprimer(cheminVignette(chemin));
+    await supprimer(cheminMoyenne(chemin));
     throw e;
   }
 }
@@ -279,6 +308,9 @@ async function effacerImage(fichierId: number | null) {
   if (f) {
     await supprimer(f.chemin);
     await supprimer(cheminVignette(f.chemin));
+    // Absente pour les plans enregistrés avant qu'elle existe : `supprimer`
+    // tient déjà l'effacement de ce qui n'est plus là pour le résultat voulu.
+    await supprimer(cheminMoyenne(f.chemin));
   }
 }
 

@@ -204,6 +204,30 @@ describe("image d'un plan portée par le jeton", () => {
     expect(reponse.headers.get("Content-Type")).toBe("image/jpeg");
   });
 
+  it("demande la dérivée moyenne dans le HTML, et garde la pleine à un clic", async () => {
+    const j = await creerJeu();
+    const d = await pageDe(j);
+    const html = rendre(PagePartage, { donnees: d.donnees, jeton: d.jeton });
+    const fichierId = await imageDuPlan(j.planRez);
+
+    // En pleine résolution, une vraie photo de plan pèse 2 à 3 Mo (mesure
+    // dans le README) pour une image affichée sur 688 px au plus.
+    expect(html).toContain(`/fichiers/${fichierId}?taille=moyenne`);
+    // Sans script, le pincement est le seul zoom : la pleine reste joignable.
+    expect(html).toContain("haute résolution");
+
+    // La taille demandée ne change pas le droit, seulement le chemin lu.
+    for (const requete of [`?taille=moyenne`, ``]) {
+      const servie = await routeFichiers.loader(
+        args(`http://test/p/${j.jeton}/fichiers/${fichierId}${requete}`, {
+          jeton: j.jeton,
+          fichierId: String(fichierId),
+        }),
+      );
+      expect(servie.status).toBe(200);
+    }
+  });
+
   it("répond 404 pour l'image d'un plan hors portée, jamais 403", async () => {
     const j = await creerJeu();
     const fichierId = await imageDuPlan(j.planSousSol);

@@ -16,7 +16,7 @@ import {
   utilisateur, propriete, batiment, niveau, zone, typeElement, element,
   fichier, fichierLien, partage, session,
 } from "../../app/db/schema/index";
-import type { ChampDefinition } from "../../app/db/schema/types";
+import type { ChampDefinition } from "../../app/lib/forms/types";
 import { creerJeton } from "../../app/lib/partage/partage.server";
 import { documentSansScripts, ENTETES_PARTAGE } from "../../app/lib/partage/document";
 import { PagePartage, PartageInactif } from "../../app/components/partage/PagePartage";

@@ -7,7 +7,7 @@ import { fichier } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
-import { cheminVignette, lire } from "../../lib/stockage/fichiers.server";
+import { lireTaille } from "../../lib/stockage/fichiers.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
@@ -19,11 +19,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     "Fichier introuvable",
   );
 
-  const vignette = new URL(request.url).searchParams.get("taille") === "vignette";
-
   let contenu: Buffer;
   try {
-    contenu = await lire(vignette ? cheminVignette(f.chemin) : f.chemin);
+    contenu = await lireTaille(f.chemin, new URL(request.url).searchParams.get("taille"));
   } catch {
     throw new Response("Fichier introuvable", { status: 404 });
   }

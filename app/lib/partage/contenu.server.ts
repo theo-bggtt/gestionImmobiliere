@@ -9,7 +9,7 @@
 // disent quelque chose de la propriété.
 import { sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import type { ChampDefinition } from "../../db/schema/types";
+import type { ChampDefinition } from "../forms/types";
 import {
   chargerFacettes,
   chargerZonesVignettes,

@@ -1,6 +1,6 @@
 // app/components/DynamicElementFields.tsx
 import type { ReactNode } from "react";
-import type { ChampDefinition } from "../db/schema/types";
+import type { ChampDefinition } from "../lib/forms/types";
 
 export function DynamicElementFields({ champs, valeurs = {} }: { champs: ChampDefinition[]; valeurs?: Record<string, unknown> }) {
   return (

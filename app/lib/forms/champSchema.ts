@@ -1,6 +1,6 @@
 // app/lib/forms/champSchema.ts
 import { z } from "zod";
-import type { ChampDefinition } from "../../db/schema/types";
+import type { ChampDefinition } from "./types";
 
 export function schemaPourChamps(champs: ChampDefinition[]) {
   const forme: Record<string, z.ZodTypeAny> = {};

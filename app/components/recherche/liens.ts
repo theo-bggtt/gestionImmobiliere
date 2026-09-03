@@ -9,12 +9,15 @@
 // mentionner ni identifiant de propriété (règle non négociable #5) ni route
 // protégée. En lui donnant `liensPartage`, elle n'a plus les moyens d'en
 // écrire une.
-export type Taille = "vignette" | "pleine";
+// « moyenne » n'existe que pour les images de plan : c'est la seule qu'un
+// porteur de lien reçoit en pleine résolution, et la seule qui pèse des méga-
+// octets. Les autres images sont déjà bornées à 2000 px.
+export type Taille = "vignette" | "moyenne" | "pleine";
 
 export type Liens = {
   fiche: (elementId: number) => string;
   zone: (zoneId: number) => string;
-  /** Vignette par défaut ; un plan se regarde en pleine résolution. */
+  /** Vignette par défaut ; un plan se regarde en « moyenne », voir types.ts. */
   image: (fichierId: number, taille?: Taille) => string;
   /** Le plan d'un niveau. Le sélecteur est une liste de liens, sans script. */
   plan: (planId: number) => string;
@@ -22,7 +25,7 @@ export type Liens = {
   ajout?: string;
 };
 
-const suffixe = (taille: Taille) => (taille === "vignette" ? "?taille=vignette" : "");
+const suffixe = (taille: Taille) => (taille === "pleine" ? "" : `?taille=${taille}`);
 
 export const liensPropriete = (proprieteId: number): Liens => ({
   // La fiche est l'écran « modifier » (décision #22 de l'étape 1).

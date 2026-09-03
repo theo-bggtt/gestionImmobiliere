@@ -9,7 +9,7 @@ import {
   utilisateur, propriete, batiment, niveau, zone, systeme, typeElement, element,
   fichier, fichierLien, partage,
 } from "../../app/db/schema/index";
-import type { ChampDefinition } from "../../app/db/schema/types";
+import type { ChampDefinition } from "../../app/lib/forms/types";
 import { chargerFacettes, chargerZonesVignettes, rechercher } from "../../app/lib/recherche/recherche.server";
 import { porteeDuPartage, partageActif, creerJeton } from "../../app/lib/partage/partage.server";
 import {

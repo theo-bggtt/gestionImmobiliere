@@ -1,7 +1,7 @@
 // tests/forms/champ-validation.test.ts
 import { describe, it, expect } from "vitest";
 import { validerDetails } from "../../app/lib/forms/champSchema";
-import type { ChampDefinition } from "../../app/db/schema/types";
+import type { ChampDefinition } from "../../app/lib/forms/types";
 
 const champsChaudiere: ChampDefinition[] = [
   { cle: "puissance", label: "Puissance", genre: "nombre", unite: "kW", niveauMin: 1, obligatoire: true },

@@ -1,7 +1,7 @@
 // app/components/ChampEditor.tsx
 import { useState } from "react";
-import { CHAMP_GENRES } from "../db/schema/types";
-import type { ChampDefinition, ChampGenre } from "../db/schema/types";
+import { CHAMP_GENRES } from "../lib/forms/types";
+import type { ChampDefinition, ChampGenre } from "../lib/forms/types";
 
 type ChampBrouillon = ChampDefinition & { optionsTexte?: string };
 

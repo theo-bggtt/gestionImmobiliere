@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 78 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;78+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
+[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 81 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;81+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
 
 <br/>
 
@@ -618,11 +618,28 @@ Le sélecteur de niveau est une liste de liens (`?plan=<id>`), trié par `niveau
 
 **L'étiquette d'un plan est dérivée du niveau, jamais de `plan.nom`.** Le nom est saisi librement par le propriétaire, qui peut y avoir écrit l'adresse ou l'EGID (règle non négociable #7) ; il ne sort pas de ses écrans, comme `partage.nom`. Le repli, `niveau.nom`, est déjà rendu sur la page de partage par le chemin d'une zone et déjà listé comme non filtré dans la revue de fuite : on n'ouvre pas une classe de fuite, on en réutilise une documentée.
 
+Le **bâtiment** entre dans l'étiquette quand il y a de quoi désambiguïser, et seulement là : deux bâtiments portant chacun un rez donnaient deux entrées « Rez-de-chaussée » indiscernables dans le sélecteur. Sur une propriété à un seul bâtiment — le cas courant — « Rez » reste « Rez ». Le critère est le nombre de bâtiments et non la collision de noms de niveaux : sous deux bâtiments, un « Combles » seul ne dit toujours pas lequel des deux. La décision est prise par `etiqueter`, qui voit la liste, jamais par `etiquettePlan`, qui ne voit qu'un plan — l'ambiguïté est une propriété de la liste. `batiment.nom` est déjà joint à `niveau.nom` par `cheminZone` et rendu sur la même page : là encore, une fuite documentée réutilisée, pas une nouvelle.
+
+### Ce que pèse le plan chez le destinataire
+
+Le HTML de la page tient en 14,9 Ko sans un octet de script. L'image, elle, était servie en pleine résolution. Les plans de vérification de l'étape 4 sont des **tracés synthétiques de 40 Ko** et ne disaient rien du cas de la spécification, qui est une photo d'un plan posé sur une table. Mesuré sur de vraies photos, en passant par le pipeline réel (`LARGEUR_MAX_PLAN` 3500 px, `QUALITE_PLAN` 90) :
+
+| Source | Sortie pleine résolution | Dérivée servie (1400 px) |
+|---|---|---|
+| Photo d'un plan sur papier, 2971 × 4096 | 2539 × 3500 → **2475 Ko** | **456 Ko** |
+| Photo de téléphone, 3603 × 2158 | 3500 × 2096 → **2207 Ko** | **441 Ko** |
+
+Deux à trois mégaoctets sur le forfait du jardinier, pour une image que `.page-partage` affiche sur **688 px CSS au plus** (720 px moins les gouttières). D'où une troisième dérivée, `taille=moyenne`, à côté de l'original et de la vignette de 400 px : 1400 px, soit le double de la largeur d'affichage maximale — aucun agent ne dépasse ce rapport à cette largeur-là, un téléphone à 3× n'ayant que ~360 px de large.
+
+**Pas de `srcset`, et c'est la mesure qui le dit.** Avec un `sizes` honnête, aucun candidat au-dessus de 1400 px ne serait jamais choisi : la pleine résolution serait déclarée, téléchargée par personne, et coûterait la largeur intrinsèque de chaque dérivée — que `fichier` ne stocke pas. Ce qu'un `srcset` n'aurait de toute façon pas donné, c'est le **zoom** : sans script, le pincement du navigateur est le seul disponible, et il ne zoome que dans les pixels déjà chargés. La pleine résolution est donc offerte par un lien explicite sous le plan, payé par qui le suit.
+
+Repli pour les plans enregistrés avant que cette dérivée existe : `lireTaille` retombe sur l'original, qui est toujours là. Le repli ne vaut **que** pour elle — une vignette absente reste une erreur, servir 2,5 Mo à qui demande 400 px serait pire que ne rien servir. Ces plans-là redeviennent légers au prochain remplacement de leur image.
+
 ### Ce que le code ne peut pas filtrer
 
 Un extrait cadastral ou un plan d'architecte porte l'adresse, le numéro de parcelle et parfois le nom du propriétaire **imprimés dans l'image**. `traiterImage` efface l'EXIF, il ne lit pas ce qui est écrit sur le papier, et aucun code raisonnable ne le fera. Le plan de situation étant précisément ce qu'on montre au jardinier, cette image part telle quelle.
 
-C'est la seule fuite d'adresse que cette étape ne ferme pas. Elle est dite à l'endroit où elle se décide — l'écran de téléversement — et listée dans la revue de fuite plutôt que passée sous silence.
+C'est la seule fuite d'adresse que cette étape ne ferme pas. Elle est dite à l'endroit où elle se décide — l'écran de téléversement — et listée dans la revue de fuite plutôt que passée sous silence. La forme qui la fermerait est écrite dans `.decisions/implementation-plan.md`, table « En attente d'un besoin réel » : une **image de partage recadrée par plan**, une colonne nullable que `imageDUnPlan` sert quand elle existe. Une portée de partage par plan a été envisagée et écartée — elle laisse le choix entre un jardinier qui ne voit pas le plan de situation, donc ne trouve pas la vanne d'arrosage, et un jardinier qui voit l'adresse : elle déplace la fuite dans un écran de configuration au lieu de la fermer.
 
 ### Le zoom et le regroupement, sans bibliothèque
 
@@ -664,11 +681,11 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 | Fiche : photos, et leur nombre | `fichier_lien` sur la fiche | La fiche porte la permission ; elle a déjà passé le filtre. |
 | Octets d'une image | `chargerFichierPartage` | `EXISTS` sur un élément lié qui passe la clause. Filtrée = 404. Lien inactif = 404. |
 | Entrée du sélecteur de plans | `chargerPlans(portee)` | `clausePlanVisible` : il faut au moins une zone du niveau portant un objet visible. Un plan de sous-sol dont tout est masqué n'a pas d'entrée. |
-| Étiquette d'un plan | `niveau.nom` (`etiquettePlan`) | Dérivée du niveau et du rang, jamais de `plan.nom`. Même famille que le chemin d'une zone, déjà listé plus bas. |
+| Étiquette d'un plan | `niveau.nom`, `batiment.nom` (`etiquettePlan`) | Dérivée du niveau, du bâtiment et du rang, jamais de `plan.nom`. Le bâtiment n'apparaît que si la propriété en a plusieurs. Même famille que le chemin d'une zone, déjà listé plus bas — et exactement les deux mêmes colonnes. |
 | Point sur un plan | `chargerPointsDuPlan(portee)` | Jointure sur `element` et la même clause de portée. Un objet filtré n'a pas de point. |
 | Numéro d'une pastille, ligne de légende | les points déjà servis | Numérotés après filtrage : la numérotation ne saute pas, donc elle ne compte pas ce qu'elle ne montre pas. |
 | Nom et zone dans la légende | `element.nom`, `zone.nom` du point | Le point a déjà passé la clause : c'est la fiche qui porte la permission, comme pour ses photos. |
-| Octets de l'image d'un plan | `imageDUnPlan` | Second droit, nommé : le plan doit passer `clausePlanVisible`. Filtré = 404, lien inactif = 404. |
+| Octets de l'image d'un plan | `imageDUnPlan` | Second droit, nommé : le plan doit passer `clausePlanVisible`. Filtré = 404, lien inactif = 404. La dérivée demandée (`?taille=`) ne change pas le droit : elle ne choisit qu'un chemin sur le volume, une fois le droit accordé. |
 | Polygone d'une zone | `chargerPolygonesDuPlan(portee)` | Zone sans objet visible, pas de contour. La table est vide avant l'étape 6 ; le filtre est éprouvé par un test qui y insère des lignes directement. |
 | Plan demandé par `?plan=<id>` | le paramètre d'URL | Recoupé avec la liste déjà filtrée, sinon repli sur le premier plan visible. Un identifiant écrit à la main ne sert rien de plus. |
 | **Nom d'un plan** | `plan.nom` | **Jamais envoyé.** Étiquette privée du propriétaire, qui peut y avoir écrit l'adresse : même traitement que `partage.nom`. |
@@ -826,6 +843,16 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 
 </details>
 
+<details>
+<summary><strong>Dette de l'étape 4 — 3 décisions (garde-fou de bundle, étiquette, poids servi)</strong></summary>
+<br/>
+
+79. **La convention d'export d'un module de route devient un test, pas une ligne de CLAUDE.md.** Un `chargerNiveaux` exporté depuis `plans.nouveau.tsx` a envoyé drizzle et tout le schéma dans le bundle navigateur — 170 Ko au lieu de 2 Ko. React Router ne retire du bundle client que les exports qu'il connaît ; un export nommé quelconque survit. Rien ne voit cette classe de défaut : le typecheck est vert, les tests sont verts, la page fonctionne, seule la taille du bundle change et personne ne la regarde à chaque pull request. `tests/exports-routes.test.ts` interdit donc tout export d'un module de `app/routes/` qui ne figure pas dans les quinze exports reconnus — liste prise dans la documentation de la version installée et recoupée avec `SERVER_ONLY_ROUTE_EXPORTS` / `CLIENT_ROUTE_EXPORTS` du plugin Vite, qui est ce qui décide réellement. Même forme et même coût que `vocabulaire.test.ts`. La lecture des exports est textuelle et non un AST : ce qu'elle ne voit pas, elle ne l'interdit pas, et elle ne se trompe jamais dans l'autre sens — c'est le seul sens qui compte pour un garde-fou. Un second test tient le garde lui-même sur la forme exacte du défaut d'origine, sans quoi le premier serait décoratif. **Le garde a été vérifié rouge sur le bug réel** avant d'être livré.
+80. **La vérification empirique du bundle est un script npm, pas un test.** `npm run verifier:bundle` cherche dans `build/client` des marqueurs qui ne survivent qu'au code serveur : des noms de tables SQL (`zone_geom`, `fichier_lien`, `type_element`), écrits en clair dans le schéma drizzle et donc insensibles à la minification, plus deux marqueurs de `pg`. Il constate l'**effet** là où le test statique interdit la **cause** — c'est le seul des deux qui verrait une fuite arrivée par un autre chemin, un composant client qui importe un `.server` par exemple. Hors de `npm test` volontairement : il exige un build complet, et une suite qui met une minute à démarrer est une suite qu'on lance moins souvent. **Il a trouvé une fuite au premier lancement**, restée invisible depuis l'étape 0 : `ChampEditor.tsx` importait `CHAMP_GENRES` — six chaînes de caractères — depuis `app/db/schema/types.ts`, à côté du `pgTable`, ce qui emportait le schéma entier dans le chunk de `types.nouveau` (43 Ko au lieu de 2,9). La liste et `ChampDefinition` vivent désormais dans `app/lib/forms/types.ts`, un module neutre, et le schéma en dépend au lieu de la porter. C'est exactement la classe que le test statique ne pouvait pas voir : il n'y a aucun export illégitime, seulement un import.
+81. **Le plan est servi en 1400 px à un porteur de lien, pas en pleine résolution.** Mesure et raisonnement dans « [Ce que pèse le plan chez le destinataire](#ce-que-pèse-le-plan-chez-le-destinataire) » : 2475 Ko mesurés sur une vraie photo de plan, pour une image affichée sur 688 px CSS au plus. `traiterImage` prend une option `largeurMoyenne` et ne produit la dérivée **que si elle est demandée** — une photo d'objet est déjà bornée à 2000 px et se regarde dans une fiche, la lui donner doublerait le volume de chaque capture pour une image que personne ne réclame. Pas de `srcset` : avec un `sizes` honnête, aucun candidat au-dessus de 1400 px ne serait jamais choisi, et il aurait fallu stocker la largeur intrinsèque de chaque dérivée que `fichier` ne porte pas. La pleine résolution reste à un clic, sous le plan, pour qui veut zoomer dans une cote.
+
+</details>
+
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
 ---
@@ -834,7 +861,8 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 
 - **Aucune correction de perspective sur un plan photographié.** La rotation redresse de quelques degrés ; une photo prise de biais reste trapézoïdale. Dit à l'écran de téléversement plutôt que sous-entendu. Sans conséquence tant qu'il n'y a aucune mesure : `plan.echelle` reste NULL.
 - **Le plan d'une page de partage n'a ni zoom ni regroupement.** C'est le prix de « aucun JavaScript ». Deux points au même endroit restent superposés ; la légende numérotée sous le plan est ce qui les rend tous atteignables.
-- **Les pixels d'un plan ne sont pas filtrés, et ne peuvent pas l'être.** Un extrait cadastral porte l'adresse imprimée dedans. L'EXIF est effacé, le contenu de l'image ne l'est pas. Seul le recadrage à l'envoi y peut quelque chose. Une portée de partage par plan, ou une colonne « ne jamais partager », serait la vraie réponse : ce n'est pas dans le périmètre de cette étape.
+- **Les pixels d'un plan ne sont pas filtrés, et ne peuvent pas l'être.** Un extrait cadastral porte l'adresse imprimée dedans. L'EXIF est effacé, le contenu de l'image ne l'est pas. Seul le recadrage à l'envoi y peut quelque chose. La réponse retenue — une image de partage recadrée par plan — est décrite dans `.decisions/implementation-plan.md`, table « En attente d'un besoin réel », avec son déclencheur : le jour où un vrai extrait cadastral est téléversé et partagé.
+- **Les plans enregistrés avant la dérivée de 1400 px restent servis en pleine résolution.** `lireTaille` retombe sur l'original plutôt que de répondre 404, et ils redeviennent légers au prochain remplacement de leur image. Aucun script de reprise : sur un dépôt à trois plans, il coûterait plus qu'il ne rend.
 - **Le regroupement est une grille, pas un vrai regroupement par distance.** Deux points séparés de trois pixels mais de part et d'autre d'une frontière de cellule ne fusionnent pas. C'est le prix du déterminisme : une grille rend la même chose à chaque image, un regroupement glouton dépend de l'ordre.
 - **La formule de la boîte englobante est écrite deux fois**, dans l'aperçu et dans `traiterImage`. Elles doivent s'accorder au pixel près, et rien ne le vérifie automatiquement : c'est le point à relire si un plan enregistré ne ressemble plus à son aperçu.
 - **Un point visible posé sur un plan hors portée est inatteignable depuis un lien.** Conséquence directe du prédicat de listage, et le bon compromis : l'inverse divulguerait l'existence du niveau.

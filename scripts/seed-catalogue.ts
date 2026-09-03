@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import pg from "pg";
 import * as schema from "../app/db/schema/index";
-import type { ChampDefinition } from "../app/db/schema/types";
+import type { ChampDefinition } from "../app/lib/forms/types";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool, { schema });

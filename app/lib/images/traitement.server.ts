@@ -23,11 +23,20 @@ export type OptionsTraitement = {
   /** Degrés, appliqués après l'orientation EXIF et avant le recadrage. */
   rotation?: number;
   recadrage?: Recadrage;
+  /**
+   * Dérivée intermédiaire, produite seulement si elle est demandée : une
+   * photo d'objet n'en a pas l'usage (elle est déjà bornée à 2000 px et se
+   * regarde dans une fiche), un plan si — il est servi en pleine résolution à
+   * un porteur de lien, qui paie les 2 à 3 Mo sur son forfait.
+   */
+  largeurMoyenne?: number;
 };
 
 export type ImageTraitee = {
   original: Buffer;
   vignette: Buffer;
+  /** Présente si et seulement si `largeurMoyenne` a été demandée. */
+  moyenne?: Buffer;
   largeur: number;
   hauteur: number;
 };
@@ -93,5 +102,16 @@ export async function traiterImage(entree: Buffer, options: OptionsTraitement = 
     .jpeg({ quality: 72, mozjpeg: true })
     .toBuffer();
 
-  return { original, vignette, largeur: info.width, hauteur: info.height };
+  // Bornée par la largeur seule, et non `fit: inside` comme les deux autres :
+  // c'est la largeur qui décide de ce qu'un écran affiche, et un plan en
+  // portrait n'a aucune raison d'être servi plus petit qu'un plan en paysage.
+  const moyenne = options.largeurMoyenne
+    ? await source
+        .clone()
+        .resize({ width: options.largeurMoyenne, withoutEnlargement: true })
+        .jpeg({ quality: qualite, mozjpeg: true })
+        .toBuffer()
+    : undefined;
+
+  return { original, vignette, moyenne, largeur: info.width, hauteur: info.height };
 }
