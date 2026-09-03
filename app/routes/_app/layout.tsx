@@ -1,7 +1,7 @@
 // app/routes/_app/layout.tsx
 import { useEffect, useRef, useState } from "react";
 import { Outlet, Link, useLoaderData, useLocation, useRevalidator } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { eq } from "drizzle-orm";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { db } from "../../db/client";
@@ -12,6 +12,14 @@ import { AideInstallationIOS } from "../../components/AideInstallationIOS";
 import { rafraichirInstantane } from "../../lib/capture/instantane";
 import { prechargerCoquille } from "../../lib/capture/coquille";
 import { demarrerSynchro, souscrire } from "../../lib/capture/synchro";
+
+// La PWA vit ici, et pas dans `root.tsx` : la page de partage est servie par
+// le même document racine, et un manifeste y proposerait d'installer une
+// application à qui n'a reçu qu'un lien de consultation.
+export const links: LinksFunction = () => [
+  { rel: "manifest", href: "/manifest.webmanifest" },
+  { rel: "apple-touch-icon", href: "/icones/icone-180.png" },
+];
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
@@ -56,6 +64,19 @@ export default function AppLayout() {
 
   useEffect(() => {
     void prechargerCoquille();
+  }, []);
+
+  useEffect(() => {
+    // Jamais en développement : Vite sert des centaines de modules non
+    // versionnés, les mettre en cache rendrait le rechargement à chaud faux.
+    // Enregistré depuis ce layout et non depuis `root.tsx`, pour qu'une page
+    // hors de l'arbre protégé ne puisse structurellement pas l'installer.
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // Pas de service worker (contexte non sécurisé, réglage navigateur) :
+        // l'app fonctionne, elle ne démarre simplement pas hors ligne.
+      });
+    }
   }, []);
 
   // Une capture partie pendant qu'un écran est ouvert doit y apparaître.

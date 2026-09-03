@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, 47 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=720&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;47+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
+[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 66 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;66+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
 
 <br/>
 
@@ -21,7 +21,7 @@
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
-![Étape actuelle](https://img.shields.io/badge/%C3%A9tape_actuelle-2%20%E2%80%94%20retrouver-2563EB?style=for-the-badge)
+![Étape actuelle](https://img.shields.io/badge/%C3%A9tape_actuelle-3%20%E2%80%94%20partager-2563EB?style=for-the-badge)
 ![Last commit](https://img.shields.io/github/last-commit/theo-bggtt/gestionImmobiliere?style=for-the-badge&color=0F172A&label=dernier%20commit)
 ![Issues](https://img.shields.io/github/issues/theo-bggtt/gestionImmobiliere?style=for-the-badge&color=0F172A&label=issues)
 
@@ -29,7 +29,7 @@
 
 <br/>
 
-> Mémoire technique d'un bien immobilier. L'étape 0 a posé les fondations (schéma complet, authentification, catalogue de types, CRUD avec formulaire dynamique), l'étape 1 la capture opportuniste (photo d'abord, hors ligne, boîte d'envoi). Cette étape **expose** ce qui dormait en base depuis l'étape 0 : recherche plein texte classée, facettes, et un écran d'accueil refondu autour du champ de recherche et d'une grille de zones en photo. Pas de partage, pas de plan, pas de chronologie — voir [`.decisions/implementation-plan.md`](.decisions/implementation-plan.md) pour la suite.
+> Mémoire technique d'un bien immobilier. L'étape 0 a posé les fondations (schéma complet, authentification, catalogue de types, CRUD avec formulaire dynamique), l'étape 1 la capture opportuniste (photo d'abord, hors ligne, boîte d'envoi), l'étape 2 la recherche plein texte classée et les facettes. Cette étape **projette** la même base différemment selon qui la regarde : un lien de partage donne à voir une partie du bien, à un plafond de visibilité et sur une portée de zones ou de systèmes, sans compte et sans installation. Pas de plan, pas de chronologie — voir [`.decisions/implementation-plan.md`](.decisions/implementation-plan.md) pour la suite.
 
 <br/>
 
@@ -54,6 +54,8 @@
 **Comprendre**
 - [La capture](#la-capture)
 - [Retrouver](#retrouver)
+- [Partager](#partager)
+- [Revue de fuite](#revue-de-fuite)
 - [Structure des dossiers](#structure-des-dossiers)
 - [Décisions prises](#décisions-prises-non-spécifiées-par-le-prompt-détape)
 - [Limites connues](#limites-connues)
@@ -472,25 +474,152 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 
 ---
 
+## Partager
+
+Le propriétaire crée un lien, l'envoie par WhatsApp, et le destinataire voit une page — immédiatement, sans compte et sans rien installer.
+
+| Lien | Plafond | Portée | Ce qu'il voit |
+|---|---|---|---|
+| Locataire Airbnb | `usage` | vide | les prises de la chambre, le fonctionnement de l'induction |
+| Artisan | `technique` | son système | le tableau électrique, pas les fiches du jardin |
+| Jardinier | `usage` | zones extérieures | la vanne d'arrosage, pas la prise de la chambre |
+
+### Le filtre
+
+Il était déjà écrit. L'étape 2 avait posé `Portee` (`niveauMax`, `zones`, `systemes`) en paramètre de `rechercher`, `chargerFacettes` et `chargerZonesVignettes`, avec ses tests, et le propriétaire y passait `PORTEE_PROPRIETAIRE`. Cette étape lui donne enfin des valeurs non triviales : **aucune de ces trois requêtes n'a changé.**
+
+```ts
+porteeDuPartage(partage) = {
+  niveauMax: partage.niveauMax,
+  zones:     partage.porteeZones.length    ? partage.porteeZones    : null,
+  systemes:  partage.porteeSystemes.length ? partage.porteeSystemes : null,
+}
+```
+
+Les deux tableaux vides donnent `null`/`null`, c'est-à-dire une portée vide, c'est-à-dire **toute la propriété dans la limite du plafond**. La clause SQL, exportée par `recherche.server.ts`, est la même pour les six surfaces qui la citent — recherche, facettes, grille de zones, fiche, image, et le compte de chacune :
+
+```sql
+e.niveau <= :niveauMax
+AND (:porteeVide OR e.zone_id = ANY(:zones) OR e.systeme_id = ANY(:systemes))
+```
+
+Elle est **exportée** plutôt que recopiée. Une deuxième écriture de la même idée aurait dérivé au premier changement, et c'est précisément le genre d'erreur qu'une revue ne voit pas et qu'un tiers voit.
+
+### Ce que l'étape 3 a dû changer dans l'étape 2
+
+Trois surfaces décrivaient le **fonds** plutôt que les résultats. Elles étaient justes pour le propriétaire et fuyaient dès qu'une portée mord. Elles se coupent maintenant d'après la portée — `porteeRestreinte(portee)`, vrai dès que le plafond descend ou qu'une portée est fixée — et non d'après un paramètre qu'un futur écran de partage pourrait oublier de passer.
+
+1. **La grille de zones listait toutes les zones**, la portée n'en filtrait que le compte et la photo. Une tuile « Local technique · 0 objet » dit qu'il existe un local technique. Sous portée restreinte, une zone sans objet visible disparaît. Le propriétaire, lui, garde ses zones vides : il doit pouvoir y capturer, et ce n'est pas un score de complétude (règle non négociable #2) mais un fait de structure.
+2. **L'état vide proposait les types du catalogue** qui portent le mot cherché. Le catalogue système ne dit rien de la propriété — les types **perso**, si. Sous portée restreinte, aucune suggestion.
+3. **`element.recherche` indexe toutes les valeurs de `details`**, en poids D, y compris celles des champs dont le `niveauMin` dépasse le plafond. Le porteur du lien ne voyait pas le numéro de série de la chaudière, mais il pouvait le **confirmer** en le tapant, et l'étiquette « détails » le lui aurait dit. Sous portée restreinte, le poids D est retiré du vecteur avant la comparaison (`ts_filter(e.recherche, '{a,b,c}')`) et l'étiquette « détails » n'est jamais rendue.
+
+Le troisième point a une contrepartie assumée : l'index ne sait pas de quel champ vient un lexème, donc **aucune** valeur de détail n'est cherchable depuis un lien, pas même celle d'un champ que ce lien affiche. Et `ts_filter` interdit l'index GIN : la requête d'un partage parcourt les fiches de la propriété. Mesuré à 200 fiches, elle reste sous les 150 ms du budget de l'étape 2 (`tests/partage/filtrage.test.ts`).
+
+> Une assertion d'un test de l'étape 2 a dû changer : `tests/recherche/requete.test.ts` vérifiait qu'une zone vidée par le plafond restait dans la grille avec « 0 objet ». C'est exactement ce que l'étape 3 interdit. Le test reste, avec la même intention et le commentaire qui explique le revirement.
+
+### `niveau_min` par champ
+
+La dette de l'étape 0 est due. Chaque entrée de `type_element.champs` porte un `niveauMin`, capturé depuis le début et jamais appliqué faute de partage. Un champ dont le `niveauMin` dépasse le plafond n'est pas rendu, **alors que sa fiche l'est** : le locataire voit la chaudière, pas son numéro de série.
+
+Le filtrage est fait dans le loader, et ce qui est filtré **n'est jamais envoyé au client**. Masquer à l'affichage laisserait la valeur dans la source de la page, à un clic droit. `champsVisibles` écarte aussi le genre `fichier` (rien à montrer avant l'étape 6), les valeurs vides, et les clés de `details` absentes du type — un champ retiré est masqué et non effacé (règle non négociable #5), et sans définition il n'a plus de `niveauMin` à respecter.
+
+### Les images
+
+`GET /p/:jeton/fichiers/:fichierId` (`?taille=vignette`). La route de l'application est authentifiée par session et ne peut pas servir un visiteur anonyme ; celle-ci est portée par le jeton. Le droit de lire l'octet vient de la fiche : au moins un élément lié doit passer le filtre.
+
+```sql
+EXISTS (SELECT 1 FROM fichier_lien fl JOIN element e ON e.id = fl.cible_id
+        WHERE fl.fichier_id = f.id AND fl.cible_type = 'element'
+          AND e.propriete_id = :pid AND <la même clause de portée>)
+```
+
+**`fichier.niveau` est délibérément ignoré.** La capture l'écrit toujours à 3 (étape 1) : le lire ici masquerait la totalité des photos de tous les partages. C'est la fiche qui porte la permission.
+
+L'EXIF n'est pas retraité : il est appliqué puis effacé au téléversement, vérifié sur les octets par `tests/images/traitement.test.ts`. Le refaire à la lecture coûterait un décodage par requête pour un résultat identique.
+
+Un fichier rattaché à une fiche filtrée répond **404**, jamais 403 — un 403 confirme l'existence. Un lien révoqué ne sert plus d'image : une URL gardée de côté ne survit pas au lien qui l'autorisait.
+
+### La page, sans une ligne de JavaScript
+
+`/p/:jeton` vit dans un arbre de routes séparé, hors de `layout.tsx` : ni session, ni barre de capture, ni manifeste, ni service worker. Le manifeste et l'enregistrement du service worker ont **quitté `root.tsx` pour `_app/layout.tsx`** : racine commune à tous les arbres, `root.tsx` les servait partout. C'est structurel et non conditionnel — une page hors de l'arbre protégé n'a plus les moyens d'installer quoi que ce soit.
+
+Les routes de partage portent `handle.sansScripts`, que `root.tsx` lit dans `useMatches()` pour ne pas rendre `<Scripts />`. Sans hydratation, la recherche est un formulaire `GET` (les facettes cochées voyagent en champs cachés), les facettes sont des liens, et le repli « + n autres » est un `<details>` natif. Même feuille de style, mêmes classes : on retire des éléments, on ne redessine rien.
+
+**Mesuré sur le jeu d'exemple** : 4 064 octets de HTML, zéro `<script>`, zéro référence au manifeste ou au service worker, zéro `/proprietes/`. Les composants de la page ne reçoivent que `liensPartage(jeton)` — ils n'ont pas les moyens de fabriquer une URL de l'arbre protégé, ni de mentionner un identifiant de propriété.
+
+En-têtes sur toutes les surfaces du partage : `Cache-Control: private, no-store`, `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow`, plus une `<meta name="robots">`. Les images font exception sur le cache : `private, max-age=300` — le contenu d'un identifiant ne change jamais, mais le droit de le lire se révoque.
+
+### Jeton, expiration, révocation
+
+Le jeton fait 32 octets encodés en base64url (43 caractères), jamais séquentiel ni dérivé d'un identifiant — même raisonnement que `session.id` (décision #4). Il circule dans WhatsApp, il **est** le secret.
+
+- **Jeton inconnu → 404.** Sans distinguer « n'existe pas » de « n'est plus à vous ».
+- **Jeton connu, expiré ou révoqué → page neutre** « ce lien n'est plus actif ». Rien de la propriété n'est chargé, donc rien n'est rendu. La distinction avec le 404 est acceptable : celui qui tient le lien connaissait déjà le bien.
+- **Révoquer n'efface pas.** `revoque_le` est daté, la ligne reste : la trace de ce qui a été partagé, et à qui, est précisément ce qu'on veut garder.
+- L'expiration tombe à la **fin** du jour choisi (23:59:59) : le lien du locataire expire au départ, pas au réveil.
+
+### La prévisualisation
+
+« Voir ce que verra le destinataire », depuis l'écran de gestion. Elle appelle `chargerContenuPartage` — le loader réel de `/p/:jeton` — avec la ligne `partage` réelle, et rend `PagePartage`, le composant réel, encadré d'un bandeau. Ses liens pointent vers `/p/:jeton` : une seule famille d'URL, aucune route dupliquée, et cliquer dedans emmène littéralement sur la page du destinataire.
+
+`tests/partage/routes.test.ts` compare les données des deux loaders champ par champ (à la durée de requête près, seule valeur qui ne peut pas être égale d'un appel à l'autre) plutôt que d'affirmer que le chemin est le même.
+
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
+## Revue de fuite
+
+Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comment elle est filtrée. Les trois dernières lignes ne sont **pas** filtrées ; elles sont là pour être lues, pas pour être passées sous silence.
+
+| Surface | Origine | Filtrage |
+|---|---|---|
+| Nom de la propriété | `propriete.nom` | Seule colonne sélectionnée. Ni `adresse` ni `egid` n'entrent dans le loader — ce qui n'est pas chargé ne peut pas fuir. |
+| Tuiles de zone | `chargerZonesVignettes(portee)` | Clause de portée sur les éléments comptés **et** sur l'existence de la tuile : zéro objet visible, pas de tuile. |
+| Compte d'objets par tuile | `count(*)` latéral | Même clause. |
+| Vignette d'une tuile | `LATERAL` sur `fichier_lien → element` | Même clause : la photo vient d'un élément visible. |
+| Facettes zone / système / type | `chargerFacettes(portee)` | Jointure interne sur des éléments déjà filtrés : une dimension sans élément visible n'a pas de pastille. |
+| Compte porté par une pastille | `count(*)` groupé | Même requête. C'est le fonds **visible**, pas le fonds. |
+| Résultats de recherche | `rechercher(portee)` | Même clause, plus les facettes qui restreignent en plus, jamais à la place. |
+| Compte total de résultats | `count(*) OVER ()` | Calculé dans la requête filtrée. |
+| Étiquette de motif | `CASE` sur les champs sources | La branche `details` est coupée sous portée restreinte : elle aurait confirmé une valeur masquée. |
+| Suggestions de l'état vide | `chercherTypesProches` | Coupées sous portée restreinte : les types **perso** disent comment le propriétaire nomme ses affaires. |
+| Correspondance plein texte | `element.recherche` | Poids D (valeurs de `details`) retiré du vecteur : l'index aurait servi d'oracle sur les champs masqués. |
+| Fiche : nom, type, zone, système | `chargerFichePartage` | Même clause de portée. Filtrée = 404. |
+| Fiche : champs et valeurs | `champsVisibles` | `niveauMin <= plafond`. Ce qui est masqué n'est pas envoyé au client. |
+| Fiche : photos, et leur nombre | `fichier_lien` sur la fiche | La fiche porte la permission ; elle a déjà passé le filtre. |
+| Octets d'une image | `chargerFichierPartage` | `EXISTS` sur un élément lié qui passe la clause. Filtrée = 404. Lien inactif = 404. |
+| Nom du partage | `partage.nom` | Jamais envoyé : c'est l'étiquette privée du propriétaire (« Jardinier Marc »). |
+| **Chemin d'une zone** | `batiment.nom · niveau.nom` | **Non filtré indépendamment.** Un lien limité à une zone intérieure révèle le nom du bâtiment et de l'étage qui la portent. C'est l'adresse interne d'une zone déjà montrée, pas une donnée de plus — mais ce n'est pas rien, et ce n'est pas filtré. |
+| **Alias d'une fiche et d'un type** | `element.alias`, `type_element.alias` | **Cherchables (poids B), jamais rendus.** Un alias est du vocabulaire de recherche porté par une fiche déjà visible ; il n'a pas de `niveauMin`. Le jour où quelqu'un y écrit autre chose que du vocabulaire, il fuit. |
+| **Identifiants numériques** | `zone.id`, `element.id`, `fichier.id`… | **Séquentiels et visibles dans les URL.** Ils permettent d'énumérer : `/p/:jeton/objets/1…N` répond 404 sur tout ce qui est filtré et 200 sur ce qui est visible — donc rien de plus que ce que la page montre déjà. Un identifiant de **propriété** n'apparaît nulle part. |
+
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
 ## Structure des dossiers
 
 - `app/db/schema/` — schéma Drizzle, une table (ou un petit groupe de tables liées) par fichier.
 - `app/lib/auth/` — hachage, cookie, sessions.
 - `app/lib/forms/` — validation des `details` dynamiques contre `type_element.champs`.
 - `app/lib/capture/` — instantané hors ligne (`instantane.server.ts` le produit, `instantane.ts` le recopie), boîte d'envoi IndexedDB (`file.ts`), compression (`image.ts`), synchro (`synchro.ts`), amorçage de la coquille (`coquille.ts`).
-- `app/lib/recherche/` — la requête et ses variantes (`recherche.server.ts` : recherche, facettes, grille de zones), les types partagés client/serveur (`types.ts`), la lecture/écriture des paramètres d'URL (`params.ts`).
+- `app/lib/recherche/` — la requête et ses variantes (`recherche.server.ts` : recherche, facettes, grille de zones, clause de portée exportée), les types partagés client/serveur (`types.ts`), la lecture/écriture des paramètres d'URL (`params.ts`).
+- `app/lib/partage/` — jeton et état d'un lien (`partage.server.ts`), le contenu d'une page de partage (`contenu.server.ts`, le loader réel, partagé avec la prévisualisation), `niveauMin` par champ (`champs.ts`), en-têtes et marqueur « sans scripts » (`document.ts`), libellés des niveaux (`niveaux.ts`).
 - `app/lib/images/` — orientation puis effacement EXIF, vignette.
 - `app/lib/stockage/` — interface `sauvegarder` / `lire` / `supprimer`, adossée au système de fichiers.
 - `app/lib/zoneTree.ts` — construction de l'arbre bâtiment → niveau → zone (+ zones extérieures).
 - `app/components/` — `ZoneSelector`, `DynamicElementFields`, `ChampEditor`, `AideInstallationIOS`.
 - `app/components/capture/` — `Capture` (déclencheur, feuille, confirmation), `Selecteur`, `IndicateurFile`.
-- `app/components/recherche/` — `BarreRecherche` (et l'anti-rebond), `ListeResultats`, `PastillesFacettes`.
+- `app/components/recherche/` — `BarreRecherche` (et l'anti-rebond), `ListeResultats`, `GrilleZones`, `PastillesFacettes`, et `liens.ts` : les URL fabriquées d'avance (`liensPropriete` / `liensPartage`), pour qu'une page de partage n'ait pas les moyens d'écrire une route protégée.
+- `app/components/partage/` — `PagePartage` (et `PartageInactif`), `FicheObjet`, `FacettesLiens` (les mêmes pastilles, en liens : la page ne charge aucun script).
 - `app/styles/app.css` — feuille unique, sobre, dimensionnée pour le pouce.
 - `app/routes/_public/` — connexion, inscription, déconnexion (non protégé).
-- `app/routes/_app/` — tout le reste, protégé, scopé par `proprieteId` dans l'URL. La future page de partage publique (`/p/:jeton`, étape 3) prendra place dans un arbre `_share` séparé.
+- `app/routes/_app/` — tout le reste, protégé, scopé par `proprieteId` dans l'URL.
+- `app/routes/_partage/` — `/p/:jeton` (page, fiche, images). Hors de l'arbre protégé, sans session, sans PWA, servi en HTML seul.
 - `public/` — manifeste, icônes, service worker.
 - `scripts/` — migration au démarrage, seeds.
-- `tests/` — tests d'intégration base de données, traitement d'images, réception d'une capture, recherche, vocabulaire.
+- `tests/` — tests d'intégration base de données, traitement d'images, réception d'une capture, recherche, partage (filtrage et routes), vocabulaire.
 
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
@@ -566,6 +695,32 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 
 </details>
 
+<details>
+<summary><strong>Étape 3 — 19 décisions (partage, filtrage, page publique)</strong></summary>
+<br/>
+
+48. **Les surfaces qui décrivent le fonds se coupent d'après la portée, pas d'après un paramètre.** `porteeRestreinte(portee)` est vrai dès que le plafond descend sous 3 ou qu'une portée de zones ou de systèmes est fixée. Un booléen passé par l'appelant aurait été oubliable, et le prompt d'étape avertit que l'erreur d'une étape de partage est « invisible en revue et visible par un tiers ». Le propriétaire passe `PORTEE_PROPRIETAIRE`, donc rien ne change pour lui.
+49. **Une zone sans objet visible disparaît de la grille sous portée restreinte.** L'étape 2 la laissait avec « 0 objet », ce qui divulgue son existence. Conséquence assumée : une assertion de `tests/recherche/requete.test.ts` a dû être mise à jour — c'est le seul test existant modifié, et son intention est conservée.
+50. **Le poids D est retiré du vecteur de recherche sous portée restreinte** (`ts_filter(e.recherche, '{a,b,c}')`). `element.recherche` indexe toutes les valeurs de `details`, `niveauMin` compris : sans cela, un porteur de lien confirmait un numéro de série en le tapant. Contrepartie : aucune valeur de détail n'est cherchable depuis un lien, et l'index GIN est perdu pour cette requête (mesuré sous 150 ms à 200 fiches).
+51. **L'étiquette de motif « détails » n'est jamais rendue sous portée restreinte.** Deuxième verrou sur le même oracle : la branche du `CASE` est désactivée, pas seulement rendue inatteignable.
+52. **La page de partage est servie sans JavaScript.** `handle.sansScripts`, lu par `root.tsx` dans `useMatches()`, retire `<Scripts />` et `<ScrollRestoration />`. Recherche = formulaire `GET`, facettes = liens, repli = `<details>` natif. Le prompt demande « sans PWA, sans service worker, sans installation » ; ne rien envoyer est la seule lecture qu'on ne peut pas contourner par distraction. Mesuré : 4 Ko de HTML.
+53. **Le manifeste et l'enregistrement du service worker quittent `root.tsx` pour `_app/layout.tsx`.** Racine commune à tous les arbres, `root.tsx` les servait partout, y compris sur un lien de partage. Effet de bord assumé : l'écran de connexion ne porte plus le manifeste, donc l'application ne s'installe plus depuis là — elle s'installe une fois connecté, ce qui est de toute façon le seul moment utile.
+54. **Les composants de résultats et de grille reçoivent des liens fabriqués**, `liensPropriete(id)` ou `liensPartage(jeton)`, au lieu d'un `proprieteId` à partir duquel recomposer des chemins. Ce n'est pas de la souplesse : la page de partage n'a plus les moyens d'écrire une URL protégée ni de mentionner un identifiant de propriété (règle non négociable #5).
+55. **`fichier.niveau` est ignoré par la route à jeton.** La capture l'écrit toujours à 3 ; le lire masquerait toutes les photos de tous les partages. C'est la fiche liée qui porte la permission, comme le demande le prompt.
+56. **Le nom du partage n'est jamais envoyé au destinataire.** « Locataires 12-19 août » est l'étiquette privée du propriétaire. Elle ne sort pas de l'écran de gestion et de la prévisualisation, qui la lit sur la ligne `partage` qu'elle a déjà en main.
+57. **La prévisualisation pointe ses liens vers `/p/:jeton`.** Une famille d'URL, pas de routes dupliquées pour un aperçu, et cliquer dedans emmène littéralement sur la page du destinataire. La première page rendue vient du loader réel et du composant réel, ce qu'un test vérifie en comparant les données des deux loaders.
+58. **En-têtes du partage** : `private, no-store`, `no-referrer`, `noindex, nofollow`, sur les pages comme sur les images. Le `noindex` n'était pas demandé — un lien collé dans un espace public finirait autrement dans un moteur de recherche, ce qui rendrait la révocation illusoire.
+59. **Les images de partage sont en `private, max-age=300`** et non `immutable`. Le contenu d'un identifiant ne change jamais, mais le droit de le lire se révoque : une heure de cache rendrait la révocation lente, `no-store` ferait retélécharger chaque vignette à chaque défilement.
+60. **L'expiration tombe à 23:59:59 du jour choisi.** « Expire le 19 août » veut dire « le 19 au soir », pas « le 19 au réveil ».
+61. **Révoquer ne supprime pas.** `revoque_le` est daté et la ligne reste : garder la trace de ce qui a été partagé est l'intérêt du registre.
+62. **Le jeton fait 32 octets en base64url** (43 caractères), jamais séquentiel. Même raisonnement que `session.id` (décision #4) : il circule dans WhatsApp, il est le secret.
+63. **Un lien inactif ne sert plus d'image.** Une URL de fichier gardée de côté ne doit pas survivre au lien qui l'autorisait.
+64. **Les zones et systèmes soumis au formulaire de création sont recoupés avec ceux de la propriété.** Une portée écrite avec les identifiants du voisin ne fuirait rien (la clause porte aussi sur `propriete_id`), mais elle mentirait sur l'écran de gestion.
+65. **`seed-exemple` attribue désormais un `niveau` explicite à chaque fiche** — 1 pour ce qu'un locataire doit savoir faire marcher, 2 pour ce qui relève de l'artisan. Toutes restaient à 3 (privé, la valeur par défaut), donc un lien de niveau « usage », le cas le plus courant, ne montrait rien du tout sur le jeu de démonstration. Hors du périmètre annoncé, mais livrer une fonctionnalité qu'on ne peut pas voir marcher n'est pas la livrer.
+66. **Le plafond « privé » (3) reste proposé au formulaire.** Un lien qui montre tout est un cas légitime (se donner accès depuis un autre appareil) et la colonne l'autorise déjà. Le défaut est « usage ».
+
+</details>
+
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
 ---
@@ -583,6 +738,12 @@ Une case de zone mène à `recherche?zone=<id>`, c'est-à-dire à l'écran qui s
 - **`count(*) OVER ()` matérialise toutes les lignes filtrées avant la limite.** Mesuré sans effet à 5 000 fiches (28 à 36 ms) ; c'est la première chose à revoir si une propriété réelle atteignait un ordre de grandeur de plus.
 - **La recherche ne fonctionne pas hors ligne.** Elle interroge le serveur à chaque frappe. L'instantané de capture, lui, reste dans IndexedDB et couvre le seul besoin hors ligne identifié (capturer à la cave). Chercher dans la copie locale serait un autre chantier, et il n'est pas demandé.
 - **La migration 0005 demande un rôle propriétaire de la base** (`CREATE EXTENSION`, `CREATE TEXT SEARCH CONFIGURATION`). Vrai en local et en conteneur, à vérifier sur un hébergement géré.
+- **Aucune valeur de `details` n'est cherchable depuis un lien de partage**, pas même celle d'un champ que ce lien affiche. C'est le prix du correctif de l'oracle (décision #50) : l'index ne sait pas de quel champ vient un lexème. Le nom, les alias, le type, la zone et le système classent toujours. Le jour où on voudra mieux, il faudra un second `tsvector` par niveau, écrit par le déclencheur — quatre colonnes ou une colonne par plafond, ce n'est pas une ligne de code.
+- **La requête d'un partage n'utilise pas l'index GIN.** `ts_filter` s'applique après lecture de la ligne. Mesuré sous 150 ms à 200 fiches, et le filtre de propriété et de portée borne le parcours ; c'est la première chose à revoir si une propriété réelle dépassait quelques milliers de fiches.
+- **Le chemin d'une zone montre le bâtiment et le niveau** (« Maison principale · Rez-de-chaussée ») sans filtre propre. Un lien limité à une zone intérieure révèle donc le nom de l'étage qui la porte. Assumé et listé dans la revue de fuite, pas corrigé : c'est l'adresse interne d'une zone déjà montrée.
+- **Les alias sont cherchables mais jamais rendus.** Ils n'ont pas de `niveauMin` — un alias est du vocabulaire de recherche, pas une caractéristique. Si quelqu'un y écrit un jour autre chose, il devient trouvable depuis un lien.
+- **La page de partage n'est pas hors ligne.** Elle est rendue serveur et ne met rien en cache : c'est le but. Le destinataire qui la rouvre sans réseau n'a rien.
+- **Aucune limite de débit sur `/p/:jeton`.** Un jeton de 32 octets ne se devine pas par force brute dans cet univers, mais rien ne freine un client qui essaierait. À revoir avec le reste des protections d'exposition publique, pas avant.
 
 <br/>
 

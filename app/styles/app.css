@@ -470,6 +470,77 @@ input.recherche-champ::-webkit-search-cancel-button { -webkit-appearance: none; 
 .accueil-nav { margin-top: 20px; }
 .accueil-lien-filtres { margin-top: 14px; }
 
+/* ── Partage ──────────────────────────────────────────────────────── */
+
+/* La page d'un lien n'a pas de barre de capture à esquiver : elle reprend
+   les gouttières de `.app-corps` sans son fond réservé. */
+.page-partage {
+  padding: var(--gouttiere);
+  max-width: 720px;
+  margin: 0 auto;
+}
+.page-partage .recherche-epingle { position: static; }
+.partage-recherche { display: flex; align-items: center; gap: 10px; }
+.partage-recherche .recherche-barre { flex: 1; }
+.partage-chercher { min-height: var(--cible); flex: none; }
+
+/* Sans script, le dépliant des facettes est un <details> natif. */
+.facettes-repli > summary { list-style: none; display: inline-flex; align-items: center; }
+.facettes-repli > summary::-webkit-details-marker { display: none; }
+.facettes-repli > .facettes-liste { margin-top: 6px; }
+a.pastille { text-decoration: none; display: inline-block; line-height: 34px; }
+a.pastille-active { color: #fff; }
+
+.fiche-fil { margin: 0 0 4px; font-size: 0.85rem; }
+.fiche-champs { margin: 16px 0; padding: 0; }
+.fiche-champs > div {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--trait);
+}
+.fiche-champs dt { color: var(--texte-doux); font-size: 0.85rem; flex: 1; margin: 0; }
+.fiche-champs dd { margin: 0; flex: 1; font-weight: 600; }
+
+/* ── Gestion des partages ─────────────────────────────────────────── */
+
+.partages-liste { list-style: none; margin: 0 0 24px; padding: 0; }
+.partage-ligne {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--trait);
+}
+.partage-ligne-inactif { opacity: 0.6; }
+.partage-tete { display: flex; align-items: center; gap: 10px; }
+.partage-nom { font-weight: 600; }
+.partage-etat {
+  padding: 2px 8px;
+  border: 1px solid var(--trait);
+  border-radius: 999px;
+  color: var(--texte-doux);
+  font-size: 0.72rem;
+}
+.partage-detail { margin: 4px 0; color: var(--texte-doux); font-size: 0.85rem; }
+input.partage-lien { font-size: 0.8rem; min-height: 40px; }
+.partage-actions { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+
+.portee-choix { border: 1px solid var(--trait); border-radius: var(--rayon); padding: 12px; margin-bottom: 12px; }
+.portee-choix legend { color: var(--texte-doux); font-size: 0.85rem; padding: 0 6px; }
+.portee-groupe { margin-bottom: 12px; }
+.portee-case { display: flex; align-items: center; gap: 8px; min-height: 40px; margin: 0; }
+.portee-case input { width: auto; min-height: 0; margin: 0; }
+
+.apercu-bandeau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--gouttiere);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: var(--rayon);
+  font-size: 0.9rem;
+}
+.apercu-bandeau a { margin-left: auto; }
+
 @media (min-width: 560px) {
   .grille-zones { grid-template-columns: repeat(3, 1fr); }
 }

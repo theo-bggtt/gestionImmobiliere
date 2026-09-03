@@ -33,6 +33,12 @@ export default [
         route(":elementId/modifier", "routes/_app/elements.$elementId.modifier.tsx"),
       ]),
       route("types/nouveau", "routes/_app/types.nouveau.tsx"),
+      // Gestion des liens de partage. La prévisualisation rend le composant
+      // et le loader réels de `/p/:jeton`, encadrés d'un bandeau.
+      ...prefix("partages", [
+        index("routes/_app/partages._index.tsx"),
+        route(":partageId/apercu", "routes/_app/partages.$partageId.apercu.tsx"),
+      ]),
       // L'écran de recherche (dont l'URL porte texte et facettes) et sa route
       // de ressource JSON, interrogée à la frappe depuis l'accueil.
       ...prefix("recherche", [
@@ -47,5 +53,14 @@ export default [
       ]),
       route("fichiers/:fichierId", "routes/_app/fichiers.$fichierId.tsx"),
     ]),
+  ]),
+
+  // Arbre public des liens de partage. Hors de `layout.tsx` : pas de session,
+  // pas de barre de capture, pas de manifeste ni de service worker. Ces routes
+  // portent `handle.sansScripts`, donc `root.tsx` les sert en HTML seul.
+  ...prefix("p/:jeton", [
+    index("routes/_partage/page.tsx"),
+    route("objets/:elementId", "routes/_partage/objet.tsx"),
+    route("fichiers/:fichierId", "routes/_partage/fichiers.tsx"),
   ]),
 ] satisfies RouteConfig;
