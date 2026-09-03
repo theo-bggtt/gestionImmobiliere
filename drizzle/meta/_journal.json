@@ -36,6 +36,13 @@
       "when": 1788413948982,
       "tag": "0004_fichier_capture_id",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788418375454,
+      "tag": "0005_recherche_poids_accents",
+      "breakpoints": true
     }
   ]
 }

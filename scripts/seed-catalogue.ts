@@ -33,7 +33,7 @@ export const CATALOGUE: Entree[] = [
     champ({ cle: "type_interrupteur", label: "Type", genre: "choix", options: ["simple", "va-et-vient", "variateur", "détecteur"] }),
     champ({ cle: "commande", label: "Commande quoi", genre: "texte" }),
   ]},
-  { nom: "Tableau électrique", icone: "layout-grid", alias: ["tableau électrique", "disjoncteur général", "coffret électrique"], champs: [
+  { nom: "Tableau électrique", icone: "layout-grid", alias: ["tableau électrique", "panneau électrique", "disjoncteur général", "coffret électrique"], champs: [
     champ({ cle: "marque", label: "Marque", genre: "texte" }),
     champ({ cle: "nombre_disjoncteurs", label: "Nombre de disjoncteurs", genre: "nombre", niveauMin: 2 }),
     champ({ cle: "date_installation", label: "Date d'installation", genre: "date" }),
@@ -194,13 +194,24 @@ async function main() {
   // unique PARTIEL de Task 2 (idx_type_element_nom_systeme_unique). Un index
   // partiel ne peut pas être ciblé par "ON CONFLICT ON CONSTRAINT" (réservé
   // aux contraintes) : la syntaxe target + where est la bonne ici.
-  const inserees = await db
+  //
+  // Seul `alias` est rafraîchi sur conflit. C'est du vocabulaire de recherche
+  // pur : enrichir le catalogue est justement l'objet de l'étape 2, et le
+  // déclencheur de propagation de la migration 0003 recalcule tout seul
+  // element.recherche des fiches concernées. `champs` n'est PAS rafraîchi —
+  // un champ retiré du catalogue doit être masqué, jamais effacé (règle non
+  // négociable #5), ce qu'un écrasement en bloc ne saurait faire.
+  const ecrites = await db
     .insert(schema.typeElement)
     .values(valeurs)
-    .onConflictDoNothing({ target: schema.typeElement.nom, where: sql`${schema.typeElement.origine} = 'systeme'` })
+    .onConflictDoUpdate({
+      target: schema.typeElement.nom,
+      targetWhere: sql`${schema.typeElement.origine} = 'systeme'`,
+      set: { alias: sql`excluded.alias` },
+    })
     .returning({ nom: schema.typeElement.nom });
 
-  console.log(`Catalogue : ${inserees.length} nouveaux types sur ${CATALOGUE.length} (le reste existait déjà).`);
+  console.log(`Catalogue : ${ecrites.length} types sur ${CATALOGUE.length} écrits (créés ou alias rafraîchis).`);
   await pool.end();
 }
 
