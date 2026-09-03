@@ -14,6 +14,15 @@
 // Les marqueurs sont des chaînes littérales, donc elles survivent à la
 // minification : un nom de table SQL est écrit tel quel dans le schéma
 // drizzle, et aucun code de navigateur n'a de raison de le porter.
+//
+// MAIS : c'est un grep de chaînes dans une sortie minifiée, donc une
+// HEURISTIQUE, pas une preuve. Il ne voit qu'une fuite qui traîne un des
+// marqueurs qu'on lui a donnés. Passent sous son radar : un module serveur
+// sans nom de table (un helper de session, un lecteur de variable
+// d'environnement), une table ajoutée au schéma et jamais ajoutée ici, une
+// chaîne reconstruite à l'exécution. Vert ne veut donc pas dire « aucun code
+// serveur dans le bundle », seulement « aucun de ces marqueurs-là ».
+// Quand on ajoute une table, on ajoute son nom à la liste.
 import { readdir, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 

@@ -120,6 +120,16 @@ WHERE e.niveau <= :niveau_max
 
 ## Ordre de construction
 
+> **L'ordre réel diverge du plan depuis le 3 septembre 2026 : l'étape 7 est
+> construite avant l'étape 5.** Les étapes 1 à 4 reposent toutes sur un
+> démarrage à froid brutal — un nouveau propriétaire doit créer bâtiment,
+> niveau, zones et fiches à la main avant que la capture, la recherche, le plan
+> ou le partage aient quoi que ce soit à montrer. Deux jours sur l'accueil
+> rendent utilisables les quatre étapes déjà livrées, quand l'historique ajoute
+> une cinquième surface à une application où l'on entre encore par une page
+> blanche. Les étapes restantes gardent leur numéro : la séquence effective est
+> 0 · 1 · 2 · 3 · 4 · **7** · 5 · 6.
+
 ### Étape 0 — Socle · 1 à 2 semaines
 - [ ] PostgreSQL, schéma complet ci-dessus, migrations
 - [ ] Arborescence bâtiment → niveau → zone, avec ordinal de niveau et zones extérieures sans niveau
@@ -168,7 +178,11 @@ WHERE e.niveau <= :niveau_max
 - [ ] Déduction automatique de la zone d'un point quand la géométrie existe
 
 ### Étape 7 — Accueil sans page blanche · 2 jours
-- [ ] Adresse → EGID via RegBL, proposition de squelette de zones à corriger
+> Construite avant l'étape 5, voir la note d'ordre en tête de section.
+- [ ] Squelette de niveaux et de zones proposé, éditable, à corriger — **le chemin
+      principal, saisi à la main**, qui doit marcher sans RegBL et hors de Suisse
+- [ ] Adresse → EGID via RegBL en **enrichissement optionnel** greffé dessus,
+      jamais comme condition d'existence du squelette
 
 ## En attente d'un besoin réel
 
@@ -186,7 +200,7 @@ WHERE e.niveau <= :niveau_max
 
 ## À vérifier avant de s'appuyer dessus
 
-- **Étendue exacte des attributs RegBL librement accessibles.** La recherche adresse → EGID est confirmée publique ; le reste (année de construction, type de chauffage) est à confirmer auprès de l'OFS.
+- ~~**Étendue exacte des attributs RegBL librement accessibles.**~~ **Vérifié le 3 septembre 2026**, voir `note-2026-09-03-regbl.md`. Réponse : gratuit, sans clé ni compte, usage commercial autorisé, attribution seulement recommandée (plus permissif que swisstopo) ; année de construction, nombre de niveaux, nombre de logements et agent énergétique du chauffage sont tous servis. Deux réserves qui portent sur l'écran, pas sur le droit : le service de recherche d'adresse **ne dit jamais « pas trouvé »** (il répond en `fuzzy` une adresse suisse plausible à une adresse parisienne), et `gastw` **ne compte pas les caves** — le sous-sol se demande au propriétaire, il ne se déduit pas.
 - **Quotas iOS réels** sur les appareils visés, en conditions réelles avec des photos pleine résolution.
 - **Limites de débit swisstopo** si l'usage devient intensif : un contrat est requis au-delà d'un certain volume.
 
