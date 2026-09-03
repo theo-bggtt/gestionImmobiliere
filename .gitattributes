@@ -1,0 +1,9 @@
+# Le depot est en LF, partout, quelle que soit la machine.
+# Sans ce fichier, Git for Windows (core.autocrlf=true) reecrit en CRLF
+# a chaque checkout : le working tree apparait alors integralement
+# modifie cote Linux/WSL et le commit suivant avale tout le depot.
+* text=auto eol=lf
+
+# Binaires : jamais de conversion, meme si l'auto-detection hesite.
+*.png binary
+*.pdf binary
