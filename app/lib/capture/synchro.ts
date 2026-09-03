@@ -14,6 +14,15 @@ const RESOLUS_GARDES = 20;
  * premier plan, qui peut ne jamais venir si l'app reste à l'écran.
  */
 const RETENTE_MS = 30_000;
+/**
+ * Refus dont on sait que la même requête ne passera jamais : validation
+ * refusée, taille refusée. La liste est explicite et l'inverse est le défaut
+ * — tout code absent d'ici reste réessayable, y compris ceux qu'on n'a pas
+ * anticipés. Les deux erreurs ne coûtent pas la même chose : garder à tort
+ * une capture réessayable coûte cinq envois pour rien, la déclarer à tort
+ * définitive immobilise une capture que personne n'a vue passer.
+ */
+const STATUTS_DEFINITIFS = new Set([400, 413, 422]);
 
 export type EtatFile = {
   enAttente: number;
@@ -109,10 +118,10 @@ async function envoyerUne(entree: EntreeFile): Promise<"envoyee" | "reessayer" |
     return "envoyee";
   }
 
-  // 4xx : la requête ne passera jamais telle quelle, insister ne sert à rien
-  // et l'entrée bascule en erreur visible. 5xx et réponses illisibles : c'est
-  // le serveur qui va mal, pas la capture, on retentera.
-  const definitif = reponse.status >= 400 && reponse.status < 500;
+  // Réessayable par défaut : seuls les statuts listés arrêtent les frais.
+  // Un code inattendu consomme une tentative — on ne boucle pas en silence —
+  // mais reste réessayable, et devient visible au bout de TENTATIVES_MAX.
+  const definitif = STATUTS_DEFINITIFS.has(reponse.status);
   await majEntree(entree.id, {
     echec: charge.erreur ?? messageEchec(reponse.status),
     tentatives: definitif ? TENTATIVES_MAX : entree.tentatives + 1,

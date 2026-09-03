@@ -155,12 +155,13 @@ Le quatrième n'était pas prévu. Il a été ajouté après avoir mesuré que `
 | 2xx avec `elementId` | **purgée** | — | fiche en base, lien « compléter » actif |
 | 2xx sans `elementId` (page HTML d'un proxy) | gardée | oui | retentée |
 | Redirection vers `/connexion`, 401, 403 | gardée | **non** | « Session expirée » ; repart seule après reconnexion |
-| 413 (proxy, taille refusée) | gardée | définitive | erreur visible : « fichier trop volumineux » |
-| Autre 4xx | gardée | définitive | erreur visible avec le message du serveur |
-| 5xx | gardée | oui | retentée |
+| 400, 413, 422 | gardée | définitive | erreur visible : la même requête ne passera jamais |
+| **tout le reste** (409, 429, 500, 502, code inattendu…) | gardée | oui | retentée |
 | `fetch` qui lève (pas de connexion) | gardée | **non** | retentée au prochain déclencheur |
 
-Les deux « non » comptent. Un `fetch` qui lève n'est pas une tentative ratée mais une tentative qui n'a pas eu lieu : la compter suffirait à faire crier au loup après trois captures dans une cave. Une session expirée se répare en se reconnectant, pas en réémettant la requête : brûler des tentatives obligerait l'utilisateur à retrouver un bouton « Réessayer » alors que la file serait déjà repartie toute seule.
+**Le défaut est « réessayable ».** Seuls trois statuts arrêtent les frais — `STATUTS_DEFINITIFS` dans `synchro.ts` — et tout code absent de cette liste, y compris ceux qu'on n'a pas anticipés, consomme une tentative mais reste réessayable. Les deux erreurs de classement ne coûtent pas la même chose : garder à tort une capture réessayable coûte cinq envois pour rien, la déclarer à tort définitive immobilise une capture que personne n'a vue passer.
+
+Les deux « non » de la colonne comptent aussi. Un `fetch` qui lève n'est pas une tentative ratée mais une tentative qui n'a pas eu lieu : la compter suffirait à faire crier au loup après trois captures dans une cave. Une session expirée se répare en se reconnectant, pas en réémettant la requête : brûler des tentatives obligerait l'utilisateur à retrouver un bouton « Réessayer » alors que la file serait déjà repartie toute seule.
 
 Au bout de 5 tentatives, l'entrée bascule en erreur visible avec son message et un bouton « Réessayer » qui remet le compteur à zéro. Tant que la file n'est pas vide, un indicateur « n en attente » reste dans l'en-tête, avec un envoi forçable.
 
@@ -252,5 +253,6 @@ L'écran d'une fiche montre ses photos, la plus récente en premier, et un bouto
 
 - **Hors ligne, seul `start_url` est garanti.** Suivre un lien dans l'app sans réseau échoue : React Router demande alors ses données de route au serveur. La capture, elle, ne navigue pas — c'est ce qui compte à cette étape.
 - **Le chronométrage sur téléphone réel reste à faire** (voir plus haut).
-- **408 et 429 sont traités comme des 4xx définitifs.** Ce sont pourtant des « retente plus tard ». Aucune de nos routes ne les émet ; un proxy ou un CDN le pourrait, et la capture serait alors gardée mais bloquée jusqu'à un « Réessayer » manuel — visible, jamais perdue, mais inutilement pénible. Le correctif tient en une condition dans `synchro.ts`, il n'a pas été fait parce qu'il sort du périmètre demandé.
+- **Un refus permanent hors liste coûte cinq envois pour rien.** C'est le prix assumé du défaut « réessayable » : un statut définitivement bloquant qui ne figure pas dans `STATUTS_DEFINITIFS` sera retenté cinq fois avant de devenir visible, soit environ deux minutes et cinq téléversements de la photo. Le cas est borné, il se termine toujours par une erreur affichée, et il est de loin préférable à l'inverse — immobiliser une capture sur un code mal classé. Si un tel statut se révèle fréquent en production, il rejoint la liste plutôt que de changer le défaut.
+- **Le classement ne regarde que le code HTTP.** Une réponse `200` d'un portail captif, par exemple, est indiscernable d'une réponse applicative tant qu'on n'a pas lu son corps ; elle est traitée comme un 2xx sans identifiant, donc gardée et retentée. C'est le bon résultat, mais par accident plutôt que par analyse.
 - Le sélecteur de zone du formulaire de l'étape 0 (`ZoneSelector`) est un `<select>` sans libellé visible sur l'écran de modification. Constaté, pas corrigé : hors du périmètre de cette étape.

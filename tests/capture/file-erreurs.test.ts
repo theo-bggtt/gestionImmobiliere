@@ -164,6 +164,60 @@ describe("boîte d'envoi face aux réponses du serveur", () => {
     },
   );
 
+  it.each([400, 413, 422])(
+    "arrête les frais sur un %i, qui ne passera jamais tel quel",
+    async (statut) => {
+      magasin.entrees = [capture()];
+      const { envoyerFile, etatCourant } = await chargerSynchro();
+      vi.stubGlobal("fetch", vi.fn(async () => reponse({ statut })));
+
+      await envoyerFile();
+
+      expect(magasin.retires).toEqual([]);
+      expect(etatCourant().bloquees).toHaveLength(1);
+    },
+  );
+
+  it.each([408, 409, 418, 429, 500, 502, 503])(
+    "garde réessayable un %i, y compris s'il n'a pas été anticipé",
+    async (statut) => {
+      magasin.entrees = [capture()];
+      const { envoyerFile, etatCourant } = await chargerSynchro();
+      vi.stubGlobal("fetch", vi.fn(async () => reponse({ statut })));
+
+      await envoyerFile();
+
+      expect(magasin.retires).toEqual([]);
+      // Une tentative consommée : on ne boucle pas indéfiniment en silence…
+      expect(magasin.entrees[0].tentatives).toBe(1);
+      // …mais l'entrée n'est pas condamnée pour autant.
+      expect(etatCourant().bloquees).toHaveLength(0);
+    },
+  );
+
+  it("repart seule quand un statut non anticipé (418) cesse de se produire", async () => {
+    magasin.entrees = [capture()];
+    const { envoyerFile, etatCourant } = await chargerSynchro();
+
+    let bizarre = true;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => (bizarre ? reponse({ statut: 418 }) : reponse({ statut: 200, json: { elementId: 3 } }))),
+    );
+
+    await envoyerFile();
+    expect(magasin.entrees[0].tentatives).toBe(1);
+    expect(etatCourant().bloquees).toHaveLength(0);
+
+    // Le serveur se remet : la relance périodique suffit, sans aucun geste.
+    bizarre = false;
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(magasin.entrees).toHaveLength(0);
+    expect(magasin.retires).toEqual(["capture-1"]);
+    expect(etatCourant().enAttente).toBe(0);
+  });
+
   it("ne purge que sur un 2xx portant un identifiant de fiche", async () => {
     magasin.entrees = [capture()];
     const { envoyerFile } = await chargerSynchro();
