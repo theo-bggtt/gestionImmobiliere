@@ -9,7 +9,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { regrouper } from "../../lib/plans/regroupement";
-import type { PointPlan, PolygoneZone } from "../../lib/plans/types";
+import { centre, SOMMETS_MAX, SOMMETS_MIN } from "../../lib/plans/geometrie";
+import type { PointPlan, PolygoneZone, Sommet } from "../../lib/plans/types";
 import type { Liens } from "../recherche/liens";
 
 const ECHELLE_MIN = 1;
@@ -23,12 +24,29 @@ type Vue = { echelle: number; tx: number; ty: number };
 
 const borner = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
+/**
+ * Le tracé d'un contour. L'état vit dans l'écran et non ici : la vue reçoit
+ * les sommets déjà posés et signale les clics, elle ne décide de rien — même
+ * découpage que `placement`. Deux modes exclusifs, et l'écran s'en assure :
+ * poser un objet et tracer une zone sont deux sens différents pour le même
+ * clic sur le fond.
+ */
+export type Tracage = {
+  zoneNom: string;
+  sommets: Sommet[];
+  onSommet: (x: number, y: number) => void;
+  onDefaire: () => void;
+  onTerminer: () => void;
+  onAbandonner: () => void;
+};
+
 export function VuePlan({
   imageUrl,
   points,
   polygones,
   liens,
   placement,
+  tracage,
   onPoser,
   onDeplacer,
   onRetirer,
@@ -39,6 +57,8 @@ export function VuePlan({
   liens: Liens;
   /** Renseigné quand on arrive depuis une fiche : le clic pose l'objet. */
   placement?: { elementId: number; elementNom: string } | null;
+  /** Renseigné pendant un tracé : le clic ajoute un sommet. */
+  tracage?: Tracage | null;
   onPoser: (x: number, y: number) => void;
   onDeplacer: (pointId: number, x: number, y: number) => void;
   onRetirer: (pointId: number) => void;
@@ -183,11 +203,19 @@ export function VuePlan({
   }
 
   function onClicCadre(e: React.MouseEvent) {
-    // Poser un objet est le seul clic sur le fond qui fasse quelque chose ;
-    // en dehors du mode placement, le fond ne sert qu'à déplacer la vue.
-    if (!placement || aGlisse.current) return;
+    // Un clic qui a glissé est un déplacement de vue, jamais une saisie.
+    if (aGlisse.current) return;
     const p = enPourcentage(e);
-    if (p) onPoser(p.x, p.y);
+    if (!p) return;
+
+    // Les deux modes sont exclusifs, et l'écran le garantit ; l'ordre ici ne
+    // fait que le rendre inoffensif si un jour il ne l'était plus.
+    if (tracage) {
+      if (tracage.sommets.length < SOMMETS_MAX) tracage.onSommet(p.x, p.y);
+      return;
+    }
+    // En dehors du placement et du tracé, le fond ne sert qu'à déplacer la vue.
+    if (placement) onPoser(p.x, p.y);
   }
 
   return (
@@ -202,16 +230,44 @@ export function VuePlan({
         <button type="button" className="bouton-discret" onClick={() => setVue({ echelle: 1, tx: 0, ty: 0 })}>
           Vue entière
         </button>
-        {placement && (
+        {placement && !tracage && (
           <span className="plan-placement">
             Touchez le plan pour poser <strong>{placement.elementNom}</strong>
           </span>
+        )}
+
+        {tracage && (
+          <>
+            <span className="plan-placement">
+              Contour de <strong>{tracage.zoneNom}</strong> — {tracage.sommets.length} point
+              {tracage.sommets.length > 1 ? "s" : ""}
+              {tracage.sommets.length < SOMMETS_MIN
+                ? ` (${SOMMETS_MIN} minimum)`
+                : tracage.sommets.length >= SOMMETS_MAX
+                  ? " (maximum atteint)"
+                  : ""}
+            </span>
+            <button
+              type="button"
+              className="bouton-discret"
+              onClick={tracage.onDefaire}
+              disabled={tracage.sommets.length === 0}
+            >
+              Annuler le dernier point
+            </button>
+            <button type="button" onClick={tracage.onTerminer} disabled={tracage.sommets.length < SOMMETS_MIN}>
+              Terminer le contour
+            </button>
+            <button type="button" className="bouton-discret" onClick={tracage.onAbandonner}>
+              Abandonner
+            </button>
+          </>
         )}
       </div>
 
       <div
         ref={cadreRef}
-        className={placement ? "plan-cadre plan-cadre-placement" : "plan-cadre"}
+        className={placement || tracage ? "plan-cadre plan-cadre-placement" : "plan-cadre"}
         onPointerDown={onPointerDownCadre}
         onPointerMove={onPointerMoveCadre}
         onPointerUp={onPointerUpCadre}
@@ -222,20 +278,73 @@ export function VuePlan({
           zoomer(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY);
         }}
       >
+        {/* Pendant un tracé, les pastilles ne prennent plus le clic (voir la
+            feuille de style) : sans ça, poser un sommet sur un objet
+            ouvrirait sa fiche et abandonnerait le contour en cours. Elles
+            restent visibles — c'est en repérant la chaudière qu'on sait où
+            passe le mur du local technique. */}
         <div
-          className="plan-couche"
+          className={tracage ? "plan-couche plan-couche-tracage" : "plan-couche"}
           style={{ transform: `translate(${vue.tx}px, ${vue.ty}px) scale(${vue.echelle})` }}
         >
           <img ref={imageRef} className="plan-image" src={imageUrl} alt="" draggable={false} />
 
-          {/* Vide avant l'étape 6 : rien n'écrit dans `zone_geom`. */}
-          {polygones.length > 0 && (
+          {/* Les contours tracés, plus celui en cours. Le calque est en
+              pourcentages (`viewBox` 0 0 100 sur une boîte étirée), donc il
+              suit l'image sans que rien n'ait à connaître ses dimensions —
+              c'est la même propriété que celle des points, et c'est ce qui
+              fait qu'un remplacement d'image ne déplace pas un contour. */}
+          {(polygones.length > 0 || tracage) && (
             <svg className="plan-geom" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               {polygones.map((g) => (
                 <polygon key={g.zoneId} points={g.sommets.map((s) => `${s.x},${s.y}`).join(" ")} />
               ))}
+              {tracage && tracage.sommets.length > 0 && (
+                // `polyline` et non `polygon` : le tracé n'est pas encore
+                // fermé, et le montrer fermé dirait qu'il l'est.
+                <polyline
+                  className="plan-geom-encours"
+                  points={tracage.sommets.map((s) => `${s.x},${s.y}`).join(" ")}
+                />
+              )}
             </svg>
           )}
+
+          {/* Les sommets déjà posés, en HTML et non en SVG : le calque est
+              étiré par `preserveAspectRatio="none"`, un cercle SVG y devient
+              un ovale et grossirait avec le zoom. */}
+          {tracage?.sommets.map((s, rang) => (
+            <span
+              key={`${rang}-${s.x}-${s.y}`}
+              className="plan-sommet"
+              style={{
+                left: `${s.x}%`,
+                top: `${s.y}%`,
+                transform: `translate(-50%, -50%) scale(${1 / vue.echelle})`,
+              }}
+              aria-hidden="true"
+            />
+          ))}
+
+          {/* L'étiquette d'un contour est en HTML pour la même raison, et elle
+              est portée par le nom de la zone — la seule chose qu'un contour
+              ait à dire. */}
+          {polygones.map((g) => {
+            const c = centre(g.sommets);
+            return (
+              <span
+                key={g.zoneId}
+                className="plan-geom-nom"
+                style={{
+                  left: `${c.x}%`,
+                  top: `${c.y}%`,
+                  transform: `translate(-50%, -50%) scale(${1 / vue.echelle})`,
+                }}
+              >
+                {g.nom}
+              </span>
+            );
+          })}
 
           {grappes.map((grappe) => {
             const seul = grappe.points.length === 1 ? grappe.points[0] : null;

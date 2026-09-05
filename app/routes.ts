@@ -40,13 +40,15 @@ export default [
         route(":elementId/modifier", "routes/_app/elements.$elementId.modifier.tsx"),
       ]),
       route("types/nouveau", "routes/_app/types.nouveau.tsx"),
-      // Les plans. `plans/points` est une route de ressource : la vue
-      // interactive y enregistre un point déplacé sans naviguer, sinon le
-      // zoom et la position seraient perdus à chaque glissement.
+      // Les plans. `plans/points` et `plans/contours` sont des routes de
+      // ressource : la vue interactive y enregistre un point déplacé ou un
+      // contour terminé sans naviguer, sinon le zoom et la position seraient
+      // perdus au moment même où l'on veut vérifier ce qu'on vient de faire.
       ...prefix("plans", [
         index("routes/_app/plans._index.tsx"),
         route("nouveau", "routes/_app/plans.nouveau.tsx"),
         route("points", "routes/_app/plans.points.tsx"),
+        route("contours", "routes/_app/plans.contours.tsx"),
         route(":planId/modifier", "routes/_app/plans.$planId.modifier.tsx"),
       ]),
       // L'historique. La chronologie du propriétaire rend le même composant

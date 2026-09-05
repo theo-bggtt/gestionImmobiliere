@@ -7,6 +7,7 @@
 // Ce composant ne filtre rien : il affiche ce que le loader lui donne, et le
 // loader ne lui donne que ce qui passe la portée. Un objet masqué n'a ni
 // point, ni pastille comptée, ni ligne dans une liste.
+import { centre } from "../../lib/plans/geometrie";
 import type { PlanAffiche } from "../../lib/partage/contenu.server";
 import type { PlanEtiquete } from "../../lib/plans/types";
 import type { Liens } from "../recherche/liens";
@@ -53,9 +54,17 @@ export function PlanStatique({
               zoomer que dans les pixels déjà chargés. */}
           <img className="plan-image" src={liens.image(plan.imageFichierId, "moyenne")} alt={`Plan ${plan.etiquette}`} />
 
-          {/* `zone_geom` n'est alimentée par aucun écran avant l'étape 6 : ce
-              calque est vide aujourd'hui. Les polygones servis sont déjà
-              filtrés — une zone hors portée n'a pas de contour. */}
+          {/* Les contours des zones, tracés par le propriétaire à l'étape 6.
+              Ils sont déjà filtrés par le loader — une zone sans objet
+              visible n'a pas de contour, exactement comme elle n'a pas de
+              tuile dans la grille. Rien ici ne refiltre, et rien ici ne le
+              pourrait : le composant ne voit que ce qu'on lui donne.
+
+              Du SVG statique et une étiquette HTML : aucun script, comme le
+              reste de la page (règle non négociable #7 de l'étape 3). Le
+              calque est en pourcentages, donc il suit l'image sans connaître
+              ses dimensions — et `centre` est la même fonction pure que côté
+              propriétaire, elle tourne ici au rendu serveur. */}
           {plan.polygones.length > 0 && (
             <svg className="plan-geom" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               {plan.polygones.map((g) => (
@@ -63,6 +72,18 @@ export function PlanStatique({
               ))}
             </svg>
           )}
+
+          {/* L'étiquette est en HTML et non en SVG : le calque est étiré par
+              `preserveAspectRatio="none"`, un texte SVG y serait déformé
+              autant que l'image est loin du carré. */}
+          {plan.polygones.map((g) => {
+            const c = centre(g.sommets);
+            return (
+              <span key={g.zoneId} className="plan-geom-nom" style={{ left: `${c.x}%`, top: `${c.y}%` }}>
+                {g.nom}
+              </span>
+            );
+          })}
 
           {/* Une pastille numérotée plutôt qu'une étiquette : sans script il
               n'y a ni regroupement ni survol, et deux noms posés au même

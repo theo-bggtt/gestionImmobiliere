@@ -7,8 +7,9 @@ export function schemaPourChamps(champs: ChampDefinition[]) {
 
   for (const champ of champs) {
     if (champ.genre === "fichier") {
-      // Décision verrouillée #6 : le téléversement n'existe pas encore
-      // (étape 6). Toujours optionnel, quel que soit `obligatoire`.
+      // Décision verrouillée #6 : le genre existe, le téléversement d'un
+      // champ de fiche n'est construit dans aucune étape. Toujours optionnel,
+      // quel que soit `obligatoire`.
       forme[champ.cle] = z.any().optional();
       continue;
     }

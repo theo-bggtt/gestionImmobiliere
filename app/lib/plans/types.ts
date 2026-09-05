@@ -73,11 +73,34 @@ export type PointPlan = {
   y: number;
 };
 
-/** Lu si la table est remplie, jamais écrit avant l'étape 6. */
+/**
+ * Un sommet de contour, en POURCENTAGE de l'image du plan — jamais en pixels,
+ * exactement comme `point.x`/`point.y` et pour la même raison : remplacer
+ * l'image d'un plan ne doit déplacer aucune géométrie.
+ *
+ * Le type vit ici plutôt que dans `geometrie.ts` parce que `app/db/schema/
+ * plans.ts` le lit pour typer la colonne jsonb, et que la dépendance va de la
+ * base vers la définition, jamais l'inverse (même règle que `ChampDefinition`).
+ */
+export type Sommet = { x: number; y: number };
+
+/** Le contour d'une zone sur un plan, tel qu'il est servi à un écran. */
 export type PolygoneZone = {
   zoneId: number;
   nom: string;
-  sommets: { x: number; y: number }[];
+  sommets: Sommet[];
+};
+
+/**
+ * Une zone que ce plan peut porter, côté propriétaire. La liste applique la
+ * même règle de couverture que `clausePlanVisible` : un plan d'étage porte les
+ * zones de son niveau, un plan de situation porte les zones extérieures.
+ */
+export type ZoneTracable = {
+  id: number;
+  nom: string;
+  /** Nombre de sommets du contour déjà tracé, `null` s'il n'y en a pas. */
+  sommets: number | null;
 };
 
 export const estPourcentage = (valeur: unknown): valeur is number =>

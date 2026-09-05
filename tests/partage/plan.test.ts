@@ -20,7 +20,7 @@ import { creerJeton } from "../../app/lib/partage/partage.server";
 import { PagePartage } from "../../app/components/partage/PagePartage";
 
 process.env.STOCKAGE_RACINE = await mkdtemp(join(tmpdir(), "gi-partage-plan-"));
-const { creerPlan, poserPoint } = await import("../../app/lib/plans/plans.server");
+const { creerPlan, poserPoint, enregistrerContour } = await import("../../app/lib/plans/plans.server");
 const routePage = await import("../../app/routes/_partage/page");
 const routeFichiers = await import("../../app/routes/_partage/fichiers");
 
@@ -90,7 +90,7 @@ async function creerJeu() {
     proprieteId: p.id, nom: "Locataires 12-19 aout", jeton, niveauMax: 1,
   }).returning();
 
-  return { p, zJardin, planRez, planSousSol, planSituation, jeton, lien };
+  return { p, zCuisine, zTechnique, zJardin, planRez, planSousSol, planSituation, jeton, lien };
 }
 
 type Jeu = Awaited<ReturnType<typeof creerJeu>>;
@@ -182,6 +182,51 @@ describe("le plan servi par un lien", () => {
     const j = await creerJeu();
     const d = await pageDe(j, `?plan=${j.planSituation}`);
     expect(d.donnees.plan!.etiquette).toBe("Situation");
+  });
+
+  it("rend les contours tracés en SVG statique, toujours sans une ligne de JavaScript", async () => {
+    const j = await creerJeu();
+    await enregistrerContour(j.p.id, j.planRez, j.zCuisine.id, [
+      { x: 10, y: 10 }, { x: 40, y: 10 }, { x: 40, y: 40 }, { x: 10, y: 40 },
+    ]);
+
+    const d = await pageDe(j);
+    const html = rendre(PagePartage, { donnees: d.donnees, jeton: d.jeton });
+
+    expect(d.donnees.plan!.polygones.map((g) => g.nom)).toEqual(["Cuisine"]);
+    expect(html).toContain("<polygon");
+    expect(html).toContain("10,10 40,10 40,40 10,40");
+    // L'étiquette est posée au centre de gravité, calculé au rendu serveur.
+    expect(html).toContain("left:25%");
+    expect(html).not.toContain("<script");
+  });
+
+  it("ne sert pas le contour d'une zone masquée, pas même sa forme", async () => {
+    const j = await creerJeu();
+    // Le local technique est au sous-sol, mais rien n'empêche le propriétaire
+    // d'avoir un second plan du rez qui le porterait : ici c'est le plan du
+    // sous-sol, qui n'est de toute façon pas servi. Le cas qui compte est
+    // celui d'une zone du MÊME plan dont tout est masqué.
+    const [zVide] = await db
+      .insert(zone)
+      .values({ proprieteId: j.p.id, niveauId: null, nom: "Remise a outils", type: "annexe" })
+      .returning();
+    await enregistrerContour(j.p.id, j.planSituation, zVide.id, [
+      { x: 60, y: 60 }, { x: 90, y: 60 }, { x: 90, y: 90 },
+    ]);
+    // Le jardin, lui, porte un objet visible : son contour sort. Sans ce
+    // second tracé, le test passerait aussi si aucun contour ne sortait jamais.
+    await enregistrerContour(j.p.id, j.planSituation, j.zJardin.id, [
+      { x: 5, y: 5 }, { x: 30, y: 5 }, { x: 30, y: 30 },
+    ]);
+
+    const d = await pageDe(j, `?plan=${j.planSituation}`);
+    const html = rendre(PagePartage, { donnees: d.donnees, jeton: d.jeton });
+
+    expect(d.donnees.plan!.polygones.map((g) => g.nom)).toEqual(["Jardin"]);
+    expect(JSON.stringify(d.donnees)).not.toContain("Remise a outils");
+    expect(html).not.toContain("60,60 90,60 90,90");
+    expect(html).toContain("5,5 30,5 30,30");
   });
 
   it("efface le plan pendant une recherche, sans le remplacer par un titre vide", async () => {

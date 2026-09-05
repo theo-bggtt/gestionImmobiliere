@@ -24,8 +24,8 @@ function formater(champ: ChampDefinition, valeur: unknown): string | null {
  * série.
  *
  * Deux exclusions de plus, sans rapport avec la permission : le genre
- * `fichier` (le téléversement n'existe qu'à l'étape 6, il n'y a rien à
- * montrer) et les valeurs vides, qui n'apprendraient qu'une chose — que le
+ * `fichier` (le téléversement d'un champ de fiche n'est construit dans aucune
+ * étape, il n'y a rien à montrer) et les valeurs vides, qui n'apprendraient qu'une chose — que le
  * champ existe. Les clés de `details` absentes du type ne sont jamais rendues
  * non plus : un champ retiré est masqué et non effacé (règle non négociable
  * #5), et sans définition il n'a plus de `niveauMin` à respecter.

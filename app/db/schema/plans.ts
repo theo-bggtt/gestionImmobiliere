@@ -4,6 +4,10 @@ import { sql } from "drizzle-orm";
 import { propriete, niveau, zone } from "./core";
 import { element } from "./elements";
 import { fichier } from "./fichiers";
+// Le sommet vit dans `app/lib/plans/types.ts`, un module neutre lu par des
+// composants qui tournent dans le navigateur : la dépendance va de la base
+// vers la définition, jamais l'inverse (même règle que `ChampDefinition`).
+import type { Sommet } from "../../lib/plans/types";
 
 export const planType = pgEnum("plan_type", ["etage", "situation"]);
 
@@ -36,12 +40,31 @@ export const zoneGeomSource = pgEnum("zone_geom_source", ["trace", "importe"]);
 export const zoneGeom = pgTable("zone_geom", {
   zoneId: integer("zone_id").notNull().references(() => zone.id, { onDelete: "cascade" }),
   planId: integer("plan_id").notNull().references(() => plan.id, { onDelete: "cascade" }),
-  // Liste de points {x, y} en pourcentage. jsonb à cette étape : la table
-  // existe et est utilisable, l'éditeur de tracé arrive à l'étape 6.
-  polygone: jsonb("polygone").notNull(),
+  // Liste de sommets {x, y} en POURCENTAGE de l'image, jamais en pixels :
+  // c'est ce qui permet de remplacer l'image d'un plan sans déplacer un seul
+  // contour, exactement comme pour `point`.
+  polygone: jsonb("polygone").notNull().$type<Sommet[]>(),
   source: zoneGeomSource("source").notNull(),
 }, (table) => ({
+  // La clé primaire dit la règle : un contour par zone et par plan. Retracer
+  // remplace, comme reposer un objet déplace son point — le même arbitrage
+  // qu'à l'étape 4, et il vaut mieux ici : deux contours pour une zone sur un
+  // même plan rendraient `zoneDuPoint` ambigu avec elle-même.
   pk: primaryKey({ columns: [table.zoneId, table.planId] }),
+  // Le seul sens de lecture est « les contours de ce plan ». La clé primaire
+  // ne le sert pas : `zone_id` en est la colonne de tête.
+  planIdx: index("idx_zone_geom_plan").on(table.planId),
+  // La borne `0 <= x, y <= 100` et la forme du tableau ne sont PAS déclarées
+  // ici, et ce n'est pas un oubli : valider les éléments d'un tableau jsonb
+  // demande une sous-requête, que PostgreSQL interdit dans un CHECK. La
+  // contrainte `zone_geom_contour_valide` est ajoutée par la migration 0009 à
+  // travers une fonction SQL IMMUTABLE — même forme exactement que
+  // `type_element_champs_genres_valides` (migration 0001), et même raison.
+  //
+  // Elle va en base et non dans le formulaire, comme `point_x_valide` : une
+  // route qui oublierait de valider écrirait sinon un contour hors de l'image,
+  // et ce contour-là ne serait pas seulement invisible — il servirait à
+  // déduire la zone d'un objet, donc à proposer d'écrire `element.zone_id`.
 }));
 
 export const point = pgTable("point", {
