@@ -205,6 +205,23 @@ describe("la contrainte de base, et non le formulaire", () => {
     await refuse(j, [{ y: 10 }, { x: 20, y: 10 }, { x: 20, y: 20 }]);
   });
 
+  it("refuse un sommet dont une coordonnée est un TABLEAU", async () => {
+    const j = await creerJeu();
+    // La famille que la première écriture laissait passer. En mode `lax` — le
+    // défaut — un chemin JSON DÉROULE les tableaux avant d'appliquer le
+    // filtre : `{"x": [5, 700]}` existait donc, parce que 5 satisfait le
+    // prédicat, quand `x` n'est même pas un nombre et que 700 est hors bornes.
+    // `strict` refuse de dérouler. Ce n'est pas un cas théorique : un contour
+    // pareil rend `dansLeContour` vrai hors de la forme, donc PROPOSE d'écrire
+    // `element.zone_id` sur une zone fausse.
+    const carre = [{ x: 20, y: 10 }, { x: 20, y: 20 }, { x: 10, y: 20 }];
+    await refuse(j, [{ x: [5], y: 0 }, ...carre]);
+    await refuse(j, [{ x: [5, 700], y: 0 }, ...carre]);
+    await refuse(j, [{ x: ["a", 5], y: 0 }, ...carre]);
+    await refuse(j, [{ x: 0, y: [5, 700] }, ...carre]);
+    await refuse(j, [[{ x: 5, y: 5 }], ...carre]);
+  });
+
   it("refuse un contour trop court ou trop long", async () => {
     const j = await creerJeu();
     await refuse(j, [{ x: 0, y: 0 }, { x: 10, y: 10 }]);
@@ -216,6 +233,21 @@ describe("la contrainte de base, et non le formulaire", () => {
     await enregistrerContour(j.p.id, j.planRez.id, j.zCuisine.id, [
       { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 },
     ]);
+    expect(await chargerPolygonesDuPlan(j.p.id, j.planRez.id)).toHaveLength(1);
+  });
+
+  it("accepte les bornes de comptage, dans les deux sens", async () => {
+    const j = await creerJeu();
+    // Le test « 41 sommets refusés » ne mord que dans un sens : il attrape un
+    // desserrage du maximum SQL, pas un resserrage. Abaisser le max à 25
+    // laisserait ce test vert et ferait tomber un contour légitime de 40
+    // sommets en erreur de contrainte brute, sans qu'aucun test ne bouge.
+    // Les deux bords du compte sont donc éprouvés du côté qui ACCEPTE aussi.
+    const sommets = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ x: (i * 100) / n, y: (i % 2) * 10 }));
+
+    await enregistrerContour(j.p.id, j.planRez.id, j.zCuisine.id, sommets(3));
+    await enregistrerContour(j.p.id, j.planRez.id, j.zCuisine.id, sommets(40));
     expect(await chargerPolygonesDuPlan(j.p.id, j.planRez.id)).toHaveLength(1);
   });
 });

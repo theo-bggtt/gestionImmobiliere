@@ -22,14 +22,26 @@
 -- `jsonb_path_exists` plutôt qu'un cast `(s->>'x')::numeric` : sur une valeur
 -- textuelle le cast LÈVE, et l'ordre d'évaluation des `AND` d'un `WHERE` n'est
 -- pas garanti — un garde placé avant ne protégerait donc pas du cast placé
--- après. Le chemin JSON, lui, rend faux sur une valeur qui n'est pas un
--- nombre. Vérifié en base sur les huit formes fautives, pas déduit.
+-- après.
+--
+-- Les chemins sont en mode `strict`, et ce mot est LA correction qui compte.
+-- Le mode `lax`, celui par défaut, DÉROULE les tableaux avant d'appliquer le
+-- filtre : `{"x": [5, 700]}` y passait, parce que 5 satisfait le prédicat et
+-- suffit à faire exister un résultat — 700 étant hors de [0,100], et `x`
+-- n'étant même pas un nombre. `strict` refuse de dérouler, donc `@.type()`
+-- voit bien un tableau et rend faux. Les deux modes ont été comparés en base
+-- sur la famille tableau ; les sommets légitimes passent à l'identique.
 --
 -- La table est vide aujourd'hui, mais rien ici n'en dépend : la contrainte est
 -- validée à l'ajout et passerait aussi bien sur une table déjà remplie.
 
 CREATE INDEX "idx_zone_geom_plan" ON "zone_geom" USING btree ("plan_id");--> statement-breakpoint
 CREATE FUNCTION contour_valide(polygone jsonb) RETURNS boolean AS $$
+  -- `jsonb_typeof` garde `jsonb_array_length`, qui lève sur un scalaire. Ce
+  -- n'est pas en contradiction avec le commentaire ci-dessus : ce qui n'est
+  -- pas garanti, c'est l'ordre des `AND` d'un `WHERE` entre plusieurs lignes
+  -- lues ; à l'intérieur d'une expression booléenne unique, PostgreSQL évalue
+  -- de gauche à droite et court-circuite.
   SELECT jsonb_typeof(polygone) = 'array'
      AND jsonb_array_length(polygone) BETWEEN 3 AND 40
      -- Compter les sommets valides et exiger l'égalité : un seul sommet
@@ -37,8 +49,8 @@ CREATE FUNCTION contour_valide(polygone jsonb) RETURNS boolean AS $$
      AND jsonb_array_length(polygone) = (
            SELECT count(*)
            FROM jsonb_array_elements(polygone) AS s
-           WHERE jsonb_path_exists(s, '$.x ? (@.type() == "number" && @ >= 0 && @ <= 100)')
-             AND jsonb_path_exists(s, '$.y ? (@.type() == "number" && @ >= 0 && @ <= 100)')
+           WHERE jsonb_path_exists(s, 'strict $.x ? (@.type() == "number" && @ >= 0 && @ <= 100)')
+             AND jsonb_path_exists(s, 'strict $.y ? (@.type() == "number" && @ >= 0 && @ <= 100)')
          );
 $$ LANGUAGE sql IMMUTABLE;--> statement-breakpoint
 ALTER TABLE "zone_geom"

@@ -85,6 +85,23 @@ export function lireGeometrie(form: FormData): Geometrie {
  * Exportée : la route à jeton doit autoriser l'image d'un plan par ce même
  * prédicat, pas par une seconde écriture de la même idée.
  */
+/**
+ * La couverture d'un plan : quelles zones il porte. Un plan d'étage porte les
+ * zones de son niveau, un plan de situation les zones extérieures — c'est le
+ * couple que `plan_type_niveau_coherent` (migration 0006) rend cohérent.
+ *
+ * Exportée et appelée par les DEUX endroits qui en dépendent : ce qu'un plan
+ * SERT (`clausePlanVisible`) et ce qu'on peut y TRACER
+ * (`chargerZonesTracables`). Les laisser diverger voudrait dire tracer un
+ * contour sur un plan qui ne sert pas la zone, ou l'inverse — et un contour
+ * sert à proposer d'écrire `element.zone_id`.
+ */
+export function clauseCouverturePlan(aliasPlan = sql.raw("p"), aliasZone = sql.raw("z")) {
+  return sql`(CASE WHEN ${aliasPlan}.type = 'situation'
+                   THEN ${aliasZone}.niveau_id IS NULL
+                   ELSE ${aliasZone}.niveau_id = ${aliasPlan}.niveau_id END)`;
+}
+
 export function clausePlanVisible(portee: Portee, aliasPlan = sql.raw("p")) {
   if (!porteeRestreinte(portee)) return sql`true`;
   return sql`EXISTS (
@@ -92,9 +109,7 @@ export function clausePlanVisible(portee: Portee, aliasPlan = sql.raw("p")) {
     FROM element e
     JOIN zone z ON z.id = e.zone_id
     WHERE z.propriete_id = ${aliasPlan}.propriete_id
-      AND (CASE WHEN ${aliasPlan}.type = 'situation'
-                THEN z.niveau_id IS NULL
-                ELSE z.niveau_id = ${aliasPlan}.niveau_id END)
+      AND ${clauseCouverturePlan(aliasPlan)}
       AND ${clausePortee(portee)}
   )`;
 }
@@ -229,9 +244,11 @@ export async function chargerPolygonesDuPlan(
   `);
 
   // Pas de filtrage de forme ici : `zone_geom_contour_valide` (migration 0009)
-  // garantit un tableau de 3 à 40 sommets bornés à [0, 100]. Un tri de plus
-  // ferait croire que la contrainte ne suffit pas, et masquerait le jour où
-  // elle serait retirée.
+  // refuse à l'écriture ce qui n'est pas un tableau de 3 à 40 sommets dont les
+  // `x` et `y` sont des nombres de [0, 100]. C'est une contrainte de base, pas
+  // une propriété de cette requête : elle vaut pour ce qui est entré APRÈS
+  // elle, et un tri de plus ici ferait croire qu'elle ne suffit pas tout en
+  // masquant le jour où elle serait retirée.
   return lignes.rows.map((l) => ({ zoneId: l.zoneId, nom: l.nom, sommets: l.polygone }));
 }
 
@@ -240,18 +257,17 @@ export async function chargerPolygonesDuPlan(
  * propriétaire uniquement — un partage n'a rien à tracer, et cette liste dit
  * quelles zones existent, y compris celles sans objet visible.
  *
- * La couverture applique la même règle que `clausePlanVisible` : un plan
- * d'étage porte les zones de son niveau, un plan de situation porte les zones
- * extérieures (`niveau_id IS NULL`). C'est ce qui empêche de tracer la cuisine
- * du rez sur le plan du sous-sol, et donc de proposer ensuite une zone qui n'a
- * rien à faire là.
+ * La couverture n'applique pas « la même règle » que `clausePlanVisible` :
+ * c'est LA MÊME EXPRESSION, `clauseCouverturePlan`, que les deux appellent.
+ * C'est ce qui empêche de tracer la cuisine du rez sur le plan du sous-sol, et
+ * donc de proposer ensuite une zone qui n'a rien à faire là.
  */
 export async function chargerZonesTracables(proprieteId: number, planId: number): Promise<ZoneTracable[]> {
   const lignes = await db.execute<ZoneTracable>(sql`
     SELECT z.id, z.nom, jsonb_array_length(g.polygone)::int AS "sommets"
     FROM plan p
     JOIN zone z ON z.propriete_id = p.propriete_id
-      AND (CASE WHEN p.type = 'situation' THEN z.niveau_id IS NULL ELSE z.niveau_id = p.niveau_id END)
+      AND ${clauseCouverturePlan()}
     LEFT JOIN zone_geom g ON g.zone_id = z.id AND g.plan_id = p.id
     WHERE p.id = ${planId} AND p.propriete_id = ${proprieteId}
     ORDER BY z.ordre, z.nom

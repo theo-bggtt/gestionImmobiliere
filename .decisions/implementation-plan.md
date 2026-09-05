@@ -196,22 +196,17 @@ WHERE e.niveau <= :niveau_max
       des photos d'événement manquait entièrement et a été construit avec
 
 ### Étape 6 — Le plan, phase 2 · 1 semaine
-- [x] Tracé de contours **par-dessus le scan**, quelques clics par zone, aucune
-      mesure — `zone_geom` alimentée, un contour par zone et par plan, sommets
-      en pourcentages bornés par une contrainte à fonction IMMUTABLE
-      (migration 0009), le tracé se fait dans la vue zoomable existante et
-      sans bibliothèque
-- [x] Déduction de la zone d'un point quand la géométrie existe — **elle
-      propose, elle ne décide pas** : `element.zone_id` n'est écrit que sur un
-      geste explicite du propriétaire, et une proposition ambiguë (zéro ou
-      deux contours contenants) n'est pas une proposition. Voir README,
-      décisions #110 à #112, et « Limites connues » pour le coût
-- [x] Test d'appartenance en fonction **pure**, bords et sommets décidés
-      explicitement (« sur le bord » = dedans), contour concave et contour qui
-      se croise épinglés par des tests sans base ni DOM
-- [x] Contours servis à un lien de partage en **SVG statique**, toujours sans
-      une ligne de JavaScript, sous la clause de portée déjà écrite à
-      l'étape 4 et relue plutôt que réécrite
+> **Livrée avec une divergence assumée sur le second point : la déduction
+> PROPOSE, elle ne décide pas.** L'objectif d'origine est conservé tel quel
+> ci-dessous ; l'argument contre sa lecture littérale, et le coût de l'écart,
+> sont dans la décision #110 du README et dans « Limites connues ». Même forme
+> que la note d'ordre de l'étape 7 : ce que le plan voulait reste lisible.
+- [x] Tracé de polygones **par-dessus le scan** (5 clics par pièce, aucune mesure)
+- [x] Déduction automatique de la zone d'un point quand la géométrie existe
+      — livré en **proposition à confirmer**, pas en écriture automatique.
+      `element.zone_id` est ce que lit le filtre de partage (règle #1) : le
+      réécrire au passage d'un glissement ferait entrer ou sortir un objet de
+      la portée d'un locataire sans que personne l'ait décidé. Voir #110.
 
 ### Étape 7 — Accueil sans page blanche · 2 jours
 > Construite avant l'étape 5, voir la note d'ordre en tête de section.
