@@ -10,7 +10,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "../../db/client";
-import { element, fichier, plan, point } from "../../db/schema/index";
+import { element, fichier, plan, point, zone, zoneGeom } from "../../db/schema/index";
 import { chargerRessourceOu404 } from "../db/scopedResource.server";
 import {
   clausePortee,
@@ -28,8 +28,11 @@ import {
   type PlanListe,
   type PointPlan,
   type PolygoneZone,
+  type Sommet,
   type TypePlan,
+  type ZoneTracable,
 } from "./types";
+import { zoneDuPoint } from "./geometrie";
 
 export type Geometrie = { rotation: number; recadrage?: Recadrage };
 
@@ -69,6 +72,23 @@ export function lireGeometrie(form: FormData): Geometrie {
 }
 
 /**
+ * La couverture d'un plan : quelles zones il porte. Un plan d'étage porte les
+ * zones de son niveau, un plan de situation les zones extérieures — c'est le
+ * couple que `plan_type_niveau_coherent` (migration 0006) rend cohérent.
+ *
+ * Exportée et appelée par les DEUX endroits qui en dépendent : ce qu'un plan
+ * SERT (`clausePlanVisible`) et ce qu'on peut y TRACER
+ * (`chargerZonesTracables`). Les laisser diverger voudrait dire tracer un
+ * contour sur un plan qui ne sert pas la zone, ou l'inverse — et un contour
+ * sert à proposer d'écrire `element.zone_id`.
+ */
+export function clauseCouverturePlan(aliasPlan = sql.raw("p"), aliasZone = sql.raw("z")) {
+  return sql`(CASE WHEN ${aliasPlan}.type = 'situation'
+                   THEN ${aliasZone}.niveau_id IS NULL
+                   ELSE ${aliasZone}.niveau_id = ${aliasPlan}.niveau_id END)`;
+}
+
+/**
  * Un plan est visible d'un partage si au moins une zone de son niveau porte
  * un objet visible — le plan de situation couvrant les zones extérieures,
  * celles dont `niveau_id` est nul. C'est exactement la règle de la grille de
@@ -89,9 +109,7 @@ export function clausePlanVisible(portee: Portee, aliasPlan = sql.raw("p")) {
     FROM element e
     JOIN zone z ON z.id = e.zone_id
     WHERE z.propriete_id = ${aliasPlan}.propriete_id
-      AND (CASE WHEN ${aliasPlan}.type = 'situation'
-                THEN z.niveau_id IS NULL
-                ELSE z.niveau_id = ${aliasPlan}.niveau_id END)
+      AND ${clauseCouverturePlan(aliasPlan)}
       AND ${clausePortee(portee)}
   )`;
 }
@@ -197,19 +215,24 @@ export async function chargerPointsDuPlan(
 }
 
 /**
- * `zone_geom` n'est alimentée par rien à cette étape (l'éditeur de tracé est
- * l'étape 6) : cette requête lit une table vide. Elle est écrite filtrée
- * maintenant plutôt que plus tard — un polygone est le contour d'une zone,
- * donc sa surface, sa position et son existence. La règle est celle de la
- * grille : sous portée restreinte, une zone sans objet visible n'est pas
- * servie.
+ * Les contours des zones de ce plan. Écrite filtrée à l'étape 4, alors que la
+ * table était vide et qu'aucun écran ne l'alimentait ; l'étape 6 l'alimente et
+ * ne la réécrit pas — le filtre a été relu plutôt que supposé, et il tient.
+ *
+ * Un contour est la surface, la position et l'existence d'une zone : la règle
+ * est donc celle de la grille de zones et du sélecteur de plans. Sous portée
+ * restreinte, une zone sans objet visible n'a pas de contour, comme elle n'a
+ * pas de tuile. La condition passe par `EXISTS` sur `element` et par la même
+ * `clausePortee` que tout le reste — un objet visible par son SYSTÈME suffit
+ * donc à servir le contour de sa zone, et c'est le comportement voulu : c'est
+ * exactement ce que la tuile de cette zone montre déjà.
  */
 export async function chargerPolygonesDuPlan(
   proprieteId: number,
   planId: number,
   portee: Portee = PORTEE_PROPRIETAIRE,
 ): Promise<PolygoneZone[]> {
-  const lignes = await db.execute<{ zoneId: number; nom: string; polygone: unknown }>(sql`
+  const lignes = await db.execute<{ zoneId: number; nom: string; polygone: Sommet[] }>(sql`
     SELECT g.zone_id AS "zoneId", z.nom, g.polygone
     FROM zone_geom g
     JOIN zone z ON z.id = g.zone_id
@@ -220,13 +243,150 @@ export async function chargerPolygonesDuPlan(
     ORDER BY z.nom
   `);
 
-  return lignes.rows.map((l) => ({
-    zoneId: l.zoneId,
-    nom: l.nom,
-    sommets: Array.isArray(l.polygone)
-      ? (l.polygone as { x: number; y: number }[]).filter((s) => typeof s?.x === "number" && typeof s?.y === "number")
-      : [],
-  }));
+  // Pas de filtrage de forme ici : `zone_geom_contour_valide` (migration 0009)
+  // refuse à l'écriture ce qui n'est pas un tableau de 3 à 40 sommets dont les
+  // `x` et `y` sont des nombres de [0, 100]. C'est une contrainte de base, pas
+  // une propriété de cette requête : elle vaut pour ce qui est entré APRÈS
+  // elle, et un tri de plus ici ferait croire qu'elle ne suffit pas tout en
+  // masquant le jour où elle serait retirée.
+  return lignes.rows.map((l) => ({ zoneId: l.zoneId, nom: l.nom, sommets: l.polygone }));
+}
+
+/**
+ * Les zones qu'un plan peut porter, avec l'état de leur contour. Écran du
+ * propriétaire uniquement — un partage n'a rien à tracer, et cette liste dit
+ * quelles zones existent, y compris celles sans objet visible.
+ *
+ * La couverture n'applique pas « la même règle » que `clausePlanVisible` :
+ * c'est LA MÊME EXPRESSION, `clauseCouverturePlan`, que les deux appellent.
+ * C'est ce qui empêche de tracer la cuisine du rez sur le plan du sous-sol, et
+ * donc de proposer ensuite une zone qui n'a rien à faire là.
+ */
+export async function chargerZonesTracables(proprieteId: number, planId: number): Promise<ZoneTracable[]> {
+  const lignes = await db.execute<ZoneTracable>(sql`
+    SELECT z.id, z.nom, jsonb_array_length(g.polygone)::int AS "sommets"
+    FROM plan p
+    JOIN zone z ON z.propriete_id = p.propriete_id
+      AND ${clauseCouverturePlan()}
+    LEFT JOIN zone_geom g ON g.zone_id = z.id AND g.plan_id = p.id
+    WHERE p.id = ${planId} AND p.propriete_id = ${proprieteId}
+    ORDER BY z.ordre, z.nom
+  `);
+  return lignes.rows;
+}
+
+/**
+ * Tracer, ou retracer. La clé primaire `(zone_id, plan_id)` dit qu'il n'y a
+ * qu'un contour par zone et par plan : retracer REMPLACE, comme reposer un
+ * objet déplace son point. Poser et déplacer sont la même opération, à
+ * l'étape 4 comme ici.
+ *
+ * `source` vaut `trace` : la valeur `importe` attend un import IFC/DXF qui est
+ * en attente d'un besoin réel, et laisser la colonne mentir serait pire que de
+ * ne pas l'avoir.
+ */
+export async function enregistrerContour(
+  proprieteId: number,
+  planId: number,
+  zoneId: number,
+  sommets: Sommet[],
+) {
+  const p = await chargerPlanOu404(proprieteId, planId);
+  // La zone doit être à la propriété ET couverte par ce plan. Vérifié par une
+  // requête plutôt que déduit de la liste que l'écran a affichée : la route
+  // est atteignable sans elle.
+  const couvertes = await chargerZonesTracables(proprieteId, p.id);
+  if (!couvertes.some((z) => z.id === zoneId)) throw new Response("Zone introuvable", { status: 404 });
+
+  await db
+    .insert(zoneGeom)
+    .values({ zoneId, planId: p.id, polygone: sommets, source: "trace" })
+    .onConflictDoUpdate({
+      target: [zoneGeom.zoneId, zoneGeom.planId],
+      set: { polygone: sommets, source: "trace" },
+    });
+}
+
+export async function effacerContour(proprieteId: number, planId: number, zoneId: number) {
+  const p = await chargerPlanOu404(proprieteId, planId);
+  // `zone_geom` n'atteint `propriete_id` que par ses deux références : le plan
+  // est déjà vérifié, la zone se vérifie ici. Même forme que `pointOu404`.
+  const [z] = await db
+    .select({ id: zone.id })
+    .from(zone)
+    .where(and(eq(zone.id, zoneId), eq(zone.proprieteId, proprieteId)));
+  if (!z) throw new Response("Zone introuvable", { status: 404 });
+
+  await db.delete(zoneGeom).where(and(eq(zoneGeom.zoneId, z.id), eq(zoneGeom.planId, p.id)));
+}
+
+/**
+ * Ce que la géométrie PROPOSE pour un point, et rien de plus.
+ *
+ * Décision de conception de l'étape, écrite ici parce que c'est le seul
+ * endroit d'où elle pourrait déraper : **la géométrie propose, elle ne décide
+ * pas.** `element.zone_id` est ce que le filtre de partage lit (règle non
+ * négociable #1) ; la réécrire au passage d'un glissement ferait entrer ou
+ * sortir un objet de la portée d'un locataire sans que personne l'ait décidé,
+ * dans une requête qui ne navigue même pas. La fonction rend donc une
+ * proposition, `rangerElementDansZone` est un second geste, et rien ne les
+ * enchaîne.
+ *
+ * `null` dès que la géométrie n'a rien à dire : aucun contour ne contient le
+ * point, plusieurs le contiennent (voir `zoneDuPoint`), ou la zone déduite est
+ * déjà celle de l'objet — proposer ce qui est déjà vrai est du bruit.
+ */
+export async function deduireZonePourPoint(
+  proprieteId: number,
+  planId: number,
+  elementId: number,
+  x: number,
+  y: number,
+): Promise<{ elementId: number; elementNom: string; zoneId: number; zoneNom: string; zoneActuelleNom: string } | null> {
+  const contours = await chargerPolygonesDuPlan(proprieteId, planId);
+  const zoneId = zoneDuPoint({ x, y }, contours);
+  if (zoneId === null) return null;
+
+  const lignes = await db.execute<{ elementNom: string; zoneActuelleId: number; zoneActuelleNom: string }>(sql`
+    SELECT e.nom AS "elementNom", z.id AS "zoneActuelleId", z.nom AS "zoneActuelleNom"
+    FROM element e
+    JOIN zone z ON z.id = e.zone_id
+    WHERE e.id = ${elementId} AND e.propriete_id = ${proprieteId}
+  `);
+  const courant = lignes.rows[0];
+  if (!courant || courant.zoneActuelleId === zoneId) return null;
+
+  return {
+    elementId,
+    elementNom: courant.elementNom,
+    zoneId,
+    zoneNom: contours.find((c) => c.zoneId === zoneId)!.nom,
+    zoneActuelleNom: courant.zoneActuelleNom,
+  };
+}
+
+/**
+ * L'acceptation d'une proposition, et la seule écriture de `element.zone_id`
+ * que l'étape 6 ajoute. Elle demande un geste : c'est tout l'écart entre
+ * « propose » et « décide ».
+ *
+ * Le déclencheur `maj_recherche_element` se charge de réécrire `recherche` —
+ * la zone y pèse le poids C — sans que ce code ait à le savoir (migration
+ * 0003, et le nom de la zone y arrive par la même voie qu'un renommage).
+ */
+export async function rangerElementDansZone(proprieteId: number, elementId: number, zoneId: number) {
+  const [z] = await db
+    .select({ id: zone.id })
+    .from(zone)
+    .where(and(eq(zone.id, zoneId), eq(zone.proprieteId, proprieteId)));
+  if (!z) throw new Response("Zone introuvable", { status: 404 });
+
+  const modifiees = await db
+    .update(element)
+    .set({ zoneId: z.id, majLe: new Date() })
+    .where(and(eq(element.id, elementId), eq(element.proprieteId, proprieteId)))
+    .returning({ id: element.id });
+  if (modifiees.length === 0) throw new Response("Fiche introuvable", { status: 404 });
 }
 
 export const chargerPlanOu404 = (proprieteId: number, planIdBrut: string | number | undefined) =>
@@ -373,7 +533,7 @@ export async function supprimerPlan(proprieteId: number, planId: number) {
  */
 async function pointOu404(proprieteId: number, pointId: number) {
   const [ligne] = await db
-    .select({ id: point.id, planId: point.planId })
+    .select({ id: point.id, planId: point.planId, elementId: point.elementId })
     .from(point)
     .innerJoin(plan, eq(plan.id, point.planId))
     .where(and(eq(point.id, pointId), eq(plan.proprieteId, proprieteId)));
@@ -415,9 +575,15 @@ export async function poserPoint(
   return cree.id;
 }
 
+/**
+ * Rend le plan et la fiche du point déplacé : l'appelant en a besoin pour
+ * demander à la géométrie ce qu'elle propose, et la route de ressource ne les
+ * a pas — un glissement n'envoie qu'un identifiant de point.
+ */
 export async function deplacerPoint(proprieteId: number, pointId: number, x: number, y: number) {
   const p = await pointOu404(proprieteId, pointId);
   await db.update(point).set({ x, y }).where(eq(point.id, p.id));
+  return { planId: p.planId, elementId: p.elementId };
 }
 
 export async function retirerPoint(proprieteId: number, pointId: number) {

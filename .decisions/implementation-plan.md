@@ -69,6 +69,10 @@ plan(id, propriete_id, type, niveau_id NULL, nom, image_fichier_id, echelle, ord
   -- orthophoto swisstopo ou du cadastre : même mécanique image + points,
   -- simplement une autre source d'image.
 zone_geom(zone_id, plan_id, polygone, source)   -- source : 'trace' | 'importe'
+  -- polygone : [{x, y}] EN POURCENTAGE, comme un point et pour la même raison.
+  -- UN contour par zone et par plan (la clé primaire le dit) : retracer
+  -- remplace. Le contour fait PROPOSER la zone d'un objet posé dedans, il ne
+  -- l'écrit jamais — voir l'étape 6 et le README.
 point(id, element_id, plan_id, x, y)            -- x, y en pourcentage
   -- PAS DE CONTRAINTE D'UNICITÉ sur element_id : un même objet peut porter
   -- plusieurs points, sur plusieurs plans. C'est ainsi qu'on représente une
@@ -120,6 +124,8 @@ WHERE e.niveau <= :niveau_max
 
 ## Ordre de construction
 
+> **Les huit étapes sont construites au 5 septembre 2026.**
+>
 > **L'ordre réel diverge du plan depuis le 3 septembre 2026 : l'étape 7 est
 > construite avant l'étape 5.** Les étapes 1 à 4 reposent toutes sur un
 > démarrage à froid brutal — un nouveau propriétaire doit créer bâtiment,
@@ -190,8 +196,17 @@ WHERE e.niveau <= :niveau_max
       des photos d'événement manquait entièrement et a été construit avec
 
 ### Étape 6 — Le plan, phase 2 · 1 semaine
-- [ ] Tracé de polygones **par-dessus le scan** (5 clics par pièce, aucune mesure)
-- [ ] Déduction automatique de la zone d'un point quand la géométrie existe
+> **Livrée avec une divergence assumée sur le second point : la déduction
+> PROPOSE, elle ne décide pas.** L'objectif d'origine est conservé tel quel
+> ci-dessous ; l'argument contre sa lecture littérale, et le coût de l'écart,
+> sont dans la décision #110 du README et dans « Limites connues ». Même forme
+> que la note d'ordre de l'étape 7 : ce que le plan voulait reste lisible.
+- [x] Tracé de polygones **par-dessus le scan** (5 clics par pièce, aucune mesure)
+- [x] Déduction automatique de la zone d'un point quand la géométrie existe
+      — livré en **proposition à confirmer**, pas en écriture automatique.
+      `element.zone_id` est ce que lit le filtre de partage (règle #1) : le
+      réécrire au passage d'un glissement ferait entrer ou sortir un objet de
+      la portée d'un locataire sans que personne l'ait décidé. Voir #110.
 
 ### Étape 7 — Accueil sans page blanche · 2 jours
 > Construite avant l'étape 5, voir la note d'ordre en tête de section.
@@ -214,6 +229,7 @@ WHERE e.niveau <= :niveau_max
 | Orthophotos swisstopo | ~1 semaine | Deux usages d'un coup. L'orthophoto **courante** sert de plan de situation pour les zones extérieures dès l'étape 4. Les orthophotos **historiques** (depuis 1979) remplacent l'idée d'archiver Google Maps, impossible en API et interdite par les CGU. Usage commercial autorisé, attribution `©swisstopo` obligatoire. |
 | Multi-logement (immeuble) | 3 à 5 semaines | **Décision non prise.** Le modèle gère plusieurs bâtiments et plusieurs niveaux, mais pas plusieurs *logements* indépendants dans un bâtiment, chacun avec son propriétaire ou son locataire. C'est un autre produit : parties communes, quotes-parts, plusieurs comptes par bâtiment. À trancher avant de démarcher des gérances. |
 | Rappel d'échéance de garantie par mail | ~1 jour | **Décidé le 4 septembre 2026 : rappel visuel seul pour l'instant.** Il n'y a ni SMTP, ni file, ni ordonnanceur ; un envoi voudrait soit un `setInterval` dans le process Express (qui meurt avec lui et double si on le réplique), soit un cron externe. Et la question n'est pas calendaire : personne ne se demande si la garantie de sa chaudière expire aujourd'hui, on se demande « est-ce encore sous garantie » devant la chaudière qui fuit, ce à quoi une pastille sur la fiche répond au bon moment. Le coût du report est quasi nul — « quelles garanties expirent dans N jours » est la même requête qu'un cron exécuterait. **Déclencheur : le jour où une échéance est ratée pour de bon.** Perte assumée en attendant : le cas « il reste trois mois, fais faire la révision gratuite » est sacrifié, puisqu'on découvre l'expiration en allant chercher, donc après la panne. |
+| Téléversement d'un champ de fiche de genre `fichier` | ~2 jours | Le genre existe dans la liste fermée depuis l'étape 0 et son champ est rendu avec une mention disant qu'il n'est pas construit. **Aucune étape ne le portait**, et il est resté tel quel au terme des huit — ce qui se téléverse aujourd'hui est la photo d'une capture, la photo d'un événement et l'image d'un plan, chacune par son propre chemin. Le construire voudrait dire un quatrième chemin d'écriture de `fichier`, plus une quatrième branche de droit sur la route à jeton, alors que le compte de droits nommés est tenu à **trois** depuis l'étape 5 et que c'est ce compte qui rend la revue de fuite lisible. Déclencheur : le jour où un type demande une pièce jointe que ni la fiche, ni l'événement, ni la garantie ne savent porter. |
 | Relations entre éléments | ~1 semaine | Table de liaison `element ↔ element` typée, pour répondre à « qu'est-ce que je coupe si je ferme cette vanne ». |
 | Image de partage recadrée par plan | ~2 jours | Les pixels d'une image de plan divulguent — un extrait cadastral porte l'adresse et le numéro de parcelle **imprimés dedans** — et c'est la seule ligne de la revue de fuite qui ne se ferme pas : le code filtre des colonnes, pas des pixels. **Une portée de partage par plan a été envisagée et écartée** : elle laisse le choix entre un jardinier qui ne voit pas le plan de situation, donc ne trouve pas la vanne d'arrosage, et un jardinier qui voit l'adresse — elle déplace la fuite dans un écran de configuration au lieu de la fermer. La forme retenue est une **image de partage distincte par plan** : une colonne nullable, le propriétaire recadre une fois pour couper le cartouche, `imageDUnPlan` sert cette version quand elle existe. Réutilise l'éditeur de recadrage de l'étape 4. Déclencheur : le jour où un vrai extrait cadastral est téléversé et partagé. |
 

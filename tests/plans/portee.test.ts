@@ -4,10 +4,10 @@
 // niveau, le point, le polygone d'une zone. Toutes passent la même `Portee`
 // que la recherche, ou elles ne passent pas.
 import { describe, it, expect, beforeEach } from "vitest";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../setup/test-db";
 import {
-  utilisateur, propriete, batiment, niveau, zone, typeElement, element, plan, point, zoneGeom, partage,
+  utilisateur, propriete, batiment, niveau, zone, systeme, typeElement, element, plan, point, zoneGeom, partage,
 } from "../../app/db/schema/index";
 import { creerJeton, porteeDuPartage } from "../../app/lib/partage/partage.server";
 import { PORTEE_PROPRIETAIRE } from "../../app/lib/recherche/recherche.server";
@@ -217,14 +217,18 @@ describe("points servis", () => {
 });
 
 describe("polygones de zone", () => {
-  // `zone_geom` n'est alimentée par aucun écran (étape 6) : les lignes sont
-  // insérées ici pour éprouver le filtre maintenant, et non le jour où un
-  // éditeur de tracé les écrira.
+  // Le filtre a été écrit à l'étape 4 sur une table que rien n'alimentait ;
+  // ces tests l'éprouvaient déjà en insérant les lignes à la main. L'étape 6
+  // les garde tels quels — un chemin d'écriture réel ne dispense pas de tenir
+  // le filtre depuis les deux bords — et en ajoute deux.
+  const contourCuisine = [{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 50 }];
+  const contourTechnique = [{ x: 60, y: 60 }, { x: 90, y: 60 }, { x: 90, y: 90 }];
+
   it("ne sert que les polygones des zones visibles", async () => {
     const j = await creerJeu();
     await db.insert(zoneGeom).values([
-      { zoneId: j.zCuisine.id, planId: j.planRez.id, polygone: [{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 50 }], source: "trace" },
-      { zoneId: j.zTechnique.id, planId: j.planRez.id, polygone: [{ x: 60, y: 60 }, { x: 90, y: 60 }, { x: 90, y: 90 }], source: "trace" },
+      { zoneId: j.zCuisine.id, planId: j.planRez.id, polygone: contourCuisine, source: "trace" },
+      { zoneId: j.zTechnique.id, planId: j.planRez.id, polygone: contourTechnique, source: "trace" },
     ]);
 
     const proprietaire = await chargerPolygonesDuPlan(j.p.id, j.planRez.id, PORTEE_PROPRIETAIRE);
@@ -235,5 +239,39 @@ describe("polygones de zone", () => {
     const partages = await chargerPolygonesDuPlan(j.p.id, j.planRez.id, usage);
     expect(partages.map((g) => g.nom)).toEqual(["Cuisine"]);
     expect(JSON.stringify(partages)).not.toContain("Local technique");
+  });
+
+  it("ne sert aucun contour d'une zone vide sous portée restreinte, même tracée", async () => {
+    // Une zone sans objet visible n'a pas de tuile dans la grille ; elle n'a
+    // pas plus de contour sur le plan. Un contour EST la surface, la position
+    // et l'existence d'une zone.
+    const j = await creerJeu();
+    const [zVide] = await db
+      .insert(zone)
+      .values({ proprieteId: j.p.id, niveauId: j.zCuisine.niveauId, nom: "Buanderie", type: "interieur" })
+      .returning();
+    await db.insert(zoneGeom).values({
+      zoneId: zVide.id, planId: j.planRez.id, polygone: contourTechnique, source: "trace",
+    });
+
+    expect((await chargerPolygonesDuPlan(j.p.id, j.planRez.id, PORTEE_PROPRIETAIRE)).map((g) => g.nom))
+      .toContain("Buanderie");
+    const usage = await creerPartage(j, { niveauMax: 1 });
+    expect(JSON.stringify(await chargerPolygonesDuPlan(j.p.id, j.planRez.id, usage))).not.toContain("Buanderie");
+  });
+
+  it("sert le contour d'une zone rendue visible par son SYSTÈME, pas seulement par sa zone", async () => {
+    // `clausePortee` ouvre par la zone OU par le système ; un contour servi
+    // par la seule branche « zone » divergerait de la tuile de cette zone.
+    const j = await creerJeu();
+    const [s] = await db.insert(systeme).values({ proprieteId: j.p.id, nom: "Chauffage" }).returning();
+    await db.update(element).set({ systemeId: s.id }).where(eq(element.id, j.eChaudiere.id));
+    await db.insert(zoneGeom).values({
+      zoneId: j.zTechnique.id, planId: j.planSousSol.id, polygone: contourTechnique, source: "trace",
+    });
+
+    const artisan = await creerPartage(j, { niveauMax: 2, porteeSystemes: [s.id] });
+    expect((await chargerPolygonesDuPlan(j.p.id, j.planSousSol.id, artisan)).map((g) => g.nom))
+      .toEqual(["Local technique"]);
   });
 });

@@ -10,8 +10,11 @@ export function DynamicElementFields({ champs, valeurs = {} }: { champs: ChampDe
         const valeur = valeurs[champ.cle];
 
         if (champ.genre === "fichier") {
-          // Décision verrouillée #6 : téléversement non construit à cette étape.
-          return <p key={champ.cle}>{champ.label} : téléversement de fichier à venir (étape 6).</p>;
+          // Le genre existe dans la liste fermée (décision verrouillée #6), le
+          // téléversement d'un champ de fiche n'est construit dans AUCUNE
+          // étape : il attend un besoin réel, voir le plan d'implémentation.
+          // La capture, elle, sait photographier — c'est autre chose.
+          return <p key={champ.cle}>{champ.label} : le téléversement de fichier n'est pas encore construit.</p>;
         }
 
         let input: ReactNode;

@@ -1,7 +1,8 @@
 // tests/plans/image.test.ts
 // Le téléversement d'un plan, et la promesse que portent les pourcentages :
-// remplacer l'image ne déplace aucun point. C'est la raison d'être du choix
-// de coordonnées, et elle ne vaut que si un test la tient.
+// remplacer l'image ne déplace aucun point, ni aucun contour de zone depuis
+// l'étape 6. C'est la raison d'être du choix de coordonnées, et elle ne vaut
+// que si un test la tient — pour les deux géométries.
 import { describe, it, expect, beforeEach } from "vitest";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -10,7 +11,7 @@ import sharp from "sharp";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../setup/test-db";
 import {
-  utilisateur, propriete, batiment, niveau, zone, typeElement, element, fichier, plan, point,
+  utilisateur, propriete, batiment, niveau, zone, typeElement, element, fichier, plan, point, zoneGeom,
 } from "../../app/db/schema/index";
 
 // La couche de stockage résout sa racine à l'import : la fixer avant de
@@ -19,9 +20,10 @@ process.env.STOCKAGE_RACINE = await mkdtemp(join(tmpdir(), "gi-plans-"));
 const { lire, lireTaille, cheminVignette, cheminMoyenne, supprimer } = await import(
   "../../app/lib/stockage/fichiers.server"
 );
-const { creerPlan, remplacerImagePlan, supprimerPlan, poserPoint, chargerPointsDuPlan } = await import(
-  "../../app/lib/plans/plans.server"
-);
+const {
+  creerPlan, remplacerImagePlan, supprimerPlan, poserPoint, chargerPointsDuPlan,
+  enregistrerContour, chargerPolygonesDuPlan,
+} = await import("../../app/lib/plans/plans.server");
 
 beforeEach(async () => {
   await db.execute(sql`DELETE FROM utilisateur`);
@@ -51,7 +53,7 @@ async function creerJeu() {
   }).returning();
   const [e1] = await db.insert(element).values({ proprieteId: p.id, nom: "Induction", typeId: t.id, zoneId: z.id, niveau: 1 }).returning();
   const [e2] = await db.insert(element).values({ proprieteId: p.id, nom: "Vanne", typeId: t.id, zoneId: z.id, niveau: 1 }).returning();
-  return { p, n, e1, e2 };
+  return { p, n, z, e1, e2 };
 }
 
 const cheminDuPlan = async (planId: number) => {
@@ -134,6 +136,41 @@ describe("téléversement d'un plan", () => {
 });
 
 describe("remplacement de l'image d'un plan", () => {
+  it("ne déplace aucun contour de zone, pour exactement la même raison", async () => {
+    // L'étape 6 étend la promesse des pourcentages du point au contour : la
+    // géométrie d'une zone n'a pas plus à bouger que la position d'un objet
+    // quand le relevé de l'électricien cède la place au plan de l'architecte.
+    const j = await creerJeu();
+    const planId = await creerPlan({
+      proprieteId: j.p.id, type: "etage", niveauId: j.n.id, nom: "Rez", ordre: 0,
+      image: await photoDePlan(1200, 800), geometrie: { rotation: 0 },
+    });
+    const contour = [{ x: 12.5, y: 20.25 }, { x: 60, y: 20.25 }, { x: 60, y: 75 }, { x: 12.5, y: 75 }];
+    await enregistrerContour(j.p.id, planId, j.z.id, contour);
+
+    await remplacerImagePlan(j.p.id, planId, await photoDePlan(900, 1600), { rotation: 0 });
+
+    const apres = await chargerPolygonesDuPlan(j.p.id, planId);
+    expect(apres.map((g) => g.sommets)).toEqual([contour]);
+  });
+
+  it("emporte les contours quand le plan lui-même est supprimé", async () => {
+    const j = await creerJeu();
+    const planId = await creerPlan({
+      proprieteId: j.p.id, type: "etage", niveauId: j.n.id, nom: "Rez", ordre: 0,
+      image: await photoDePlan(600, 400), geometrie: { rotation: 0 },
+    });
+    await enregistrerContour(j.p.id, planId, j.z.id, [{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 50 }]);
+
+    await supprimerPlan(j.p.id, planId);
+
+    // Par cascade : un contour n'a de sens que sur le plan qui le porte. La
+    // zone, elle, survit à son plan comme la fiche survit à son point.
+    expect(await db.select().from(zoneGeom).where(eq(zoneGeom.planId, planId))).toEqual([]);
+    const [survivante] = await db.select().from(zone).where(eq(zone.id, j.z.id));
+    expect(survivante.nom).toBe("Cuisine");
+  });
+
   it("ne déplace aucun point, même vers une image de dimensions différentes", async () => {
     const j = await creerJeu();
     const planId = await creerPlan({
