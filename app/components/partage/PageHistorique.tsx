@@ -9,6 +9,7 @@
 import type { HistoriquePartage } from "../../lib/partage/contenu.server";
 import { Chronologie } from "../historique/Chronologie";
 import { FiltreTypes } from "../historique/FiltreTypes";
+import { Pagination } from "../historique/Pagination";
 import { liensPartage } from "../recherche/liens";
 
 export function PageHistorique({ historique, jeton }: { historique: HistoriquePartage; jeton: string }) {
@@ -27,7 +28,6 @@ export function PageHistorique({ historique, jeton }: { historique: HistoriquePa
         {historique.total === 0
           ? "Aucun événement"
           : `${historique.total} événement${historique.total > 1 ? "s" : ""}`}
-        {historique.evenements.length < historique.total && `, ${historique.evenements.length} affichés`}
       </p>
 
       <Chronologie
@@ -35,6 +35,8 @@ export function PageHistorique({ historique, jeton }: { historique: HistoriquePa
         liens={liensPartage(jeton)}
         vide="Aucun événement à afficher pour ce lien."
       />
+
+      <Pagination base={base} types={historique.types} page={historique.page} pages={historique.pages} />
     </div>
   );
 }

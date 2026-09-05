@@ -803,6 +803,47 @@ par `liensPropriete` ou `liensPartage` : la page de partage n'a pas les moyens
 d'écrire une route protégée. Côté partage elle ne charge toujours aucun script —
 le filtre par type est une liste de liens.
 
+### La pagination, et pourquoi c'est un lien
+
+Au-delà de cinquante événements, l'écran annonçait honnêtement « 137 événements,
+50 affichés » et il n'existait aucun moyen d'atteindre le 51e :
+`chargerChronologie` prenait `limite` et `decalage`, personne ne les passait.
+La donnée était en base, servie par une requête qui savait déjà la paginer, et
+injoignable. Une maison suivie sur dix ans franchit ce seuil sans effort.
+
+La forme est décidée par la même contrainte que le filtre par type : la page de
+partage ne charge **aucun script**. Une pagination y est donc faite d'ancres, et
+`?page=` est le seul état qu'elle porte. Pas de bouton « charger plus », pas de
+défilement infini — ils ne fonctionneraient que sur l'écran du propriétaire, et
+il n'y a aucune raison de rendre deux écrans différents à partir du même
+composant.
+
+Trois choses la tiennent :
+
+- **La taille d'une page est fixée par le serveur** (`PAR_PAGE`), et l'URL ne
+  porte qu'un numéro. L'ancien `LIMITE_MAX = 200` gardait une limite fournie
+  par l'appelant : un garde-fou pour un paramètre que personne n'a jamais passé,
+  et le brancher tel quel aurait offert à qui lit un lien le choix du coût
+  d'une requête. Il disparaît avec `limite` et `decalage`.
+- **Le total vient d'un comptage, plus d'un `count(*) OVER ()` posé sur la
+  liste.** Au-delà de la dernière page la fenêtre ne rend aucune ligne, donc
+  aucun total : « 137 événements » serait devenu « Aucun événement » sur une URL
+  tapée à la main, et il ne serait rien resté pour ramener la demande dans les
+  bornes. Compter, borner, puis lister — deux allers-retours sur un écran qui
+  n'est pas chaud. Le compte reste celui du fonds **visible**, calculé sous la
+  même clause que la liste : la pagination n'est pas un second moyen d'apprendre
+  combien d'événements existent hors portée.
+- **`urlChronologie` est le seul endroit qui écrit ces URL**, et c'est ce qui
+  tient les deux règles qui mordent : un lien de page conserve le filtre par
+  type en cours, et un lien de filtre revient à la première page — parce qu'il
+  appelle la même fonction sans page, et que `page=1` ne s'écrit jamais. Sans
+  ça, filtrer depuis la page 4 renvoie sur une page vide.
+
+Une page hors bornes est **ramenée, jamais refusée** : `?page=abc` et `?page=-3`
+valent la première, `?page=999` la dernière, exactement comme un `?type=` inconnu
+est ignoré plutôt que rejeté. Une URL bricolée mérite la page entière, pas une
+erreur.
+
 ### Les garanties, ou l'inverse du problème
 
 `garantie.element_id` est **NOT NULL** depuis la migration 0000, et c'est tout
@@ -904,7 +945,8 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 | **Pixels de l'image d'un plan** | l'image elle-même | **Non filtré, et non filtrable.** Un extrait cadastral porte l'adresse, la parcelle et parfois un nom, imprimés dedans. L'EXIF est effacé, le contenu ne l'est pas. Averti sur l'écran de téléversement, où le recadrage est la seule parade. |
 | Entrée « Historique » de l'accueil | `compterEvenementsVisibles(portee)` | Absente à zéro. Une entrée vers une chronologie vide dirait qu'il existe un historique, comme une tuile « 0 objet » dit qu'il existe une zone. |
 | Ligne de chronologie | `chargerChronologie(portee)` | `clauseEvenementVisible` : niveau de l'événement sous le plafond, au moins un objet lié, et **tous** les objets liés dans la portée. Les deux bords échouent fermés. |
-| Compte total d'événements | `count(*) OVER ()` | Calculé dans la requête filtrée. |
+| Compte total d'événements | `count(*)` sur le même filtre | Calculé sous la clause de la liste, jamais à côté. C'est le fonds **visible**. |
+| Nombre de pages, et le lien « Suivants » | `nombreDePages(total)` | Dérivé du seul total visible : un lien restreint qui voit 60 événements en annonce deux pages, quand le propriétaire en a cinq. La pagination ne dit rien de plus que le compte, qui ne dit rien de plus que la liste. |
 | Pastille de type, et son compte | `chargerFacettesTypes(portee)` | Même clause. C'est le fonds **visible** : « Sinistre (2) » sur un lien restreint dirait qu'il y a eu deux sinistres. Un type sans événement visible n'a pas de pastille. |
 | Titre et description d'un événement | `evenement.titre`, `.description` | Du texte libre, rendu sous la seule visibilité de l'événement — c'est-à-dire sous le quantificateur universel, qui existe précisément parce que c'est *là* qu'est la charge utile. |
 | Type d'un événement | `evenement.type` | Liste **fermée** de sept valeurs depuis la migration 0007, donc du texte que le propriétaire n'écrit pas. C'était `plan.nom` en puissance. |
@@ -1148,6 +1190,15 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 
 </details>
 
+<details>
+<summary><strong>Finitions — 2 décisions (pagination de la chronologie)</strong></summary>
+<br/>
+
+> Après les huit étapes. Ce ne sont pas des décisions d'étape : ce sont des dettes relevées en relecture et fermées une fois le plan livré.
+
+119. **La pagination de la chronologie est faite de LIENS, et la taille d'une page n'est pas dans l'URL.** La forme est décidée par une contrainte et pas par un goût : la page de partage ne charge aucun script (`handle.sansScripts`), donc un bouton « charger plus » y serait un ornement mort et un défilement infini n'existerait pas. C'est déjà la raison pour laquelle le filtre par type est une liste d'ancres et les facettes de l'étape 2 aussi ; l'écran du propriétaire rend le même composant et n'a aucune raison de se comporter autrement pour deux liens. L'URL ne porte qu'un numéro de page, jamais une taille : `LIMITE_MAX = 200` gardait une limite fournie par l'appelant, c'est-à-dire un garde-fou pour un paramètre que personne n'a jamais passé, et le brancher tel quel aurait donné à qui lit un lien le choix du coût d'une requête. `limite`, `decalage` et le plafond disparaissent ensemble, remplacés par `PAR_PAGE`.
+120. **Le total vient d'une requête de comptage, plus d'un `count(*) OVER ()` posé sur la liste.** C'est la fenêtre qui rendait le total, et elle ne rend **aucune ligne** au-delà de la dernière page : « 137 événements » serait devenu « Aucun événement » sur une URL tapée à la main, et il ne serait rien resté pour ramener la demande dans les bornes. Compter d'abord, borner, puis lister : deux allers-retours sur un écran qui n'est pas chaud, contre une page qui ment sur un cas atteignable en tapant `?page=999`. Le filtre est écrit une seule fois (`FILTRE_CHRONOLOGIE`) et sert aux deux requêtes, pour que le compte ne puisse pas dire autre chose que la liste — c'est le fonds **visible** (décision #102), donc la pagination n'est pas un second moyen d'apprendre combien d'événements existent hors portée. La recherche garde son `count(*) OVER ()` : elle n'expose pas de page, donc elle n'a pas le cas.
+
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
 ---
@@ -1157,7 +1208,7 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 - **Un lien scopé ne voit pas un événement qui déborde de sa portée, même s'il en concerne une partie.** Un artisan limité au lot chauffage ne verra pas « Rénovation de la cuisine et du local technique », alors que la chaudière y figure. C'est la contrepartie assumée du quantificateur universel, et le même arbitrage que « un point visible posé sur un plan hors portée est inatteignable » : perdre de la visibilité plutôt que laisser sortir un titre qui parle d'ailleurs. Le levier existe et il est du bon côté — le propriétaire découpe l'événement en deux, ce que deux chantiers dans deux zones étaient déjà.
 - **Un événement sans objet lié n'apparaît sur aucun lien restreint.** Un ramonage annuel consigné avant que la cheminée n'ait sa fiche reste invisible en partage. Défaut assumé, et non fermé par une contrainte : la note sous le sélecteur d'objets le dit au moment de la saisie, plutôt que de le faire découvrir après coup.
 - **Ajouter un type d'événement demande une migration.** `ALTER TYPE … ADD VALUE`, plus la liste dans `app/lib/historique/types.ts`. `autre` sert de fourre-tout en attendant, et sa domination éventuelle dans la chronologie sera le signal qu'il manque une valeur — pas que la liste doit se rouvrir.
-- **La chronologie n'a pas de pagination dans l'interface.** Limite franche à 50 événements, le compte total annoncé à côté, comme les résultats de recherche (décision #44). Suffisant tant qu'aucune propriété réelle n'a des centaines d'événements ; `chargerChronologie` prend déjà `decalage`, l'écran ne l'expose pas.
+- **La recherche, elle, n'a toujours pas de pagination dans l'interface.** Limite franche à 30 résultats, le compte total annoncé à côté (décision #44). La chronologie est paginée depuis les finitions ; la recherche a son propre plafond et ses propres facettes, et le besoin ne s'est pas présenté — on affine une recherche, on ne feuillette pas ses résultats.
 - **La chronologie ne fonctionne pas hors ligne**, et l'instantané de capture ne la contient pas. Même situation que la recherche et le plan.
 - **`evenement_element` et `evenement_intervenant` ne portent pas de rôle.** Un objet est « concerné », un intervenant est « intervenu », sans distinguer qui a posé de qui a réparé. Non demandé, et le distinguer voudrait dire deux listes fermées de plus.
 - **Aucune correction de perspective sur un plan photographié.** La rotation redresse de quelques degrés ; une photo prise de biais reste trapézoïdale. Dit à l'écran de téléversement plutôt que sous-entendu. Sans conséquence tant qu'il n'y a aucune mesure : `plan.echelle` reste NULL.
