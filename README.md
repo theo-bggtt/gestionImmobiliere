@@ -674,7 +674,7 @@ L'aperçu est dessiné dans un canevas **à la boîte englobante**, avec la mêm
 Un événement n'est pas un objet : c'est un récit, il pend à la propriété et
 non à une zone. Tout le modèle de visibilité repose pourtant sur
 `clausePortee`, qui filtre `element` par sa zone, son système et son niveau.
-Cinq choses portent le poids de ce raccord.
+Six choses portent le poids de ce raccord.
 
 - **La visibilité d'un événement se dérive de ses objets liés, et le
   quantificateur est UNIVERSEL.** `clauseEvenementVisible(portee)` : le niveau
@@ -697,9 +697,23 @@ Cinq choses portent le poids de ce raccord.
   disparaissait de la sous-requête, le `NOT EXISTS` devenait vrai, et
   l'événement qui déborde passait. Un `coalesce(…, false)` referme ça **à la
   source** plutôt que dans la négation, pour que le prochain qui nie la clause
-  n'ait pas à connaître le piège. Les treize usages existants étaient tous en
-  position `WHERE`, où NULL valait déjà faux : aucun comportement ne change.
+  n'ait pas à connaître le piège. Les onze usages existants étaient tous en
+  position POSITIVE — `WHERE`, `AND`, un `EXISTS` sous un `OR`, le `WHERE`
+  interne d'un `LATERAL` — où seul TRUE passe et où NULL valait déjà faux :
+  aucun comportement ne change.
   `tests/historique/portee.test.ts` épingle les deux faits.
+- **L'appartenance à la propriété est DANS la négation, et son sens est
+  contre-intuitif.** `clausePortee` filtre par zone, système et niveau, et ne
+  dit rien de `propriete_id` : un objet d'une autre propriété lié par erreur la
+  passe dès que sa zone figure dans la portée, et rendait alors l'événement
+  entier. Le conjoint nié est donc `e.propriete_id = ev.propriete_id AND
+  (clause)`, jamais un filtre ordinaire de la sous-requête — posé comme filtre,
+  il ferait *sortir* l'intrus, le `NOT EXISTS` resterait vrai et l'événement
+  passerait, c'est-à-dire exactement le bug qu'on croit corriger. La garde
+  d'écriture (`verifierAppartenance`) et la validation de `portee_zones` à la
+  création d'un partage rendent déjà ce lien impossible : c'est la troisième
+  attache, celle qui tient si les deux autres tombent, et le test l'insère
+  directement en base pour les contourner.
 - **`evenement.cout` n'est sélectionné par aucune requête de partage**, quel que
   soit le plafond. Ce n'est pas un masquage au rendu : `EvenementListe` et
   `EvenementDetail` ne portent pas le champ, donc l'écrire depuis un loader de
@@ -967,7 +981,7 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 
 92. **Le quantificateur de la visibilité d'un événement est UNIVERSEL, pas existentiel.** « Au moins un objet lié passe » fermait le cas évident — un événement sans lien échappe au scopage par zone — et laissait ouvert celui qui arrive : un événement est un récit, « Rénovation du sous-sol et de la cuisine » se lie légitimement à un objet de chaque zone, et sous un `EXISTS` l'objet de la cuisine suffit à rendre le titre et la description au locataire. Ce n'est pas une ligne de jointure qui fuit alors, c'est la charge utile. Le seul rempart restant serait que le propriétaire pense à monter `evenement.niveau` sur tout événement mentionnant une zone restreinte, c'est-à-dire de la validation de formulaire dans la tête d'un humain — ce que la règle non négociable #1 refuse depuis le début.
 93. **Ni `evenement_element` obligatoire, ni `evenement.zone_id`.** La contrainte « au moins une ligne fille » n'est pas déclarable en PostgreSQL sans un `CONSTRAINT TRIGGER DEFERRABLE` vérifié au commit, elle refuserait « le plombier est passé le 3 » tant que rien n'est catalogué (règle #8 dans l'esprit), elle est insatisfaisable pour un ramonage annuel ou un contrôle OIBT — et surtout elle n'est pas une alternative à la clause, seulement un ajout : il faut de toute façon savoir *lesquels* des objets liés passent. Une zone propre à l'événement, elle, ment : une réfection de toiture touche toutes les zones, et un mensonge dans la colonne de scopage est un bug de permission dans les deux sens. Elle ne couvrirait pas non plus la dimension système sans une seconde colonne nullable qui répéterait ce que `evenement_element` dit déjà.
-94. **`clausePortee` a dû cesser de rendre NULL.** « Tous les objets liés passent » s'écrit `NOT EXISTS (… WHERE NOT (clause))`, et `element.systeme_id` est nullable : `NULL = ANY('{3}')` vaut NULL, `NOT NULL` vaut NULL, la ligne fautive disparaissait de la sous-requête et l'événement qui déborde passait. Le comportement ternaire a été **vérifié en base** avant d'être corrigé, pas déduit. Le `coalesce(…, false)` est posé dans `clausePortee` et non dans la négation, pour que le prochain qui la nie n'ait pas à connaître le piège ; les treize usages existants étaient tous en position `WHERE`, où NULL valait déjà faux, donc aucun comportement ne change.
+94. **`clausePortee` a dû cesser de rendre NULL.** « Tous les objets liés passent » s'écrit `NOT EXISTS (… WHERE NOT (clause))`, et `element.systeme_id` est nullable : `NULL = ANY('{3}')` vaut NULL, `NOT NULL` vaut NULL, la ligne fautive disparaissait de la sous-requête et l'événement qui déborde passait. Le comportement ternaire a été **vérifié en base** avant d'être corrigé, pas déduit. Le `coalesce(…, false)` est posé dans `clausePortee` et non dans la négation, pour que le prochain qui la nie n'ait pas à connaître le piège ; les onze usages existants (recomptés, pas estimés) étaient tous en position positive — `WHERE`, `AND`, un `EXISTS` sous un `OR`, le `WHERE` interne d'un `LATERAL` — où seul TRUE passe et où NULL valait déjà faux, donc aucun comportement ne change.
 95. **Un événement sans objet lié est invisible de tout lien restreint, et l'écran le dit.** Défaut assumé plutôt que contrainte : la note apparaît sous le sélecteur d'objets au moment où la case se décoche, et elle énonce un fait (« n'apparaîtra sur aucun lien de partage »), pas un score de complétude (règle non négociable #2). Le levier du propriétaire reste de découper l'événement.
 96. **`evenement.type` passe en liste fermée de sept valeurs.** Le schéma de l'étape 0 le laissait en texte libre faute de liste fournie par la spec : une omission, pas un choix. Un type est une catégorie, `titre` et `description` sont déjà là pour ce que le propriétaire veut dire, et du texte libre rendu sur une page de partage est la même famille de fuite que `plan.nom` — que l'étape 4 a dû filtrer. Fermer supprime la fuite au lieu de la documenter, et rend la chronologie groupable. `autre` va tout avaler, et ajouter une valeur demandera une migration : c'est écrit dans le commentaire du schéma.
 97. **`TYPES_EVENEMENT` vit dans `app/lib/historique/types.ts`, neutre, et le schéma l'importe.** Même montage que `CHAMP_GENRES` (décision #6 de la règle des genres) et même raison mesurée : les écrans lisent la liste, la faire descendre du schéma y ferait descendre drizzle.
@@ -976,6 +990,7 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 100. **Aucun fichier d'intervenant n'est servi en partage.** Il n'y a donc pas de quatrième branche de droit sur `fichier_lien` : ce qu'on attache à un artisan est une carte de visite ou une facture, et une facture est du `cout` sous un autre nom. La décision est prise ici plutôt que reportée à un écran de téléversement qui n'existe pas encore.
 101. **`photoDUnEvenement` est une troisième fonction nommée, pas un `OR`.** Suite directe de la décision #74 de l'étape 4 : on doit pouvoir dire lequel des trois droits a ouvert la porte, et les trois n'ont ni la même origine ni la même durée de vie. Le droit se dérive de la visibilité de l'événement, jamais de `fichier.niveau` — la capture y écrit toujours 3, le lire masquerait toutes les photos de tous les partages.
 102. **Le compte d'une pastille de type est celui du fonds VISIBLE.** C'est la règle de la tuile « Local technique · 0 objet » appliquée au temps. Ce n'est pas la décision #37 (le compte d'une facette de recherche décrit le fonds et ne bouge pas à la frappe) : il n'y a pas de champ de recherche sur la chronologie, donc pas de pastille qui disparaîtrait sous le doigt, et le compte peut être celui de ce que le lien peut voir. Corollaire : le filtre d'un lien restreint est plus court que celui du propriétaire, et l'entrée « Historique » disparaît de l'accueil quand il n'y a rien à montrer.
+104. **L'appartenance à la propriété est un conjoint DE LA NÉGATION, pas un filtre de la sous-requête.** `clausePortee` ne porte aucun prédicat sur `propriete_id` : un `evenement_element` croisé — impossible par l'application, la garde d'écriture et la validation de `portee_zones` le refusent toutes deux — rendait le titre, la description, le nom de l'objet étranger et le nom de sa zone. Le piège est que la correction évidente est l'inverse de la bonne : `AND e.propriete_id = ev.propriete_id` posé comme filtre de la sous-requête fait sortir l'intrus, laisse le `NOT EXISTS` vrai et rend l'événement visible. Il faut que l'intrus RESTE dans la sous-requête et fasse échouer le conjoint nié. Le test l'insère directement en base, en contournant la garde d'écriture : une garde ne peut pas prouver que la lecture se défend aussi.
 103. **Un `niveau` absent du formulaire est refusé, pas replié sur 0.** `Number("")` et `Number(null)` valent 0, c'est-à-dire « public » : un formulaire amputé de ce champ aurait publié au niveau le plus ouvert. Trouvé par un test qui cherchait autre chose, corrigé dans les deux lectures de formulaire de l'étape.
 
 </details>

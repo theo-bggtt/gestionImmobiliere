@@ -112,9 +112,11 @@ export function lireSaisieEvenement(form: FormData): LectureSaisie {
  * #4). 404 sur le premier intrus, sans distinguer « n'existe pas » de « n'est
  * pas à vous ».
  *
- * Ce contrôle est aussi ce qui dispense `clauseEvenementVisible` de se
- * défendre en lecture : un lien vers une propriété étrangère ne peut pas
- * exister.
+ * C'est la PREMIÈRE des attaches de l'invariant « un lien ne traverse pas les
+ * propriétés », pas la seule : `clauseEvenementVisible` le rejoue en lecture,
+ * dans sa négation. Deux gardes indépendantes pour un invariant dont la
+ * violation coûterait le titre et la description d'un événement d'une autre
+ * propriété — c'est le prix d'une comparaison d'entiers.
  */
 async function verifierAppartenance(proprieteId: number, saisie: SaisieEvenement) {
   if (saisie.elementIds.length > 0) {

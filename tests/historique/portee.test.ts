@@ -200,6 +200,63 @@ describe("visibilité d'un événement", () => {
   });
 });
 
+describe("un lien vers une autre propriété ne rend rien", () => {
+  /**
+   * La ligne croisée est insérée DIRECTEMENT en base, en contournant
+   * `verifierAppartenance` : c'est tout l'intérêt du test. La garde d'écriture
+   * rend ce lien impossible par l'application, et c'est précisément pourquoi
+   * on ne peut pas la charger de prouver que la lecture se défend aussi.
+   */
+  async function lierUnObjetEtranger(j: Jeu) {
+    const marque = `${Date.now()}-${Math.random()}`;
+    const [autreU] = await db.insert(utilisateur).values({ email: `x-${marque}@x.local`, motDePasseHash: "x" }).returning();
+    const [autreP] = await db.insert(propriete).values({ proprietaireId: autreU.id, nom: "Maison du voisin" }).returning();
+    const [autreB] = await db.insert(batiment).values({ proprieteId: autreP.id, nom: "Villa" }).returning();
+    const [autreN] = await db.insert(niveau).values({ batimentId: autreB.id, nom: "Rez", ordinal: 0 }).returning();
+    const [autreZ] = await db.insert(zone).values({
+      proprieteId: autreP.id, niveauId: autreN.id, nom: "Chambre du voisin", type: "interieur",
+    }).returning();
+    const [autreT] = await db.insert(typeElement).values({
+      origine: "perso", proprieteId: autreP.id, nom: `Appareil-${marque}`, champs: [], alias: [],
+    }).returning();
+    const [autreE] = await db.insert(element).values({
+      proprieteId: autreP.id, nom: "Coffre du voisin", typeId: autreT.id, zoneId: autreZ.id, niveau: 0,
+    }).returning();
+
+    // L'événement de NOTRE propriété porte un objet légitime et un intrus.
+    await db.insert(evenementElement).values({ evenementId: j.evCuisine.id, elementId: autreE.id });
+    return { autreZ, autreE };
+  }
+
+  it("un événement dont un objet lié appartient à une autre propriété disparaît", async () => {
+    const j = await creerJeu();
+    const { autreZ } = await lierUnObjetEtranger(j);
+
+    // La portée nomme la zone ÉTRANGÈRE en plus de la nôtre : sans le
+    // `propriete_id` dans la négation, l'intrus passe `clausePortee` — elle ne
+    // dit rien de la propriété — et l'événement remonte entier.
+    const titres = await titresVisibles(j, { niveauMax: 3, zones: [j.zCuisine.id, autreZ.id], systemes: null });
+    expect(titres).not.toContain("Remplacement de l'induction");
+  });
+
+  it("aucun nom d'une autre propriété n'entre dans la charge sérialisée", async () => {
+    const j = await creerJeu();
+    const { autreZ } = await lierUnObjetEtranger(j);
+    const portee: Portee = { niveauMax: 3, zones: [j.zCuisine.id, autreZ.id], systemes: null };
+
+    // Le détail est refusé, et pas seulement absent de la liste.
+    await expect(chargerEvenementDetail(j.p.id, j.evCuisine.id, portee)).rejects.toMatchObject({ status: 404 });
+
+    // Et sur l'écran du propriétaire, qui ne passe pas par la clause
+    // restreinte, l'objet étranger ne figure pas non plus dans `objets`.
+    const chezLui = await chargerEvenementDetail(j.p.id, j.evCuisine.id);
+    const serialise = JSON.stringify(chezLui);
+    for (const fuite of ["Coffre du voisin", "Chambre du voisin"]) {
+      expect(serialise).not.toContain(fuite);
+    }
+  });
+});
+
 describe("comptes et facettes", () => {
   it("le compte par type porte sur le fonds VISIBLE, jamais sur le fonds", async () => {
     const j = await creerJeu();

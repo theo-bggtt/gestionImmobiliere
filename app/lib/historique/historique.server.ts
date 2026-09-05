@@ -53,10 +53,20 @@ const LIMITE_MAX = 200;
  * requête englobante : `clausePortee` écrit `e.`, et c'est l'élément lié qu'on
  * veut ici. Aucune des trois surfaces n'expose un `e` extérieur.
  *
- * Un élément d'une AUTRE propriété lié par erreur ne passerait pas la clause,
- * donc masquerait l'événement : l'erreur de données coûte de l'invisibilité,
- * jamais de la fuite. La garde d'écriture (`verifierElements`) la rend de
- * toute façon impossible.
+ * L'appartenance est DANS la négation, et ce n'est pas un filtre ordinaire.
+ * `clausePortee` ne dit rien de `propriete_id` : un élément d'une autre
+ * propriété lié par erreur passe la clause dès que sa zone figure dans la
+ * portée, et il rendait alors l'événement entier, nom de l'objet et nom de sa
+ * zone compris. Le sens compte, et l'écrire à l'envers est silencieux :
+ * `AND e.propriete_id = ev.propriete_id` posé comme filtre de la sous-requête
+ * ferait SORTIR l'élément étranger, donc laisserait le `NOT EXISTS` vrai et
+ * l'événement visible — exactement le bug. Il doit rester dans la sous-requête
+ * et faire échouer le conjoint nié.
+ *
+ * La garde d'écriture (`verifierAppartenance`) rend déjà ce lien impossible,
+ * et la portée d'un partage est validée contre les zones de la propriété à sa
+ * création : l'invariant a donc trois attaches, et celle-ci est la seule qui
+ * tienne encore si les deux autres tombent. Tenu par `tests/historique/portee.test.ts`.
  */
 export function clauseEvenementVisible(portee: Portee, aliasEvenement = sql.raw("ev")) {
   const plafond = sql`${aliasEvenement}.niveau <= ${portee.niveauMax}`;
@@ -73,17 +83,22 @@ export function clauseEvenementVisible(portee: Portee, aliasEvenement = sql.raw(
       FROM evenement_element ee
       JOIN element e ON e.id = ee.element_id
       WHERE ee.evenement_id = ${aliasEvenement}.id
-        AND NOT (${clausePortee(portee)})
+        AND NOT (e.propriete_id = ${aliasEvenement}.propriete_id AND (${clausePortee(portee)}))
     )`;
 }
 
 /**
  * Les objets liés à un événement, agrégés en JSON dans la même requête.
  *
- * Ils ne sont PAS refiltrés, et ce n'est pas un oubli : un événement servi a
- * déjà vu tous ses objets passer la portée. C'est le cadeau du quantificateur
- * universel — le rendu partiel n'existe pas ici, donc il n'y a pas de seconde
- * clause à tenir à jour.
+ * Ils ne sont PAS refiltrés par la portée, et ce n'est pas un oubli : un
+ * événement servi a déjà vu tous ses objets passer. C'est le cadeau du
+ * quantificateur universel — le rendu partiel n'existe pas ici, donc il n'y a
+ * pas de seconde clause de portée à tenir à jour.
+ *
+ * Le filtre sur `propriete_id` est autre chose, et lui est un filtre ordinaire
+ * : `clauseEvenementVisible` refuse déjà l'événement qui porte un lien
+ * étranger, mais l'écran du propriétaire ne passe pas par elle, et le nom d'un
+ * objet d'une autre propriété n'a rien à faire dans sa liste non plus.
  */
 const OBJETS_LIES = (alias = sql.raw("ev")) => sql`
   coalesce((
@@ -92,6 +107,7 @@ const OBJETS_LIES = (alias = sql.raw("ev")) => sql`
     JOIN element e ON e.id = ee.element_id
     JOIN zone z ON z.id = e.zone_id
     WHERE ee.evenement_id = ${alias}.id
+      AND e.propriete_id = ${alias}.propriete_id
   ), '[]'::json)`;
 
 // `date` en base, texte à l'écran. Sans `to_char`, node-postgres rend un objet

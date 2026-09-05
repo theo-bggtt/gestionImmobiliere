@@ -17,13 +17,20 @@ CREATE TYPE "public"."evenement_type" AS ENUM('installation', 'reparation', 'ent
 
 -- Comble les nuls et tout ce qui ne tomberait pas dans la liste : la
 -- conversion doit être totale, sinon elle échoue sur une seule ligne.
+--
+-- Le `lower(btrim(…))` est ici et dans le `USING` ci-dessous, et il n'est pas
+-- cosmétique : `'ENTRETIEN'` et `'reparation '` sont la bonne valeur à la
+-- casse et à l'espace près. Sans lui, du texte libre saisi par un humain se
+-- fait rabattre sur `'autre'` — c'est-à-dire perdre de la donnée pour une
+-- raison de forme, dans la migration même dont le commentaire dit qu'une
+-- migration qui ne marche que sur une table vide est une mine.
 UPDATE "evenement"
 SET "type" = 'autre'
 WHERE "type" IS NULL
-   OR "type" NOT IN ('installation', 'reparation', 'entretien', 'controle', 'renovation', 'sinistre', 'autre');--> statement-breakpoint
+   OR lower(btrim("type")) NOT IN ('installation', 'reparation', 'entretien', 'controle', 'renovation', 'sinistre', 'autre');--> statement-breakpoint
 
 ALTER TABLE "evenement" ALTER COLUMN "type" DROP DEFAULT;--> statement-breakpoint
-ALTER TABLE "evenement" ALTER COLUMN "type" SET DATA TYPE "public"."evenement_type" USING "type"::"public"."evenement_type";--> statement-breakpoint
+ALTER TABLE "evenement" ALTER COLUMN "type" SET DATA TYPE "public"."evenement_type" USING lower(btrim("type"))::"public"."evenement_type";--> statement-breakpoint
 ALTER TABLE "evenement" ALTER COLUMN "type" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "evenement" ALTER COLUMN "type" SET DEFAULT 'autre';--> statement-breakpoint
 
