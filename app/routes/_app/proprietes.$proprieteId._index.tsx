@@ -9,6 +9,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { chargerZonesVignettes, PORTEE_PROPRIETAIRE } from "../../lib/recherche/recherche.server";
+import { chargerEcheances } from "../../lib/historique/garanties.server";
+import type { GarantieProprietaire } from "../../lib/historique/types";
 import type { ReponseRecherche, ZoneVignette } from "../../lib/recherche/types";
 import { BarreRecherche, useAntiRebond } from "../../components/recherche/BarreRecherche";
 import { ListeResultats } from "../../components/recherche/ListeResultats";
@@ -18,12 +20,15 @@ import { liensPropriete } from "../../components/recherche/liens";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
   const propriete = await requireProprieteAccess(utilisateurId, params.proprieteId);
-  const zones = await chargerZonesVignettes(propriete.id, PORTEE_PROPRIETAIRE);
-  return { propriete, zones };
+  const [zones, echeances] = await Promise.all([
+    chargerZonesVignettes(propriete.id, PORTEE_PROPRIETAIRE),
+    chargerEcheances(propriete.id),
+  ]);
+  return { propriete, zones, echeances };
 }
 
 export default function AccueilPropriete() {
-  const { propriete, zones } = useLoaderData<typeof loader>();
+  const { propriete, zones, echeances } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<ReponseRecherche>();
 
   const [saisie, setSaisie] = useState("");
@@ -60,7 +65,12 @@ export default function AccueilPropriete() {
           </p>
         </>
       ) : (
-        <Accueil proprieteId={propriete.id} zones={zones} proprieteNom={propriete.nom} />
+        <Accueil
+          proprieteId={propriete.id}
+          zones={zones}
+          proprieteNom={propriete.nom}
+          echeances={echeances}
+        />
       )}
     </div>
   );
@@ -70,14 +80,18 @@ function Accueil({
   proprieteId,
   proprieteNom,
   zones,
+  echeances,
 }: {
   proprieteId: number;
   proprieteNom: string;
   zones: ZoneVignette[];
+  echeances: GarantieProprietaire[];
 }) {
   return (
     <section>
       <h1 className="accueil-titre">{proprieteNom}</h1>
+
+      <Echeances echeances={echeances} />
       {zones.length === 0 ? (
         <>
           <p className="resultats-vide">Aucune zone pour l'instant.</p>
@@ -103,6 +117,44 @@ function Accueil({
         <Link to="intervenants">Intervenants</Link>
         <Link to="partages">Partages</Link>
       </nav>
+    </section>
+  );
+}
+
+/**
+ * Les échéances : tout ce que « rappels » veut dire à cette étape.
+ *
+ * Une liste qu'on regarde, pas une notification qui arrive — le projet n'a ni
+ * mailer, ni file de travail, ni permission de notifier, et un vrai système de
+ * rappels est une surface produit à lui seul. La perte est réelle et écrite
+ * dans le README : sans ouvrir l'app, on n'apprend rien.
+ *
+ * Absente quand elle serait vide. Pas de « 0 échéance » : ce serait un score
+ * de complétude déguisé, et la règle non négociable #2 l'interdit.
+ *
+ * Les expirées restent, en tête puisque le tri est croissant. Savoir qu'une
+ * garantie a expiré est exactement ce qu'on vient chercher ici.
+ */
+function Echeances({ echeances }: { echeances: GarantieProprietaire[] }) {
+  if (echeances.length === 0) return null;
+
+  return (
+    <section className="accueil-echeances">
+      <h2>Échéances</h2>
+      <ul>
+        {echeances.map((g) => (
+          <li key={g.id}>
+            <Link to={`garanties/${g.id}/modifier`}>{g.fin}</Link>
+            {g.expiree && <span className="garantie-expiree"> · expirée</span>}
+            <span className="chrono-objet-zone">
+              {" · "}
+              <Link to={`elements/${g.elementId}/modifier`}>{g.elementNom}</Link>
+              {" · "}
+              {g.zoneNom}
+            </span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

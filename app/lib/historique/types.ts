@@ -97,8 +97,81 @@ export type EvenementListe = {
 export type EvenementDetail = EvenementListe & {
   description: string | null;
   intervenants: IntervenantRendu[];
-  /** Identifiants de fichiers, servis par la route à jeton du partage. */
-  photos: number[];
+  /**
+   * Les photos, servies par la route à jeton du partage. Le `role` est de la
+   * présentation (« avant » / « après »), jamais de la permission.
+   */
+  photos: PhotoEvenement[];
+};
+
+/**
+ * Une garantie telle qu'elle peut sortir vers un lien de partage.
+ *
+ * `fin` sort, et c'est voulu : « la chaudière est sous garantie jusqu'en
+ * 2029 » est un fait sur la maison, et c'est même ce qu'un artisan doit savoir
+ * AVANT de démonter quelque chose — le produit existe pour ça.
+ *
+ * Ni `reference`, ni `fichierId`. La référence est un numéro de contrat en
+ * texte libre, donc la même famille de fuite que `plan.nom` ; et le document
+ * d'une garantie est un contrat ou une facture, c'est-à-dire du `cout` sous un
+ * autre nom (décision #100). L'absence de ces champs est une propriété du
+ * type, comme pour `IntervenantRendu` : les écrire depuis un loader de partage
+ * ne compile pas.
+ *
+ * `expiree` est calculée côté serveur et non déduite de `fin` par l'écran :
+ * `new Date("2026-03-01")` se lit en UTC et rendrait une garantie expirée un
+ * jour trop tôt à l'ouest de Greenwich. Même piège que les dates de la
+ * chronologie.
+ */
+export type GarantieRendue = {
+  id: number;
+  /** ISO `YYYY-MM-DD`. */
+  debut: string;
+  fin: string | null;
+  expiree: boolean;
+};
+
+/**
+ * Une garantie sur l'écran du propriétaire : tout, plus de quoi la situer.
+ * Ce type ne quitte jamais `garanties.server.ts` et les routes `_app`.
+ */
+export type GarantieProprietaire = GarantieRendue & {
+  reference: string | null;
+  fichierId: number | null;
+  elementId: number;
+  elementNom: string;
+  zoneNom: string;
+};
+
+/**
+ * Les rôles d'une photo d'événement, sous-ensemble de `fichier_lien.role`.
+ *
+ * `plaque` en est absent : c'est le rôle d'une photo de plaque signalétique,
+ * qui pend à un objet et pas à un chantier. La liste complète vit dans le
+ * schéma parce que c'est un `pgEnum` de la migration 0000 ; celle-ci est ce
+ * qu'un formulaire d'événement propose.
+ *
+ * Le rôle ne décide d'AUCUNE permission : le droit de lire l'octet vient de
+ * `photoDUnEvenement`, dérivé de la visibilité de l'événement. Filtrer par
+ * rôle ne fermerait rien et donnerait l'illusion du contraire.
+ */
+export const ROLES_PHOTO_EVENEMENT = ["avant", "apres", "general"] as const;
+
+export type RolePhotoEvenement = (typeof ROLES_PHOTO_EVENEMENT)[number];
+
+export const LIBELLES_ROLE_PHOTO: Record<RolePhotoEvenement, string> = {
+  avant: "Avant",
+  apres: "Après",
+  general: "Sans étape",
+};
+
+export const estRolePhotoEvenement = (valeur: unknown): valeur is RolePhotoEvenement =>
+  typeof valeur === "string" && (ROLES_PHOTO_EVENEMENT as readonly string[]).includes(valeur);
+
+/** Une photo d'événement : l'identifiant du fichier et l'étape qu'elle montre. */
+export type PhotoEvenement = {
+  id: number;
+  role: RolePhotoEvenement;
 };
 
 /** Une pastille de filtre de la chronologie, comptée sur le fonds VISIBLE. */
@@ -113,3 +186,4 @@ export const MAX_LONGUEUR_DESCRIPTION = 4000;
 export const MAX_LONGUEUR_NOM_INTERVENANT = 120;
 export const MAX_LONGUEUR_CHAMP_COURT = 120;
 export const MAX_LONGUEUR_NOTES = 4000;
+export const MAX_LONGUEUR_REFERENCE = 200;

@@ -91,4 +91,14 @@ export const garantie = pgTable("garantie", {
   fin: date("fin"),
   reference: text("reference"),
   fichierId: integer("fichier_id").references(() => fichier.id, { onDelete: "set null" }),
-});
+}, (table) => ({
+  // Le sens de lecture est « les garanties de cet objet » : c'est la fiche qui
+  // les demande, jamais l'inverse.
+  elementIdx: index("idx_garantie_element").on(table.elementId),
+  // La borne va en base et non dans le formulaire, même raisonnement que
+  // `point_x_valide` : une garantie qui finit avant de commencer est une
+  // erreur qu'aucune route ne doit pouvoir écrire, pas une règle d'écran.
+  // `fin` reste nullable — « garantie sans terme connu » est le cas courant
+  // quand on reprend un classeur, et ce n'est pas la même chose qu'expirée.
+  bornes: check("garantie_fin_apres_debut", sql`${table.fin} IS NULL OR ${table.fin} >= ${table.debut}`),
+}));

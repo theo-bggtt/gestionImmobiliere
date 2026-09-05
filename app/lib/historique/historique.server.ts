@@ -31,6 +31,7 @@ import type {
   FacetteType,
   IntervenantRendu,
   ObjetLie,
+  PhotoEvenement,
   TypeEvenement,
 } from "./types";
 
@@ -113,7 +114,7 @@ const OBJETS_LIES = (alias = sql.raw("ev")) => sql`
 // `date` en base, texte à l'écran. Sans `to_char`, node-postgres rend un objet
 // Date, que la sérialisation d'un loader décale d'un fuseau : une intervention
 // du 1er mars s'affiche le 28 février pour la moitié de la planète.
-const JOUR = (colonne: ReturnType<typeof sql.raw>) => sql`to_char(${colonne}, 'YYYY-MM-DD')`;
+export const JOUR = (colonne: ReturnType<typeof sql.raw>) => sql`to_char(${colonne}, 'YYYY-MM-DD')`;
 
 type LigneListe = {
   id: number;
@@ -267,18 +268,37 @@ async function chargerIntervenantsDeLEvenement(
   return lignes.rows;
 }
 
-/** Les photos d'un événement. Aucun `fichier.niveau` ici : voir `photoDUnEvenement`. */
-async function chargerPhotosDeLEvenement(proprieteId: number, evenementId: number): Promise<number[]> {
-  const lignes = await db.execute<{ id: number }>(sql`
-    SELECT f.id
+/**
+ * Les photos d'un événement. Aucun `fichier.niveau` ici : voir
+ * `photoDUnEvenement`.
+ *
+ * Le `role` est servi, et il ne filtre RIEN. C'est de la présentation — « voici
+ * l'avant, voici l'après » — et le droit de lire l'octet vient toujours de la
+ * visibilité de l'événement. Une requête qui filtrerait par rôle ne fermerait
+ * rien du tout et donnerait l'illusion du contraire, ce qui est pire que de ne
+ * rien faire.
+ *
+ * L'ordre range l'avant devant l'après : c'est le sens du récit, et il ne
+ * dépend pas de la date de prise (on photographie souvent l'avant après coup,
+ * dans un dossier d'assurance).
+ */
+async function chargerPhotosDeLEvenement(
+  proprieteId: number,
+  evenementId: number,
+): Promise<PhotoEvenement[]> {
+  const lignes = await db.execute<PhotoEvenement>(sql`
+    SELECT f.id, fl.role
     FROM fichier_lien fl
     JOIN fichier f ON f.id = fl.fichier_id
     WHERE fl.cible_type = 'evenement'
       AND fl.cible_id = ${evenementId}
       AND f.propriete_id = ${proprieteId}
-    ORDER BY f.date_prise DESC NULLS LAST, f.id DESC
+    ORDER BY
+      CASE fl.role WHEN 'avant' THEN 0 WHEN 'apres' THEN 1 ELSE 2 END,
+      f.date_prise DESC NULLS LAST,
+      f.id DESC
   `);
-  return lignes.rows.map((l) => l.id);
+  return lignes.rows;
 }
 
 /**

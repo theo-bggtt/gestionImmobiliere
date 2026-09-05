@@ -10,6 +10,7 @@
 //   tél. / e-mail — d'un intervenant : données personnelles d'un tiers.
 //                   `IntervenantRendu` ne porte que le nom et le métier.
 import type { EvenementPartage } from "../../lib/partage/contenu.server";
+import { LIBELLES_ROLE_PHOTO } from "../../lib/historique/types";
 import { LIBELLES_TYPE_EVENEMENT } from "../../lib/historique/types";
 import { periode } from "../historique/Chronologie";
 import { liensPartage } from "../recherche/liens";
@@ -65,11 +66,20 @@ export function FicheEvenement({ evenement, jeton }: { evenement: EvenementParta
         <section className="fiche-photos">
           <h2>Photos</h2>
           <ul className="galerie">
-            {evenement.photos.map((id) => (
-              <li key={id}>
-                <a href={`/p/${jeton}/fichiers/${id}`}>
-                  <img src={liens.image(id)} alt="" loading="lazy" />
-                </a>
+            {/* L'étiquette est une légende, pas un filtre : le droit de lire
+                l'octet vient de la visibilité de l'événement, jamais du rôle.
+                « Sans étape » n'est pas affiché — c'est le défaut, et une
+                légende qui dit « rien de particulier » est du bruit. */}
+            {evenement.photos.map((photo) => (
+              <li key={photo.id}>
+                <figure className="photo-etape">
+                  <a href={`/p/${jeton}/fichiers/${photo.id}`}>
+                    <img src={liens.image(photo.id)} alt="" loading="lazy" />
+                  </a>
+                  {photo.role !== "general" && (
+                    <figcaption>{LIBELLES_ROLE_PHOTO[photo.role]}</figcaption>
+                  )}
+                </figure>
               </li>
             ))}
           </ul>

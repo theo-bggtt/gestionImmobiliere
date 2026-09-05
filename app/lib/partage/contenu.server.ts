@@ -37,7 +37,14 @@ import {
   compterEvenementsVisibles,
 } from "../historique/historique.server";
 import type { Chronologie } from "../historique/historique.server";
-import { estTypeEvenement, type EvenementDetail, type EvenementListe, type TypeEvenement } from "../historique/types";
+import { chargerGarantiesDeLElement } from "../historique/garanties.server";
+import {
+  estTypeEvenement,
+  type EvenementDetail,
+  type EvenementListe,
+  type GarantieRendue,
+  type TypeEvenement,
+} from "../historique/types";
 
 // Le nom du partage (« Jardinier Marc ») n'entre pas dans ces types : c'est
 // l'étiquette privée du propriétaire, elle n'a rien à faire sur la page du
@@ -85,6 +92,12 @@ export type FichePartage = {
   photos: number[];
   /** L'historique de l'objet, filtré par `clauseEvenementVisible`. */
   evenements: EvenementListe[];
+  /**
+   * Les garanties de l'objet. `GarantieRendue` ne porte ni `reference` ni
+   * document : la première est du texte libre, le second est du `cout` sous un
+   * autre nom. Rien à filtrer ici, le type l'a déjà fait.
+   */
+  garanties: GarantieRendue[];
 };
 
 /** La chronologie servie à un lien, et le filtre par type qu'elle porte. */
@@ -257,6 +270,10 @@ export async function chargerFichePartage(
     // zone masquée, et c'est justement le cas que le quantificateur universel
     // ferme. Voir `clauseEvenementVisible`.
     evenements: await chargerEvenementsDeLElement(p.proprieteId, elementId, portee),
+    // La garantie hérite de la visibilité de son élément — `element_id` est
+    // NOT NULL — donc aucune clause propre, seulement `clausePortee` sur
+    // l'élément joint. C'est l'inverse exact du problème de l'événement.
+    garanties: await chargerGarantiesDeLElement(p.proprieteId, elementId, portee),
   };
 }
 

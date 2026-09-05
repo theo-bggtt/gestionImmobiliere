@@ -56,6 +56,10 @@ export default [
         route("nouveau", "routes/_app/evenements.nouveau.tsx"),
         route(":evenementId/modifier", "routes/_app/evenements.$evenementId.modifier.tsx"),
       ]),
+      // Une garantie se crée depuis la fiche de son objet (`element_id` est
+      // NOT NULL), et se corrige ici — atteignable aussi depuis les échéances
+      // de l'accueil, sans avoir à retrouver l'objet d'abord.
+      route("garanties/:garantieId/modifier", "routes/_app/garanties.$garantieId.modifier.tsx"),
       ...prefix("intervenants", [
         index("routes/_app/intervenants._index.tsx"),
         route("nouveau", "routes/_app/intervenants.nouveau.tsx"),
