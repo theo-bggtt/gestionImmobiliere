@@ -34,6 +34,12 @@ const borner = (v: number, min: number, max: number) => Math.min(Math.max(v, min
 export type Tracage = {
   zoneNom: string;
   sommets: Sommet[];
+  /**
+   * L'envoi est en cours : les sommets restent à l'écran — c'est le point,
+   * un refus ne doit pas les jeter — mais rien ne les modifie plus tant que
+   * le serveur n'a pas répondu.
+   */
+  envoi: boolean;
   onSommet: (x: number, y: number) => void;
   onDefaire: () => void;
   onTerminer: () => void;
@@ -211,7 +217,7 @@ export function VuePlan({
     // Les deux modes sont exclusifs, et l'écran le garantit ; l'ordre ici ne
     // fait que le rendre inoffensif si un jour il ne l'était plus.
     if (tracage) {
-      if (tracage.sommets.length < SOMMETS_MAX) tracage.onSommet(p.x, p.y);
+      if (!tracage.envoi && tracage.sommets.length < SOMMETS_MAX) tracage.onSommet(p.x, p.y);
       return;
     }
     // En dehors du placement et du tracé, le fond ne sert qu'à déplacer la vue.
@@ -241,24 +247,37 @@ export function VuePlan({
             <span className="plan-placement">
               Contour de <strong>{tracage.zoneNom}</strong> — {tracage.sommets.length} point
               {tracage.sommets.length > 1 ? "s" : ""}
-              {tracage.sommets.length < SOMMETS_MIN
-                ? ` (${SOMMETS_MIN} minimum)`
-                : tracage.sommets.length >= SOMMETS_MAX
-                  ? " (maximum atteint)"
-                  : ""}
+              {tracage.envoi
+                ? " (enregistrement…)"
+                : tracage.sommets.length < SOMMETS_MIN
+                  ? ` (${SOMMETS_MIN} minimum)`
+                  : tracage.sommets.length >= SOMMETS_MAX
+                    ? " (maximum atteint)"
+                    : ""}
             </span>
             <button
               type="button"
               className="bouton-discret"
               onClick={tracage.onDefaire}
-              disabled={tracage.sommets.length === 0}
+              disabled={tracage.envoi || tracage.sommets.length === 0}
             >
               Annuler le dernier point
             </button>
-            <button type="button" onClick={tracage.onTerminer} disabled={tracage.sommets.length < SOMMETS_MIN}>
+            <button
+              type="button"
+              onClick={tracage.onTerminer}
+              disabled={tracage.envoi || tracage.sommets.length < SOMMETS_MIN}
+            >
               Terminer le contour
             </button>
-            <button type="button" className="bouton-discret" onClick={tracage.onAbandonner}>
+            {/* Abandonner pendant l'envoi jetterait des clics que le serveur
+                est peut-être en train d'accepter : on attend sa réponse. */}
+            <button
+              type="button"
+              className="bouton-discret"
+              onClick={tracage.onAbandonner}
+              disabled={tracage.envoi}
+            >
               Abandonner
             </button>
           </>

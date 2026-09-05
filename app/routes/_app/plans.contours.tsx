@@ -16,6 +16,30 @@ import { lireContour, SOMMETS_MAX, SOMMETS_MIN } from "../../lib/plans/geometrie
 
 const erreur = (message: string, status = 400) => Response.json({ erreur: message }, { status });
 
+/**
+ * Exécute une écriture et RENVOIE ses 404 au lieu de les relancer.
+ *
+ * Une `Response` lancée depuis l'action d'un fetcher ne devient pas
+ * `fetcher.data` : elle remonte à la frontière d'erreur et remplace la page
+ * entière — mesuré au navigateur, on obtient un « 404 » nu. Elle emporte donc
+ * avec le composant le tracé en cours, qui vit dedans, et aucune précaution
+ * côté écran ne peut le rattraper. Rendue, elle arrive dans `fetcher.data`,
+ * l'écran affiche son message et les clics restent à l'écran.
+ *
+ * Le code reste 404 sur le fil, et le message ne dépend pas du motif : la
+ * règle #4 porte sur ce que la réponse APPREND — « n'existe pas » et « n'est
+ * pas à vous » restent indiscernables — pas sur la façon dont le routeur la
+ * transporte. Ce qui n'est pas une `Response` continue de remonter.
+ */
+async function rendreLes404<T>(travail: () => Promise<T>) {
+  try {
+    return { valeur: await travail(), refus: null };
+  } catch (e) {
+    if (!(e instanceof Response)) throw e;
+    return { valeur: null, refus: erreur(await e.text(), e.status) };
+  }
+}
+
 export async function action({ request, params }: ActionFunctionArgs) {
   if (request.method !== "POST") return erreur("Méthode non autorisée.", 405);
 
@@ -27,8 +51,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const zoneId = Number(form.get("zoneId"));
 
   if (form.get("_action") === "effacer") {
-    await effacerContour(propriete.id, planId, zoneId);
-    return Response.json({ ok: true });
+    const { refus } = await rendreLes404(() => effacerContour(propriete.id, planId, zoneId));
+    return refus ?? Response.json({ ok: true });
   }
 
   let brut: unknown = null;
@@ -44,6 +68,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const sommets = lireContour(brut);
   if (!sommets) return erreur(`Un contour tient entre ${SOMMETS_MIN} et ${SOMMETS_MAX} points, tous dans le plan.`);
 
-  await enregistrerContour(propriete.id, planId, zoneId, sommets);
-  return Response.json({ ok: true });
+  const { refus } = await rendreLes404(() => enregistrerContour(propriete.id, planId, zoneId, sommets));
+  return refus ?? Response.json({ ok: true });
 }
