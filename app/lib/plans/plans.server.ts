@@ -72,20 +72,6 @@ export function lireGeometrie(form: FormData): Geometrie {
 }
 
 /**
- * Un plan est visible d'un partage si au moins une zone de son niveau porte
- * un objet visible — le plan de situation couvrant les zones extérieures,
- * celles dont `niveau_id` est nul. C'est exactement la règle de la grille de
- * zones : une tuile « Local technique · 0 objet » et une entrée « Sous-sol »
- * dans un sélecteur divulguent la même chose.
- *
- * Corollaire assumé : un point visible posé sur un plan dont aucune zone ne
- * l'est reste inatteignable (le cas d'une colonne de chute qui traverse un
- * niveau interdit). C'est une perte, pas une fuite.
- *
- * Exportée : la route à jeton doit autoriser l'image d'un plan par ce même
- * prédicat, pas par une seconde écriture de la même idée.
- */
-/**
  * La couverture d'un plan : quelles zones il porte. Un plan d'étage porte les
  * zones de son niveau, un plan de situation les zones extérieures — c'est le
  * couple que `plan_type_niveau_coherent` (migration 0006) rend cohérent.
@@ -102,6 +88,20 @@ export function clauseCouverturePlan(aliasPlan = sql.raw("p"), aliasZone = sql.r
                    ELSE ${aliasZone}.niveau_id = ${aliasPlan}.niveau_id END)`;
 }
 
+/**
+ * Un plan est visible d'un partage si au moins une zone de son niveau porte
+ * un objet visible — le plan de situation couvrant les zones extérieures,
+ * celles dont `niveau_id` est nul. C'est exactement la règle de la grille de
+ * zones : une tuile « Local technique · 0 objet » et une entrée « Sous-sol »
+ * dans un sélecteur divulguent la même chose.
+ *
+ * Corollaire assumé : un point visible posé sur un plan dont aucune zone ne
+ * l'est reste inatteignable (le cas d'une colonne de chute qui traverse un
+ * niveau interdit). C'est une perte, pas une fuite.
+ *
+ * Exportée : la route à jeton doit autoriser l'image d'un plan par ce même
+ * prédicat, pas par une seconde écriture de la même idée.
+ */
 export function clausePlanVisible(portee: Portee, aliasPlan = sql.raw("p")) {
   if (!porteeRestreinte(portee)) return sql`true`;
   return sql`EXISTS (
