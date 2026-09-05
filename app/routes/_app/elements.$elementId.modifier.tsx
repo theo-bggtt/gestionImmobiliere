@@ -11,6 +11,9 @@ import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
 import { zoneAppartientALaPropriete, systemeAppartientALaPropriete } from "../../lib/db/elementRefs.server";
 import { chargerArbreZones } from "../../lib/zoneTree";
 import { chargerPlans, chargerPlansDeLElement } from "../../lib/plans/plans.server";
+import { chargerEvenementsDeLElement } from "../../lib/historique/historique.server";
+import { Chronologie } from "../../components/historique/Chronologie";
+import { liensPropriete } from "../../components/recherche/liens";
 import { validerDetails } from "../../lib/forms/champSchema";
 import { extraireDetails } from "../../lib/forms/extraireDetails";
 import { ZoneSelector } from "../../components/ZoneSelector";
@@ -49,7 +52,7 @@ async function chargerPhotos(proprieteId: number, elementId: number) {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
   const propriete = await requireProprieteAccess(utilisateurId, params.proprieteId);
-  const [e, types, arbre, systemes, photos, plans, poses] = await Promise.all([
+  const [e, types, arbre, systemes, photos, plans, poses, evenements] = await Promise.all([
     chargerElement(propriete.id, params.elementId),
     chargerTypesDisponibles(propriete.id),
     chargerArbreZones(propriete.id),
@@ -57,6 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     chargerPhotos(propriete.id, Number(params.elementId)),
     chargerPlans(propriete.id),
     chargerPlansDeLElement(propriete.id, Number(params.elementId)),
+    chargerEvenementsDeLElement(propriete.id, Number(params.elementId)),
   ]);
   // Un objet déjà placé reste plaçable ailleurs : l'écran le montre (« déjà
   // sur Sous-sol ») plutôt que de l'interdire.
@@ -69,6 +73,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     systemes,
     photos,
     plans: plans.map((p) => ({ id: p.id, nom: p.nom, pose: posesParPlan.has(p.id) })),
+    evenements,
   };
 }
 
@@ -121,7 +126,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ModifierElement() {
-  const { propriete, element, types, arbre, systemes, photos, plans } = useLoaderData<typeof loader>();
+  const { propriete, element, types, arbre, systemes, photos, plans, evenements } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [typeId, setTypeId] = useState<number>(element.typeId);
   const typeChoisi = types.find((t) => t.id === typeId);
@@ -208,6 +213,20 @@ export default function ModifierElement() {
         {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
         <button type="submit">Enregistrer</button>
       </Form>
+      <section>
+        <div className="fiche-photos-tete">
+          <h2>Historique</h2>
+          <Link to={`/proprietes/${propriete.id}/evenements/nouveau`} className="bouton-discret">
+            Ajouter un événement
+          </Link>
+        </div>
+        <Chronologie
+          evenements={evenements}
+          liens={liensPropriete(propriete.id)}
+          vide="Rien n'est consigné sur cet objet."
+        />
+      </section>
+
       <Form method="post">
         <input type="hidden" name="_action" value="supprimer" />
         <button type="submit">Supprimer l'élément</button>

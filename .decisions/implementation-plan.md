@@ -168,10 +168,26 @@ WHERE e.niveau <= :niveau_max
 - [ ] Un objet traversant plusieurs niveaux porte un point sur chaque plan concerné
 
 ### Étape 5 — Historique · 1 à 2 semaines
-- [ ] Événements, liens vers éléments et intervenants
+> Découpée en deux PR : la visibilité et les données personnelles d'abord, les
+> garanties ensuite. La seconde n'ouvre qu'après le merge de la première.
+
+**PR 1 — événements, intervenants, chronologie, filtrage de partage**
+- [x] Événements, liens vers éléments et intervenants
+- [x] Chronologie affichée, côté propriétaire et côté partage, filtrable par type
+- [x] `clauseEvenementVisible` : quantificateur **universel** sur les objets
+      liés — un événement est un récit, et `titre`/`description` sont la charge
+      utile. Voir README, section « L'historique »
+- [x] `evenement.type` fermé en `pgEnum` de sept valeurs (migration 0007)
+- [x] `evenement.cout`, `intervenant.tel`/`email`/`notes` jamais sélectionnés
+- [x] Troisième droit sur les fichiers, `photoDUnEvenement`
+
+**PR 2 — garanties et avant/après**
+- [ ] Garanties avec date de fin, référence, document lié, calcul de l'échéance
+- [ ] Rappel **visuel seul** : pastille sur la fiche et sur l'accueil. Le mail
+      part dans « En attente d'un besoin réel », déclencheur : le jour où une
+      échéance est ratée. La question n'est pas calendaire, elle se pose devant
+      l'appareil en panne
 - [ ] Avant/après par le champ `role` sur `fichier_lien`
-- [ ] Garanties avec date de fin et rappels
-- [ ] Chronologie affichée
 
 ### Étape 6 — Le plan, phase 2 · 1 semaine
 - [ ] Tracé de polygones **par-dessus le scan** (5 clics par pièce, aucune mesure)
@@ -197,6 +213,7 @@ WHERE e.niveau <= :niveau_max
 | Import IFC / DXF | 4 à 8 semaines | Si un jour on vend aux pros du bâtiment. |
 | Orthophotos swisstopo | ~1 semaine | Deux usages d'un coup. L'orthophoto **courante** sert de plan de situation pour les zones extérieures dès l'étape 4. Les orthophotos **historiques** (depuis 1979) remplacent l'idée d'archiver Google Maps, impossible en API et interdite par les CGU. Usage commercial autorisé, attribution `©swisstopo` obligatoire. |
 | Multi-logement (immeuble) | 3 à 5 semaines | **Décision non prise.** Le modèle gère plusieurs bâtiments et plusieurs niveaux, mais pas plusieurs *logements* indépendants dans un bâtiment, chacun avec son propriétaire ou son locataire. C'est un autre produit : parties communes, quotes-parts, plusieurs comptes par bâtiment. À trancher avant de démarcher des gérances. |
+| Rappel d'échéance de garantie par mail | ~1 jour | **Décidé le 4 septembre 2026 : rappel visuel seul pour l'instant.** Il n'y a ni SMTP, ni file, ni ordonnanceur ; un envoi voudrait soit un `setInterval` dans le process Express (qui meurt avec lui et double si on le réplique), soit un cron externe. Et la question n'est pas calendaire : personne ne se demande si la garantie de sa chaudière expire aujourd'hui, on se demande « est-ce encore sous garantie » devant la chaudière qui fuit, ce à quoi une pastille sur la fiche répond au bon moment. Le coût du report est quasi nul — « quelles garanties expirent dans N jours » est la même requête qu'un cron exécuterait. **Déclencheur : le jour où une échéance est ratée pour de bon.** Perte assumée en attendant : le cas « il reste trois mois, fais faire la révision gratuite » est sacrifié, puisqu'on découvre l'expiration en allant chercher, donc après la panne. |
 | Relations entre éléments | ~1 semaine | Table de liaison `element ↔ element` typée, pour répondre à « qu'est-ce que je coupe si je ferme cette vanne ». |
 | Image de partage recadrée par plan | ~2 jours | Les pixels d'une image de plan divulguent — un extrait cadastral porte l'adresse et le numéro de parcelle **imprimés dedans** — et c'est la seule ligne de la revue de fuite qui ne se ferme pas : le code filtre des colonnes, pas des pixels. **Une portée de partage par plan a été envisagée et écartée** : elle laisse le choix entre un jardinier qui ne voit pas le plan de situation, donc ne trouve pas la vanne d'arrosage, et un jardinier qui voit l'adresse — elle déplace la fuite dans un écran de configuration au lieu de la fermer. La forme retenue est une **image de partage distincte par plan** : une colonne nullable, le propriétaire recadre une fois pour couper le cartouche, `imageDUnPlan` sert cette version quand elle existe. Réutilise l'éditeur de recadrage de l'étape 4. Déclencheur : le jour où un vrai extrait cadastral est téléversé et partagé. |
 

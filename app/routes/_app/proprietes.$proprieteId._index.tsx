@@ -99,6 +99,8 @@ function Accueil({
         <Link to="systemes">Systèmes</Link>
         <Link to="elements">Éléments</Link>
         <Link to="plans">Plans</Link>
+        <Link to="evenements">Historique</Link>
+        <Link to="intervenants">Intervenants</Link>
         <Link to="partages">Partages</Link>
       </nav>
     </section>

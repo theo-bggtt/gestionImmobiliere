@@ -61,10 +61,23 @@ export const porteeRestreinte = (portee: Portee) =>
  */
 export function clausePortee(portee: Portee) {
   const vide = portee.zones === null && portee.systemes === null;
+  // Le `coalesce` n'est pas une élégance, c'est la seule chose qui rend cette
+  // clause NIABLE. `e.systeme_id` est nullable et `NULL = ANY('{3}')` vaut
+  // NULL, pas false (vérifié en base) : la clause pouvait donc rendre NULL
+  // pour un élément sans système sous une portée qui nomme des systèmes.
+  //
+  // Tant qu'elle n'était lue qu'en position WHERE, NULL s'y comportait comme
+  // false et rien ne se voyait. `clauseEvenementVisible` la NIE — « tous les
+  // éléments liés passent » s'écrit `NOT EXISTS (… WHERE NOT (clause)) » — et
+  // `NOT NULL` vaut NULL : la ligne fautive disparaissait de la sous-requête,
+  // le `NOT EXISTS` devenait vrai, et l'événement qui déborde passait.
+  //
+  // Corrigé ici plutôt que dans la négation, pour que le prochain qui nie
+  // cette clause n'ait pas à connaître le piège. Tenu par un test.
   return sql`e.niveau <= ${portee.niveauMax}
     AND (${vide}::boolean
          OR e.zone_id = ANY(${sql.param(portee.zones ?? [])}::int[])
-         OR e.systeme_id = ANY(${sql.param(portee.systemes ?? [])}::int[]))`;
+         OR coalesce(e.systeme_id = ANY(${sql.param(portee.systemes ?? [])}::int[]), false))`;
 }
 
 /** Une dimension de facette : liste vide = pas de restriction. */

@@ -56,6 +56,7 @@
 - [Retrouver](#retrouver)
 - [Partager](#partager)
 - [Le plan](#le-plan)
+- [L'historique](#lhistorique)
 - [Revue de fuite](#revue-de-fuite)
 - [Structure des dossiers](#structure-des-dossiers)
 - [Décisions prises](#décisions-prises-non-spécifiées-par-le-prompt-détape)
@@ -143,7 +144,16 @@ erDiagram
     PROPRIETE ||--o{ PLAN : "plan de situation"
     PLAN ||--o{ POINT : repères
     ELEMENT ||--o{ POINT : "un par plan traversé"
+    PROPRIETE ||--o{ EVENEMENT : historique
+    EVENEMENT }o--o{ ELEMENT : "objets concernés"
+    EVENEMENT }o--o{ INTERVENANT : "qui est venu"
+    PROPRIETE ||--o{ INTERVENANT : carnet
+    EVENEMENT ||--o{ FICHIER_LIEN : photos
 ```
+
+**`EVENEMENT` ne pend à aucune zone**, et c'est le nœud de l'étape 5 : sa
+visibilité se dérive de ses objets liés, tous, pas au moins un. Voir
+« L'historique ».
 
 `niveau.ordinal` est un entier signé (sous-sol -2, rez 0, etc.) : c'est la clé de tri, `niveau.nom` n'est qu'un libellé libre. `zone.niveauId` n'est nul que pour les zones extérieures, rattachées directement à la propriété — l'extérieur est une zone comme une autre, jamais un cas particulier dans l'interface.
 
@@ -659,6 +669,99 @@ L'aperçu est dessiné dans un canevas **à la boîte englobante**, avec la mêm
 
 ---
 
+## L'historique
+
+Un événement n'est pas un objet : c'est un récit, il pend à la propriété et
+non à une zone. Tout le modèle de visibilité repose pourtant sur
+`clausePortee`, qui filtre `element` par sa zone, son système et son niveau.
+Six choses portent le poids de ce raccord.
+
+- **La visibilité d'un événement se dérive de ses objets liés, et le
+  quantificateur est UNIVERSEL.** `clauseEvenementVisible(portee)` : le niveau
+  propre de l'événement passe le plafond, il porte au moins un objet lié, et
+  **tous** ses objets liés passent `clausePortee`. Le quantificateur existentiel
+  aurait suffi à fermer le cas évident (un événement sans lien échappe au
+  scopage), pas le cas qui arrive : « Rénovation du sous-sol et de la cuisine »
+  se lie légitimement à un objet de chaque zone, et sous un `EXISTS` l'objet de
+  la cuisine rendrait l'événement entier au locataire, `titre` et `description`
+  compris. Le seul rempart restant serait que le propriétaire pense à monter
+  `evenement.niveau` sur tout événement mentionnant une zone restreinte : de la
+  validation de formulaire dans la tête d'un humain, ce que la règle #1 refuse
+  depuis le début. Les deux bords échouent fermés, et le levier du propriétaire
+  est de découper l'événement — deux chantiers dans deux zones étaient de toute
+  façon deux événements.
+- **`clausePortee` ne rend plus jamais NULL, et c'est cette négation qui l'a
+  exigé.** « Tous les objets passent » s'écrit `NOT EXISTS (… WHERE NOT
+  (clause))`. Or `element.systeme_id` est nullable, `NULL = ANY('{3}')` vaut
+  NULL (vérifié en base, pas déduit) et `NOT NULL` vaut NULL : la ligne fautive
+  disparaissait de la sous-requête, le `NOT EXISTS` devenait vrai, et
+  l'événement qui déborde passait. Un `coalesce(…, false)` referme ça **à la
+  source** plutôt que dans la négation, pour que le prochain qui nie la clause
+  n'ait pas à connaître le piège. Les onze usages existants étaient tous en
+  position POSITIVE — `WHERE`, `AND`, un `EXISTS` sous un `OR`, le `WHERE`
+  interne d'un `LATERAL` — où seul TRUE passe et où NULL valait déjà faux :
+  aucun comportement ne change.
+  `tests/historique/portee.test.ts` épingle les deux faits.
+- **L'appartenance à la propriété est DANS la négation, et son sens est
+  contre-intuitif.** `clausePortee` filtre par zone, système et niveau, et ne
+  dit rien de `propriete_id` : un objet d'une autre propriété lié par erreur la
+  passe dès que sa zone figure dans la portée, et rendait alors l'événement
+  entier. Le conjoint nié est donc `e.propriete_id = ev.propriete_id AND
+  (clause)`, jamais un filtre ordinaire de la sous-requête — posé comme filtre,
+  il ferait *sortir* l'intrus, le `NOT EXISTS` resterait vrai et l'événement
+  passerait, c'est-à-dire exactement le bug qu'on croit corriger. La garde
+  d'écriture (`verifierAppartenance`) et la validation de `portee_zones` à la
+  création d'un partage rendent déjà ce lien impossible : c'est la troisième
+  attache, celle qui tient si les deux autres tombent, et le test l'insère
+  directement en base pour les contourner.
+- **`evenement.cout` n'est sélectionné par aucune requête de partage**, quel que
+  soit le plafond. Ce n'est pas un masquage au rendu : `EvenementListe` et
+  `EvenementDetail` ne portent pas le champ, donc l'écrire depuis un loader de
+  partage ne compile pas, et la colonne ne quitte jamais
+  `evenements.server.ts`, qui n'est importé que par les écrans du propriétaire.
+- **Un intervenant est un TIERS, et c'est la première fois que le produit en
+  stocke.** `nom` et `metier` sortent vers un lien sous deux conditions
+  cumulées : l'événement est visible, et `intervenant.niveau` passe le plafond
+  — défaut à 3, donc rien ne sort tant que le propriétaire ne l'a pas décidé,
+  intervenant par intervenant. `tel`, `email` et `notes` ne sont sélectionnés
+  nulle part hors de ses écrans. Le nom de l'entreprise qui a posé la chaudière
+  est un fait sur la maison, et c'est la promesse du produit ; un numéro de
+  téléphone est un moyen de joindre quelqu'un qui n'a pas choisi de figurer sur
+  une adresse que l'on peut faire suivre. Le propriétaire l'a ; s'il veut qu'on
+  appelle l'artisan, il le transmet lui-même.
+- **Le troisième droit sur les fichiers s'appelle `photoDUnEvenement`.**
+  `fichier_lien` est polymorphe ; l'étape 3 a écrit `photoDUneFiche`, l'étape 4
+  `imageDUnPlan`, celle-ci ajoute une troisième branche nommée, jamais un `OR`
+  glissé dans la requête — on doit pouvoir dire lequel des trois droits a ouvert
+  la porte. Il se dérive de la visibilité de l'ÉVÉNEMENT et jamais de
+  `fichier.niveau`, comme les deux autres. Il n'y a **pas** de quatrième branche
+  pour `cible_type = 'intervenant'`, et c'est une décision : ce qu'on attache à
+  un artisan est une carte de visite ou une facture, et une facture est du
+  `cout` sous un autre nom.
+
+`evenement.type` passe du texte libre à une liste fermée de sept valeurs
+(migration 0007). C'était `plan.nom` à nouveau — du texte libre rendu sur une
+page de partage — et fermer la liste supprime la fuite au lieu de la
+documenter. `TYPES_EVENEMENT` vit dans `app/lib/historique/types.ts`, neutre,
+et le schéma l'importe pour en faire un `pgEnum` : le schéma importe la
+définition, jamais l'inverse, comme `CHAMP_GENRES`.
+
+Le compte porté par une pastille de type est celui du fonds **visible**, calculé
+dans la requête filtrée. C'est la règle de la tuile « Local technique · 0 objet »
+appliquée au temps : une pastille « Sinistre (2) » sur un lien restreint
+apprendrait qu'il y a eu deux sinistres quand la liste n'en montre aucun. Un
+type sans événement visible n'a pas de pastille du tout, et l'entrée
+« Historique » disparaît de la page d'accueil d'un lien qui ne verrait rien.
+
+La chronologie est le **même composant** des deux côtés (`Chronologie`), nourri
+par `liensPropriete` ou `liensPartage` : la page de partage n'a pas les moyens
+d'écrire une route protégée. Côté partage elle ne charge toujours aucun script —
+le filtre par type est une liste de liens.
+
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
 ## Revue de fuite
 
 Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comment elle est filtrée. Les lignes en gras ne le sont **pas** — ou pas indépendamment ; elles sont là pour être lues, pas pour être passées sous silence. La dernière est la seule que le code ne saurait pas fermer même en le voulant.
@@ -693,6 +796,20 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 | Plan demandé par `?plan=<id>` | le paramètre d'URL | Recoupé avec la liste déjà filtrée, sinon repli sur le premier plan visible. Un identifiant écrit à la main ne sert rien de plus. |
 | **Nom d'un plan** | `plan.nom` | **Jamais envoyé.** Étiquette privée du propriétaire, qui peut y avoir écrit l'adresse : même traitement que `partage.nom`. |
 | **Pixels de l'image d'un plan** | l'image elle-même | **Non filtré, et non filtrable.** Un extrait cadastral porte l'adresse, la parcelle et parfois un nom, imprimés dedans. L'EXIF est effacé, le contenu ne l'est pas. Averti sur l'écran de téléversement, où le recadrage est la seule parade. |
+| Entrée « Historique » de l'accueil | `compterEvenementsVisibles(portee)` | Absente à zéro. Une entrée vers une chronologie vide dirait qu'il existe un historique, comme une tuile « 0 objet » dit qu'il existe une zone. |
+| Ligne de chronologie | `chargerChronologie(portee)` | `clauseEvenementVisible` : niveau de l'événement sous le plafond, au moins un objet lié, et **tous** les objets liés dans la portée. Les deux bords échouent fermés. |
+| Compte total d'événements | `count(*) OVER ()` | Calculé dans la requête filtrée. |
+| Pastille de type, et son compte | `chargerFacettesTypes(portee)` | Même clause. C'est le fonds **visible** : « Sinistre (2) » sur un lien restreint dirait qu'il y a eu deux sinistres. Un type sans événement visible n'a pas de pastille. |
+| Titre et description d'un événement | `evenement.titre`, `.description` | Du texte libre, rendu sous la seule visibilité de l'événement — c'est-à-dire sous le quantificateur universel, qui existe précisément parce que c'est *là* qu'est la charge utile. |
+| Type d'un événement | `evenement.type` | Liste **fermée** de sept valeurs depuis la migration 0007, donc du texte que le propriétaire n'écrit pas. C'était `plan.nom` en puissance. |
+| Objets liés à un événement servi | `evenement_element` | Non refiltrés, et ce n'est pas un oubli : un événement n'est servi que si tous ses objets passent. Le rendu partiel n'existe pas ici. |
+| Historique sur la fiche d'un objet | `chargerEvenementsDeLElement(portee)` | La même clause, pas celle de la fiche : un objet visible peut porter un événement qui déborde ailleurs. |
+| Nom et métier d'un intervenant | `intervenant.nom`, `.metier` | Deux conditions cumulées : l'événement est visible **et** `intervenant.niveau <= plafond`. Défaut à 3, donc rien avant décision explicite, intervenant par intervenant. |
+| **Coût d'un événement** | `evenement.cout` | **Jamais sélectionné**, à aucun plafond. Pas masqué : pas chargé. Le type servi ne porte pas le champ, l'écrire ne compile pas. |
+| **Téléphone, e-mail et notes d'un intervenant** | `intervenant.tel`, `.email`, `.notes` | **Jamais sélectionnés.** Coordonnées d'un tiers qui n'a pas choisi de figurer sur une adresse que l'on peut faire suivre. |
+| **Niveau d'un événement** | `evenement.niveau` | **Jamais envoyé.** Métadonnée de visibilité : l'afficher apprendrait au destinataire qu'il existe des crans au-dessus du sien. |
+| Octets de la photo d'un événement | `photoDUnEvenement` | Troisième droit, nommé : l'événement doit passer `clauseEvenementVisible`. `fichier.niveau` délibérément ignoré, comme pour les deux autres droits. Filtré = 404, lien inactif = 404. |
+| **Fichier d'un intervenant** | `fichier_lien` sur `'intervenant'` | **Jamais servi.** Pas de quatrième branche : ce qu'on attache à un artisan est une carte ou une facture, et une facture est du coût sous un autre nom. |
 | Nom du partage | `partage.nom` | Jamais envoyé : c'est l'étiquette privée du propriétaire (« Jardinier Marc »). |
 | **Chemin d'une zone** | `batiment.nom · niveau.nom` | **Non filtré indépendamment.** Un lien limité à une zone intérieure révèle le nom du bâtiment et de l'étage qui la portent. C'est l'adresse interne d'une zone déjà montrée, pas une donnée de plus — mais ce n'est pas rien, et ce n'est pas filtré. |
 | **Alias d'une fiche et d'un type** | `element.alias`, `type_element.alias` | **Cherchables (poids B), jamais rendus.** Un alias est du vocabulaire de recherche porté par une fiche déjà visible ; il n'a pas de `niveauMin`. Le jour où quelqu'un y écrit autre chose que du vocabulaire, il fuit. |
@@ -711,6 +828,7 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 - `app/lib/recherche/` — la requête et ses variantes (`recherche.server.ts` : recherche, facettes, grille de zones, clause de portée exportée), les types partagés client/serveur (`types.ts`), la lecture/écriture des paramètres d'URL (`params.ts`).
 - `app/lib/partage/` — jeton et état d'un lien (`partage.server.ts`), le contenu d'une page de partage (`contenu.server.ts`, le loader réel, partagé avec la prévisualisation), `niveauMin` par champ (`champs.ts`), en-têtes et marqueur « sans scripts » (`document.ts`), libellés des niveaux (`niveaux.ts`).
 - `app/lib/plans/` — le plan et ses points (`plans.server.ts` : listage sous portée, points, polygones, écritures), le regroupement des points en fonction pure (`regroupement.ts`), les types partagés client/serveur et les plafonds propres au plan (`types.ts`), la rasterisation d'un PDF dans le navigateur (`pdf.ts`, importé dynamiquement).
+- `app/lib/historique/` — la visibilité d'un événement et les lectures servies aux deux audiences (`historique.server.ts` : `clauseEvenementVisible` exportée, chronologie, facettes de type, détail), les écrans du propriétaire et l'écriture (`evenements.server.ts`, seul endroit où `cout` et `niveau` circulent), le carnet d'artisans (`intervenants.server.ts`), les types partagés client/serveur et la liste fermée `TYPES_EVENEMENT` (`types.ts`, neutre).
 - `app/lib/images/` — orientation puis effacement EXIF, vignette, rotation et recadrage.
 - `app/lib/stockage/` — interface `sauvegarder` / `lire` / `supprimer`, adossée au système de fichiers.
 - `app/lib/zoneTree.ts` — construction de l'arbre bâtiment → niveau → zone (+ zones extérieures).
@@ -718,14 +836,15 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 - `app/components/capture/` — `Capture` (déclencheur, feuille, confirmation), `Selecteur`, `IndicateurFile`.
 - `app/components/recherche/` — `BarreRecherche` (et l'anti-rebond), `ListeResultats`, `GrilleZones`, `PastillesFacettes`, et `liens.ts` : les URL fabriquées d'avance (`liensPropriete` / `liensPartage`), pour qu'une page de partage n'ait pas les moyens d'écrire une route protégée.
 - `app/components/plan/` — `VuePlan` (zoom, déplacement, regroupement, glissement d'un point) et `EditeurImagePlan` (recadrage et rotation avant envoi). Aucun des deux n'est rendu par une page de partage.
-- `app/components/partage/` — `PagePartage` (et `PartageInactif`), `FicheObjet`, `FacettesLiens` (les mêmes pastilles, en liens : la page ne charge aucun script), `PlanStatique` (le plan en `<img>` et ancres numérotées).
+- `app/components/historique/` — `Chronologie` (rendue à l'identique des deux côtés, nourrie par des liens pré-fabriqués), `FiltreTypes` (des liens, pas des boutons), `FormulaireEvenement` et `FormulaireIntervenant`.
+- `app/components/partage/` — `PagePartage` (et `PartageInactif`), `FicheObjet`, `PageHistorique`, `FicheEvenement`, `FacettesLiens` (les mêmes pastilles, en liens : la page ne charge aucun script), `PlanStatique` (le plan en `<img>` et ancres numérotées).
 - `app/styles/app.css` — feuille unique, sobre, dimensionnée pour le pouce.
 - `app/routes/_public/` — connexion, inscription, déconnexion (non protégé).
 - `app/routes/_app/` — tout le reste, protégé, scopé par `proprieteId` dans l'URL.
-- `app/routes/_partage/` — `/p/:jeton` (page, fiche, images). Hors de l'arbre protégé, sans session, sans PWA, servi en HTML seul.
+- `app/routes/_partage/` — `/p/:jeton` (page, fiche, chronologie, événement, images). Hors de l'arbre protégé, sans session, sans PWA, servi en HTML seul.
 - `public/` — manifeste, icônes, service worker.
 - `scripts/` — migration au démarrage, seeds.
-- `tests/` — tests d'intégration base de données, traitement d'images, réception d'une capture, recherche, partage (filtrage et routes), vocabulaire.
+- `tests/` — tests d'intégration base de données, traitement d'images, réception d'une capture, recherche, partage (filtrage et routes), plans, démarrage, historique (portée, routes, saisie), et les gardes statiques : vocabulaire, exports de route, adresse jamais écrite.
 
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
@@ -857,6 +976,26 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 </details>
 
 <details>
+<summary><strong>Étape 5 · PR 1 — 12 décisions (historique, intervenants, chronologie)</strong></summary>
+<br/>
+
+92. **Le quantificateur de la visibilité d'un événement est UNIVERSEL, pas existentiel.** « Au moins un objet lié passe » fermait le cas évident — un événement sans lien échappe au scopage par zone — et laissait ouvert celui qui arrive : un événement est un récit, « Rénovation du sous-sol et de la cuisine » se lie légitimement à un objet de chaque zone, et sous un `EXISTS` l'objet de la cuisine suffit à rendre le titre et la description au locataire. Ce n'est pas une ligne de jointure qui fuit alors, c'est la charge utile. Le seul rempart restant serait que le propriétaire pense à monter `evenement.niveau` sur tout événement mentionnant une zone restreinte, c'est-à-dire de la validation de formulaire dans la tête d'un humain — ce que la règle non négociable #1 refuse depuis le début.
+93. **Ni `evenement_element` obligatoire, ni `evenement.zone_id`.** La contrainte « au moins une ligne fille » n'est pas déclarable en PostgreSQL sans un `CONSTRAINT TRIGGER DEFERRABLE` vérifié au commit, elle refuserait « le plombier est passé le 3 » tant que rien n'est catalogué (règle #8 dans l'esprit), elle est insatisfaisable pour un ramonage annuel ou un contrôle OIBT — et surtout elle n'est pas une alternative à la clause, seulement un ajout : il faut de toute façon savoir *lesquels* des objets liés passent. Une zone propre à l'événement, elle, ment : une réfection de toiture touche toutes les zones, et un mensonge dans la colonne de scopage est un bug de permission dans les deux sens. Elle ne couvrirait pas non plus la dimension système sans une seconde colonne nullable qui répéterait ce que `evenement_element` dit déjà.
+94. **`clausePortee` a dû cesser de rendre NULL.** « Tous les objets liés passent » s'écrit `NOT EXISTS (… WHERE NOT (clause))`, et `element.systeme_id` est nullable : `NULL = ANY('{3}')` vaut NULL, `NOT NULL` vaut NULL, la ligne fautive disparaissait de la sous-requête et l'événement qui déborde passait. Le comportement ternaire a été **vérifié en base** avant d'être corrigé, pas déduit. Le `coalesce(…, false)` est posé dans `clausePortee` et non dans la négation, pour que le prochain qui la nie n'ait pas à connaître le piège ; les onze usages existants (recomptés, pas estimés) étaient tous en position positive — `WHERE`, `AND`, un `EXISTS` sous un `OR`, le `WHERE` interne d'un `LATERAL` — où seul TRUE passe et où NULL valait déjà faux, donc aucun comportement ne change.
+95. **Un événement sans objet lié est invisible de tout lien restreint, et l'écran le dit.** Défaut assumé plutôt que contrainte : la note apparaît sous le sélecteur d'objets au moment où la case se décoche, et elle énonce un fait (« n'apparaîtra sur aucun lien de partage »), pas un score de complétude (règle non négociable #2). Le levier du propriétaire reste de découper l'événement.
+96. **`evenement.type` passe en liste fermée de sept valeurs.** Le schéma de l'étape 0 le laissait en texte libre faute de liste fournie par la spec : une omission, pas un choix. Un type est une catégorie, `titre` et `description` sont déjà là pour ce que le propriétaire veut dire, et du texte libre rendu sur une page de partage est la même famille de fuite que `plan.nom` — que l'étape 4 a dû filtrer. Fermer supprime la fuite au lieu de la documenter, et rend la chronologie groupable. `autre` va tout avaler, et ajouter une valeur demandera une migration : c'est écrit dans le commentaire du schéma.
+97. **`TYPES_EVENEMENT` vit dans `app/lib/historique/types.ts`, neutre, et le schéma l'importe.** Même montage que `CHAMP_GENRES` (décision #6 de la règle des genres) et même raison mesurée : les écrans lisent la liste, la faire descendre du schéma y ferait descendre drizzle.
+98. **Le coût n'est pas masqué, il n'est pas chargé.** `EvenementListe` et `EvenementDetail` ne portent pas le champ, donc l'écrire depuis un loader de partage est une erreur de compilation ; et la colonne ne quitte jamais `evenements.server.ts`, qui n'est importé que par les écrans du propriétaire. Même raisonnement que `propriete.adresse` : ce qui n'est pas chargé ne peut pas fuir, et c'est plus fort que filtrer à l'affichage.
+99. **D'un intervenant, un lien voit le nom et le métier ; jamais le téléphone, l'e-mail ni les notes.** Le nom de l'entreprise qui a posé la chaudière est un fait sur la maison, et c'est la promesse du produit. Un numéro de téléphone est un **moyen de joindre** un tiers qui n'a jamais accepté de figurer sur une URL qui circule dans WhatsApp ; le propriétaire l'a, et s'il veut qu'on appelle l'artisan il le transmet lui-même. Le défaut `niveau = 3` est conservé : rien ne sort tant qu'il ne l'a pas décidé, intervenant par intervenant, et l'écran de saisie dit ce que baisser ce niveau fait sortir.
+100. **Aucun fichier d'intervenant n'est servi en partage.** Il n'y a donc pas de quatrième branche de droit sur `fichier_lien` : ce qu'on attache à un artisan est une carte de visite ou une facture, et une facture est du `cout` sous un autre nom. La décision est prise ici plutôt que reportée à un écran de téléversement qui n'existe pas encore.
+101. **`photoDUnEvenement` est une troisième fonction nommée, pas un `OR`.** Suite directe de la décision #74 de l'étape 4 : on doit pouvoir dire lequel des trois droits a ouvert la porte, et les trois n'ont ni la même origine ni la même durée de vie. Le droit se dérive de la visibilité de l'événement, jamais de `fichier.niveau` — la capture y écrit toujours 3, le lire masquerait toutes les photos de tous les partages.
+102. **Le compte d'une pastille de type est celui du fonds VISIBLE.** C'est la règle de la tuile « Local technique · 0 objet » appliquée au temps. Ce n'est pas la décision #37 (le compte d'une facette de recherche décrit le fonds et ne bouge pas à la frappe) : il n'y a pas de champ de recherche sur la chronologie, donc pas de pastille qui disparaîtrait sous le doigt, et le compte peut être celui de ce que le lien peut voir. Corollaire : le filtre d'un lien restreint est plus court que celui du propriétaire, et l'entrée « Historique » disparaît de l'accueil quand il n'y a rien à montrer.
+104. **L'appartenance à la propriété est un conjoint DE LA NÉGATION, pas un filtre de la sous-requête.** `clausePortee` ne porte aucun prédicat sur `propriete_id` : un `evenement_element` croisé — impossible par l'application, la garde d'écriture et la validation de `portee_zones` le refusent toutes deux — rendait le titre, la description, le nom de l'objet étranger et le nom de sa zone. Le piège est que la correction évidente est l'inverse de la bonne : `AND e.propriete_id = ev.propriete_id` posé comme filtre de la sous-requête fait sortir l'intrus, laisse le `NOT EXISTS` vrai et rend l'événement visible. Il faut que l'intrus RESTE dans la sous-requête et fasse échouer le conjoint nié. Le test l'insère directement en base, en contournant la garde d'écriture : une garde ne peut pas prouver que la lecture se défend aussi.
+103. **Un `niveau` absent du formulaire est refusé, pas replié sur 0.** `Number("")` et `Number(null)` valent 0, c'est-à-dire « public » : un formulaire amputé de ce champ aurait publié au niveau le plus ouvert. Trouvé par un test qui cherchait autre chose, corrigé dans les deux lectures de formulaire de l'étape.
+
+</details>
+
+<details>
 <summary><strong>Étape 7 — 10 décisions (démarrage, squelette, RegBL)</strong></summary>
 <br/>
 
@@ -881,6 +1020,12 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 
 ## Limites connues
 
+- **Un lien scopé ne voit pas un événement qui déborde de sa portée, même s'il en concerne une partie.** Un artisan limité au lot chauffage ne verra pas « Rénovation de la cuisine et du local technique », alors que la chaudière y figure. C'est la contrepartie assumée du quantificateur universel, et le même arbitrage que « un point visible posé sur un plan hors portée est inatteignable » : perdre de la visibilité plutôt que laisser sortir un titre qui parle d'ailleurs. Le levier existe et il est du bon côté — le propriétaire découpe l'événement en deux, ce que deux chantiers dans deux zones étaient déjà.
+- **Un événement sans objet lié n'apparaît sur aucun lien restreint.** Un ramonage annuel consigné avant que la cheminée n'ait sa fiche reste invisible en partage. Défaut assumé, et non fermé par une contrainte : la note sous le sélecteur d'objets le dit au moment de la saisie, plutôt que de le faire découvrir après coup.
+- **Ajouter un type d'événement demande une migration.** `ALTER TYPE … ADD VALUE`, plus la liste dans `app/lib/historique/types.ts`. `autre` sert de fourre-tout en attendant, et sa domination éventuelle dans la chronologie sera le signal qu'il manque une valeur — pas que la liste doit se rouvrir.
+- **La chronologie n'a pas de pagination dans l'interface.** Limite franche à 50 événements, le compte total annoncé à côté, comme les résultats de recherche (décision #44). Suffisant tant qu'aucune propriété réelle n'a des centaines d'événements ; `chargerChronologie` prend déjà `decalage`, l'écran ne l'expose pas.
+- **La chronologie ne fonctionne pas hors ligne**, et l'instantané de capture ne la contient pas. Même situation que la recherche et le plan.
+- **`evenement_element` et `evenement_intervenant` ne portent pas de rôle.** Un objet est « concerné », un intervenant est « intervenu », sans distinguer qui a posé de qui a réparé. Non demandé, et le distinguer voudrait dire deux listes fermées de plus.
 - **Aucune correction de perspective sur un plan photographié.** La rotation redresse de quelques degrés ; une photo prise de biais reste trapézoïdale. Dit à l'écran de téléversement plutôt que sous-entendu. Sans conséquence tant qu'il n'y a aucune mesure : `plan.echelle` reste NULL.
 - **Le plan d'une page de partage n'a ni zoom ni regroupement.** C'est le prix de « aucun JavaScript ». Deux points au même endroit restent superposés ; la légende numérotée sous le plan est ce qui les rend tous atteignables.
 - **Les pixels d'un plan ne sont pas filtrés, et ne peuvent pas l'être.** Un extrait cadastral porte l'adresse imprimée dedans. L'EXIF est effacé, le contenu de l'image ne l'est pas. Seul le recadrage à l'envoi y peut quelque chose. La réponse retenue — une image de partage recadrée par plan — est décrite dans `.decisions/implementation-plan.md`, table « En attente d'un besoin réel », avec son déclencheur : le jour où un vrai extrait cadastral est téléversé et partagé.
