@@ -182,12 +182,12 @@ WHERE e.niveau <= :niveau_max
 - [x] Troisième droit sur les fichiers, `photoDUnEvenement`
 
 **PR 2 — garanties et avant/après**
-- [ ] Garanties avec date de fin, référence, document lié, calcul de l'échéance
-- [ ] Rappel **visuel seul** : pastille sur la fiche et sur l'accueil. Le mail
-      part dans « En attente d'un besoin réel », déclencheur : le jour où une
-      échéance est ratée. La question n'est pas calendaire, elle se pose devant
-      l'appareil en panne
-- [ ] Avant/après par le champ `role` sur `fichier_lien`
+- [x] Garanties avec date de fin, référence, document lié, calcul de l'échéance
+- [x] Rappel **visuel seul** : liste « Échéances » sur l'accueil, mention sur la
+      fiche. Le mail reste dans « En attente d'un besoin réel », déclencheur
+      inchangé : le jour où une échéance est ratée
+- [x] Avant/après par le champ `role` sur `fichier_lien` — le chemin d'écriture
+      des photos d'événement manquait entièrement et a été construit avec
 
 ### Étape 6 — Le plan, phase 2 · 1 semaine
 - [ ] Tracé de polygones **par-dessus le scan** (5 clics par pièce, aucune mesure)

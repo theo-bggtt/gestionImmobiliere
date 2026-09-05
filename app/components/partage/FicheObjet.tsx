@@ -47,6 +47,28 @@ export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: strin
         )}
       </section>
 
+      {/* Ce qu'un porteur de lien voit d'une garantie : la date de fin, et si
+          elle a expiré. Ni la référence (numéro de contrat en texte libre,
+          même famille de fuite que le nom d'un plan), ni son document (un
+          contrat ou une facture, donc du coût sous un autre nom). Ce n'est pas
+          un choix de ce composant : `GarantieRendue` ne porte pas ces champs,
+          donc les afficher ne compilerait pas.
+
+          Absente quand elle serait vide, comme l'historique juste en dessous. */}
+      {fiche.garanties.length > 0 && (
+        <section className="fiche-garanties">
+          <h2>Garanties</h2>
+          <ul className="fiche-garanties-liste">
+            {fiche.garanties.map((g) => (
+              <li key={g.id}>
+                {g.fin ? `Jusqu'au ${g.fin}` : "Sans terme connu"}
+                {g.expiree && <span className="garantie-expiree"> · expirée</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Absente quand elle serait vide : un titre « Historique » suivi de
           « aucun événement » dirait qu'il y en a ailleurs. Les événements
           servis ici ont passé leur propre clause, pas celle de la fiche. */}

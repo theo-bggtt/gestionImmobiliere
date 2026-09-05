@@ -758,6 +758,63 @@ par `liensPropriete` ou `liensPartage` : la page de partage n'a pas les moyens
 d'écrire une route protégée. Côté partage elle ne charge toujours aucun script —
 le filtre par type est une liste de liens.
 
+### Les garanties, ou l'inverse du problème
+
+`garantie.element_id` est **NOT NULL** depuis la migration 0000, et c'est tout
+ce qu'il y a à dire sur sa visibilité : elle est celle de son élément. Pas de
+`clauseGarantieVisible`, seulement `clausePortee` sur l'élément joint. Là où
+l'événement a demandé un raccord entier parce qu'il ne pend à aucune zone, la
+garantie n'a rien demandé du tout — la colonne avait été posée deux étapes plus
+tôt exactement pour ça.
+
+Ce qu'un lien en voit : la **date de fin** et si elle est expirée. Pas la
+référence, pas le document — qui est rattaché par `garantie.fichier_id`, une
+colonne, et non par `fichier_lien` : il n'a donc structurellement aucun droit
+de lecture sur un partage, et le compte des droits nommés reste à trois. « Sous garantie jusqu'en 2029 » est ce qu'un artisan
+doit savoir avant de démonter quelque chose, un numéro de contrat est du texte
+libre, et un contrat est du `cout` sous un autre nom. `GarantieRendue` ne porte
+pas ces deux champs, donc les servir ne compile pas.
+
+`fin IS NULL` est un **troisième état** et non un synonyme d'expiré : la
+garantie existe, son terme est inconnu — le cas courant quand on reprend un
+classeur. Elle vit sur la fiche de son objet et n'entre pas dans les échéances,
+puisque ce qui n'échoit jamais n'a rien à faire dans une liste d'échéances. Les
+expirées, elles, y restent et en tête : c'est ce qu'on vient y chercher.
+
+### Ce que « rappels » veut dire ici
+
+Une liste « Échéances » sur l'accueil, triée sur `garantie.fin`. Pas de table,
+pas de tâche planifiée, pas de notification.
+
+Ce n'est pas un écart : le plan de l'étape 5 avait déjà tranché « rappel
+**visuel seul** », en renvoyant le mail dans « En attente d'un besoin réel ».
+Ce qui se décide ici est la forme. La raison tient toujours — un rappel arrive
+à quelqu'un qui ne regarde pas, ce qui suppose un mailer ou des notifications
+push plus un planificateur, et le projet n'a aucun des trois. **La perte reste
+dite** : sans ouvrir l'application, on n'apprend pas qu'une garantie a expiré.
+Déclencheur inchangé, le jour où une échéance est ratée pour de vrai.
+
+### L'avant/après, et l'écriture qui manquait
+
+`fichier_lien.role` (`avant`, `apres`, `plaque`, `general`) existe depuis la
+migration 0000 et n'avait jamais été écrit autrement que par défaut. En allant
+le brancher, on a trouvé plus gros : **rien n'écrivait de `fichier_lien` en
+`cible_type = 'evenement'`**. La PR 1 avait livré les deux lectures — la galerie
+d'un événement et le droit `photoDUnEvenement` — sur une ligne que seuls les
+tests inséraient, à la main. Le chemin d'écriture est construit ici.
+
+Il ne passe pas par la boîte d'envoi hors ligne, et c'est un choix : celle-ci
+sert la capture opportuniste, trente secondes debout devant l'objet (règle #8).
+Photographier l'avant d'un chantier est l'inverse — un geste posé, souvent une
+photo qu'on retrouve plutôt qu'on ne prend. Un envoi de formulaire suffit, et il
+évite d'apprendre à la boîte d'envoi une seconde forme de cible.
+
+Le rôle est une **légende, jamais un droit**. Ce qui autorise l'octet reste
+`photoDUnEvenement`, dérivé de la visibilité de l'événement. Un test tient les
+deux bords : une photo « avant » sur un événement visible passe, la même sur un
+événement qui déborde est refusée. Si quelqu'un ajoute un jour un filtre par
+rôle en croyant fermer quelque chose, c'est ce test qui tombe.
+
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
 ---
@@ -810,6 +867,11 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 | **Niveau d'un événement** | `evenement.niveau` | **Jamais envoyé.** Métadonnée de visibilité : l'afficher apprendrait au destinataire qu'il existe des crans au-dessus du sien. |
 | Octets de la photo d'un événement | `photoDUnEvenement` | Troisième droit, nommé : l'événement doit passer `clauseEvenementVisible`. `fichier.niveau` délibérément ignoré, comme pour les deux autres droits. Filtré = 404, lien inactif = 404. |
 | **Fichier d'un intervenant** | `fichier_lien` sur `'intervenant'` | **Jamais servi.** Pas de quatrième branche : ce qu'on attache à un artisan est une carte ou une facture, et une facture est du coût sous un autre nom. |
+| Étape d'une photo d'événement | `fichier_lien.role` | Servie comme légende (« Avant », « Après »), et elle ne filtre **rien** : le droit de lire l'octet reste `photoDUnEvenement`, dérivé de la visibilité de l'événement. Filtrer par rôle ne fermerait rien et donnerait l'illusion du contraire. Les deux bords sont épinglés par un test. |
+| Fin d'une garantie | `garantie.fin` | La garantie hérite de la visibilité de son élément — `garantie.element_id` est NOT NULL — donc `clausePortee` sur l'élément joint, et aucune clause propre à maintenir. Servie parce que « sous garantie jusqu'en 2029 » est ce qu'un artisan doit savoir avant de démonter. |
+| Garantie expirée ou non | `fin < CURRENT_DATE` | Calculée par PostgreSQL, pas déduite par l'écran : `new Date("…")` se lit en UTC et l'expiration tomberait un jour trop tôt à l'ouest de Greenwich. Même filtrage que la ligne ci-dessus. |
+| **Référence d'une garantie** | `garantie.reference` | **Jamais sélectionnée.** Numéro de contrat en texte libre : même famille de fuite que `plan.nom`. Le type servi ne porte pas le champ. |
+| **Document d'une garantie** | `garantie.fichier_id` | **Jamais servi**, et pas de quatrième branche de droit — il est rattaché par une colonne et non par `fichier_lien`, donc il n'en a structurellement aucun. Un contrat ou une facture de garantie est du coût sous un autre nom, même arbitrage que le fichier d'un intervenant. |
 | Nom du partage | `partage.nom` | Jamais envoyé : c'est l'étiquette privée du propriétaire (« Jardinier Marc »). |
 | **Chemin d'une zone** | `batiment.nom · niveau.nom` | **Non filtré indépendamment.** Un lien limité à une zone intérieure révèle le nom du bâtiment et de l'étage qui la portent. C'est l'adresse interne d'une zone déjà montrée, pas une donnée de plus — mais ce n'est pas rien, et ce n'est pas filtré. |
 | **Alias d'une fiche et d'un type** | `element.alias`, `type_element.alias` | **Cherchables (poids B), jamais rendus.** Un alias est du vocabulaire de recherche porté par une fiche déjà visible ; il n'a pas de `niveauMin`. Le jour où quelqu'un y écrit autre chose que du vocabulaire, il fuit. |
@@ -991,6 +1053,11 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 101. **`photoDUnEvenement` est une troisième fonction nommée, pas un `OR`.** Suite directe de la décision #74 de l'étape 4 : on doit pouvoir dire lequel des trois droits a ouvert la porte, et les trois n'ont ni la même origine ni la même durée de vie. Le droit se dérive de la visibilité de l'événement, jamais de `fichier.niveau` — la capture y écrit toujours 3, le lire masquerait toutes les photos de tous les partages.
 102. **Le compte d'une pastille de type est celui du fonds VISIBLE.** C'est la règle de la tuile « Local technique · 0 objet » appliquée au temps. Ce n'est pas la décision #37 (le compte d'une facette de recherche décrit le fonds et ne bouge pas à la frappe) : il n'y a pas de champ de recherche sur la chronologie, donc pas de pastille qui disparaîtrait sous le doigt, et le compte peut être celui de ce que le lien peut voir. Corollaire : le filtre d'un lien restreint est plus court que celui du propriétaire, et l'entrée « Historique » disparaît de l'accueil quand il n'y a rien à montrer.
 104. **L'appartenance à la propriété est un conjoint DE LA NÉGATION, pas un filtre de la sous-requête.** `clausePortee` ne porte aucun prédicat sur `propriete_id` : un `evenement_element` croisé — impossible par l'application, la garde d'écriture et la validation de `portee_zones` le refusent toutes deux — rendait le titre, la description, le nom de l'objet étranger et le nom de sa zone. Le piège est que la correction évidente est l'inverse de la bonne : `AND e.propriete_id = ev.propriete_id` posé comme filtre de la sous-requête fait sortir l'intrus, laisse le `NOT EXISTS` vrai et rend l'événement visible. Il faut que l'intrus RESTE dans la sous-requête et fasse échouer le conjoint nié. Le test l'insère directement en base, en contournant la garde d'écriture : une garde ne peut pas prouver que la lecture se défend aussi.
+105. **Les échéances se dérivent à la lecture : aucune table, aucune tâche planifiée.** Ce n'est pas un écart — le plan avait déjà tranché « rappel **visuel seul** », en renvoyant le mail dans « En attente d'un besoin réel ». Ce qui est décidé ici est sa forme : une liste « Échéances » sur l'accueil, triée sur `garantie.fin`, calculée par la requête. Un rappel au sens propre arrive à quelqu'un qui ne regarde pas, ce qui suppose un mailer ou des notifications push plus un planificateur ; le projet n'a aucun des trois, et la PWA ne demande même pas la permission de notifier. **La perte est réelle et reste dite** : sans ouvrir l'application, on n'apprend pas qu'une garantie a expiré. Déclencheur inchangé par rapport au plan — le jour où une échéance est ratée pour de vrai.
+106. **D'une garantie, un lien voit la date de fin ; jamais la référence ni le document.** Parallèle exact de l'intervenant (décisions #99 et #100). « La chaudière est sous garantie jusqu'en 2029 » est un fait sur la maison, et c'est même ce qu'un artisan doit savoir *avant* de démonter quelque chose : le produit existe pour ça. La référence est un numéro de contrat en texte libre, donc la même famille de fuite que `plan.nom` ; le document est un contrat ou une facture, c'est-à-dire du `cout` sous un autre nom. Conséquence voulue : le nombre de droits nommés sur les fichiers reste à **trois**. Ce que ça coûte : un artisan ne peut pas faire jouer la garantie lui-même, il demande au propriétaire — qui est de toute façon celui qui a signé.
+107. **Aucune `clauseGarantieVisible`, et c'est le sujet.** `garantie.element_id` est NOT NULL depuis la migration 0000, donc la visibilité d'une garantie EST celle de son élément : `clausePortee` sur l'élément joint, rien de plus. Écrire une seconde règle serait la laisser diverger de la première, et c'est exactement ce que la PR 1 a passé son temps à éviter pour l'événement — qui, lui, ne pend à aucune zone et a bien fallu raccorder. La clause est quand même répétée dans chaque requête plutôt que déduite du fait que l'appelant a déjà vérifié : le filtre vit dans la requête, pas dans la promesse de l'appelant (règle non négociable #4).
+108. **Une garantie expirée reste affichée, et « sans terme » n'est pas « expirée ».** Savoir que la garantie de la chaudière a expiré il y a trois mois est précisément ce qu'on vient chercher : masquer un fait parce qu'il est désagréable serait la règle #2 dans l'autre sens. `fin IS NULL` est un troisième état, courant quand on reprend un classeur — la garantie existe, son terme est inconnu. Elle s'affiche sur la fiche de son objet et n'entre pas dans les échéances : ce qui n'échoit jamais n'a rien à faire dans une liste d'échéances. Et `expiree` est calculé par PostgreSQL contre `CURRENT_DATE`, jamais par l'écran : `new Date("2026-03-01")` se lit en UTC, et l'expiration tomberait un jour trop tôt à l'ouest de Greenwich — le même piège que les dates de la chronologie, réglé du même côté.
+109. **Le chemin d'écriture des photos d'événement manquait entièrement, et l'avant/après le supposait.** La PR 1 a livré les deux lectures — `chargerPhotosDeLEvenement` et le droit `photoDUnEvenement` — sans que rien n'écrive jamais un `fichier_lien` en `cible_type = 'evenement'` ; les tests inséraient la ligne à la main, ce qui prouvait la lecture et masquait l'absence de l'écriture. Il est construit ici, et **hors de la boîte d'envoi hors ligne** : celle-ci sert la capture opportuniste, trente secondes debout devant l'objet (règle #8), quand photographier l'avant d'un chantier est un geste posé, souvent une photo qu'on retrouve plutôt qu'on ne prend. Un envoi de formulaire suffit, et il évite d'apprendre à la boîte d'envoi une seconde forme de cible. Le `role` qu'il écrit est de la présentation, **jamais de la permission** : un test tient les deux bords, une photo « avant » sur un événement visible passe, la même sur un événement qui déborde est refusée.
 103. **Un `niveau` absent du formulaire est refusé, pas replié sur 0.** `Number("")` et `Number(null)` valent 0, c'est-à-dire « public » : un formulaire amputé de ce champ aurait publié au niveau le plus ouvert. Trouvé par un test qui cherchait autre chose, corrigé dans les deux lectures de formulaire de l'étape.
 
 </details>

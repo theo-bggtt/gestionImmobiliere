@@ -915,3 +915,22 @@ input.partage-lien { font-size: 0.8rem; min-height: 40px; }
 .formulaire-cases li { padding: 2px 0; }
 .formulaire-cases label { flex-direction: row; align-items: center; gap: 8px; min-height: 36px; }
 .formulaire-cases input[type="checkbox"] { width: 20px; height: 20px; flex: none; }
+
+/* ---------------------------------------------------------------------------
+   Étape 5, PR 2 : garanties et étapes d'un chantier. */
+
+/* La légende d'une photo d'événement. Elle dit « avant » ou « après » — c'est
+   du récit, jamais de la permission : le droit de lire l'octet vient de la
+   visibilité de l'événement, pas du rôle. */
+.photo-etape { margin: 0; }
+.photo-etape figcaption { color: var(--texte-doux); font-size: 0.85rem; }
+
+.fiche-garanties-liste { list-style: none; padding: 0; }
+.fiche-garanties-liste li { margin-bottom: 0.5rem; }
+
+/* Une garantie expirée reste lisible et n'est pas barrée : savoir qu'elle a
+   expiré est justement ce qu'on vient chercher, pas une erreur à signaler. */
+.garantie-expiree { color: var(--texte-doux); }
+
+.accueil-echeances ul { list-style: none; padding: 0; }
+.accueil-echeances li { margin-bottom: 0.35rem; }

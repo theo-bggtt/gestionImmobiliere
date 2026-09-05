@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { db } from "../setup/test-db";
+import type { RolePhotoEvenement } from "../../app/lib/historique/types";
 import {
   utilisateur, propriete, batiment, niveau, zone, systeme, typeElement, element,
   evenement, evenementElement, evenementIntervenant, intervenant,
@@ -101,11 +102,17 @@ const args = (url: string, params: Record<string, string>) =>
   ({ request: new Request(url), params }) as unknown as LoaderFunctionArgs;
 
 /** Une photo attachée à une cible polymorphe quelconque. */
-async function photo(j: Jeu, cibleType: string, cibleId: number, chemin: string) {
+async function photo(
+  j: Jeu,
+  cibleType: string,
+  cibleId: number,
+  chemin: string,
+  role: RolePhotoEvenement = "general",
+) {
   const [f] = await db.insert(fichier).values({
     proprieteId: j.p.id, chemin, typeMime: "image/jpeg", taille: 3,
   }).returning();
-  await db.insert(fichierLien).values({ fichierId: f.id, cibleType, cibleId });
+  await db.insert(fichierLien).values({ fichierId: f.id, cibleType, cibleId, role });
   await sauvegarder(chemin, Buffer.from("jpg"));
   return f;
 }
@@ -247,6 +254,29 @@ describe("le troisième droit sur les fichiers", () => {
 
     await expect(
       routeFichiers.loader(args(`http://test/p/${j.jeton}/fichiers/${f.id}`, { jeton: j.jeton, fichierId: String(f.id) })),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("ignore le rôle : « avant » n'ouvre ni ne ferme rien", async () => {
+    const j = await creerJeu();
+    // Le rôle est du récit — « voici l'avant, voici l'après » — et il ne doit
+    // apparaître dans AUCUN prédicat. Les deux bords le prouvent : sur un
+    // événement visible la photo passe quel que soit le rôle, et sur un
+    // événement qui déborde elle est refusée avec le même rôle. Si un jour
+    // quelqu'un ajoute un filtre par rôle en croyant fermer quelque chose,
+    // c'est ce test qui tombe.
+    const ouverte = await photo(j, "evenement", j.evVisible.id, "avant-ok.jpg", "avant");
+    const fermee = await photo(j, "evenement", j.evDeborde.id, "avant-hors.jpg", "avant");
+
+    const reponse = await routeFichiers.loader(
+      args(`http://test/p/${j.jeton}/fichiers/${ouverte.id}`, { jeton: j.jeton, fichierId: String(ouverte.id) }),
+    );
+    expect(reponse.status).toBe(200);
+
+    await expect(
+      routeFichiers.loader(
+        args(`http://test/p/${j.jeton}/fichiers/${fermee.id}`, { jeton: j.jeton, fichierId: String(fermee.id) }),
+      ),
     ).rejects.toMatchObject({ status: 404 });
   });
 

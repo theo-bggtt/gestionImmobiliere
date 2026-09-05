@@ -12,6 +12,12 @@ import { zoneAppartientALaPropriete, systemeAppartientALaPropriete } from "../..
 import { chargerArbreZones } from "../../lib/zoneTree";
 import { chargerPlans, chargerPlansDeLElement } from "../../lib/plans/plans.server";
 import { chargerEvenementsDeLElement } from "../../lib/historique/historique.server";
+import {
+  chargerGarantiesProprietaire,
+  creerGarantie,
+  lireSaisieGarantie,
+  supprimerGarantie,
+} from "../../lib/historique/garanties.server";
 import { Chronologie } from "../../components/historique/Chronologie";
 import { liensPropriete } from "../../components/recherche/liens";
 import { validerDetails } from "../../lib/forms/champSchema";
@@ -62,6 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     chargerPlansDeLElement(propriete.id, Number(params.elementId)),
     chargerEvenementsDeLElement(propriete.id, Number(params.elementId)),
   ]);
+  const garanties = await chargerGarantiesProprietaire(propriete.id, Number(params.elementId));
   // Un objet déjà placé reste plaçable ailleurs : l'écran le montre (« déjà
   // sur Sous-sol ») plutôt que de l'interdire.
   const posesParPlan = new Set(poses.map((p) => p.planId));
@@ -74,6 +81,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     photos,
     plans: plans.map((p) => ({ id: p.id, nom: p.nom, pose: posesParPlan.has(p.id) })),
     evenements,
+    garanties,
   };
 }
 
@@ -86,6 +94,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (form.get("_action") === "supprimer") {
     await db.delete(element).where(eq(element.id, Number(params.elementId)));
     return redirect(`/proprietes/${propriete.id}/elements`);
+  }
+
+  // Les garanties se saisissent depuis la fiche de leur objet, parce que
+  // `garantie.element_id` est NOT NULL : elles n'ont pas d'existence hors de
+  // lui, et un écran « nouvelle garantie » demanderait de rechoisir l'objet
+  // qu'on a déjà sous les yeux.
+  if (form.get("_action") === "garantie-creer") {
+    const saisie = lireSaisieGarantie(form);
+    if (!saisie.ok) return { erreur: saisie.message };
+    await creerGarantie(propriete.id, Number(params.elementId), saisie.valeur);
+    return redirect(`/proprietes/${propriete.id}/elements/${params.elementId}/modifier`);
+  }
+
+  if (form.get("_action") === "garantie-supprimer") {
+    await supprimerGarantie(propriete.id, Number(form.get("garantieId")));
+    return redirect(`/proprietes/${propriete.id}/elements/${params.elementId}/modifier`);
   }
 
   const nom = String(form.get("nom") ?? "").trim();
@@ -126,7 +150,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ModifierElement() {
-  const { propriete, element, types, arbre, systemes, photos, plans, evenements } = useLoaderData<typeof loader>();
+  const { propriete, element, types, arbre, systemes, photos, plans, evenements, garanties } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [typeId, setTypeId] = useState<number>(element.typeId);
   const typeChoisi = types.find((t) => t.id === typeId);
@@ -225,6 +250,55 @@ export default function ModifierElement() {
           liens={liensPropriete(propriete.id)}
           vide="Rien n'est consigné sur cet objet."
         />
+      </section>
+
+      <section className="fiche-garanties">
+        <h2>Garanties</h2>
+        {garanties.length === 0 ? (
+          <p className="fiche-photos-vide">Aucune garantie consignée.</p>
+        ) : (
+          <ul className="fiche-garanties-liste">
+            {garanties.map((g) => (
+              <li key={g.id}>
+                <Link to={`/proprietes/${propriete.id}/garanties/${g.id}/modifier`}>
+                  {g.fin ? `Jusqu'au ${g.fin}` : "Sans terme connu"}
+                </Link>
+                {/* Un fait, pas un jugement : une garantie expirée reste
+                    affichée, savoir qu'elle l'est est justement l'intérêt. */}
+                {g.expiree && <span className="garantie-expiree"> · expirée</span>}
+                <span className="selecteur-secondaire"> · depuis le {g.debut}</span>
+                {g.reference && <span className="selecteur-secondaire"> · {g.reference}</span>}
+                <Form method="post">
+                  <input type="hidden" name="_action" value="garantie-supprimer" />
+                  <input type="hidden" name="garantieId" value={g.id} />
+                  <button type="submit" className="bouton-discret">Retirer</button>
+                </Form>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Form method="post">
+          <input type="hidden" name="_action" value="garantie-creer" />
+          <label>
+            Début
+            <input type="date" name="debut" required />
+          </label>
+          <label>
+            Fin (optionnelle)
+            <input type="date" name="fin" />
+          </label>
+          <label>
+            Référence (optionnelle)
+            <input type="text" name="reference" />
+          </label>
+          {/* La référence ne sort d'aucun lien de partage : c'est du texte
+              libre, même famille de fuite que le nom d'un plan. */}
+          <p className="selecteur-secondaire">
+            Un lien de partage voit la date de fin, jamais la référence.
+          </p>
+          <button type="submit">Ajouter la garantie</button>
+        </Form>
       </section>
 
       <Form method="post">
