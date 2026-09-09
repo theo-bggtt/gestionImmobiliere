@@ -124,7 +124,10 @@ WHERE e.niveau <= :niveau_max
 
 ## Ordre de construction
 
-> **Les huit étapes sont construites au 5 septembre 2026.**
+> **Les huit étapes sont construites au 5 septembre 2026.** L'étape 8, la mise
+> en service, n'était pas dans ce plan : ajoutée le 8 septembre 2026 (issue
+> #25), construite côté dépôt le 9 ; sa moitié sur la machine cible est un
+> runbook (README, « Mise en service ») et se coche après exécution.
 >
 > **L'ordre réel diverge du plan depuis le 3 septembre 2026 : l'étape 7 est
 > construite avant l'étape 5.** Les étapes 1 à 4 reposent toutes sur un
@@ -216,6 +219,37 @@ WHERE e.niveau <= :niveau_max
       jamais comme condition d'existence du squelette
 - [x] Ni l'adresse ni l'EGID stockés : décision #82 du README, tenue par un
       balayage de toutes les colonnes de toutes les tables
+
+### Étape 8 — Mise en service · hors plan initial
+> Une machine (Raspberry Pi 5, arm64), un `docker compose`, un proxy, des
+> sauvegardes. Pas de CI, pas de supervision, pas d'orchestration. Première
+> étape où la règle #9 porte sur des données réelles.
+
+**Côté dépôt (PR de l'étape)**
+- [x] Caddy devant, TLS et renouvellement, HTTP→HTTPS ; `app` et `postgres`
+      non publiés (5432 sur la boucle locale seulement)
+- [x] `trust proxy` = 1 saut (`PROXYS_DE_CONFIANCE`), jamais `true` — testé
+- [x] Limite de débit sur `/p/` et `POST /connexion`+`/inscription`, jamais
+      sur l'arbre authentifié — les deux cas testés
+- [x] En-têtes de sécurité sur tout l'arbre, CSP à nonce, `default-src 'none'`
+      et `X-Robots-Tag: noindex` sur `/p/`, page d'erreur sans script
+- [x] Borne de taille des envois au transport (`Content-Length`, et Caddy
+      pour le `chunked`)
+- [x] `seed:exemple` refusé en production et sur une base qui a un compte réel
+- [x] Inscription fermée au premier compte (#26)
+- [x] `sauvegarde.sh` + `restauration.sh`, restauration exécutée dans une base
+      vide (sans Docker ; sur le Pi, même procédure avec `docker compose exec`)
+- [x] README : badge, introduction, « Mise en service », décisions #124–#133,
+      limites connues
+
+**Côté machine cible (issue #25, à cocher après exécution)**
+- [ ] `docker compose up` sur arm64, migrations depuis une base vide
+- [ ] Certificat valide, renouvellement constaté, cookie `Secure` derrière le
+      proxy dans les en-têtes réels
+- [ ] Restauration sur le Pi
+- [ ] La vraie maison : structure, objets réels, capture chronométrée sur
+      téléphone (cave sans réseau comprise), lien ouvert hors du réseau local
+- [ ] Revue de fuite relue face à la vraie propriété, résultat dans la PR
 
 ## En attente d'un besoin réel
 

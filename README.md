@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 81 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;81+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
+[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 133 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;133+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
 
 <br/>
 
@@ -21,7 +21,7 @@
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
-![Étape actuelle](https://img.shields.io/badge/%C3%A9tape_actuelle-4%20%E2%80%94%20le%20plan-2563EB?style=for-the-badge)
+![Étape actuelle](https://img.shields.io/badge/%C3%A9tape_actuelle-8%20%E2%80%94%20mise%20en%20service-2563EB?style=for-the-badge)
 ![Last commit](https://img.shields.io/github/last-commit/theo-bggtt/gestionImmobiliere?style=for-the-badge&color=0F172A&label=dernier%20commit)
 ![Issues](https://img.shields.io/github/issues/theo-bggtt/gestionImmobiliere?style=for-the-badge&color=0F172A&label=issues)
 
@@ -29,7 +29,7 @@
 
 <br/>
 
-> Mémoire technique d'un bien immobilier. L'étape 0 a posé les fondations (schéma complet, authentification, catalogue de types, CRUD avec formulaire dynamique), l'étape 1 la capture opportuniste (photo d'abord, hors ligne, boîte d'envoi), l'étape 2 la recherche plein texte classée et les facettes, l'étape 3 la **projection** de la même base selon qui la regarde — un lien de partage donne à voir une partie du bien, à un plafond de visibilité et sur une portée de zones ou de systèmes, sans compte et sans installation. Cette étape ajoute la deuxième entrée pour retrouver un objet : le **plan**. Le propriétaire téléverse le plan de chaque niveau, y pose des points, et un point mène à une fiche — y compris au bout d'un lien de partage, où le plan est servi sans une ligne de JavaScript. Pas de chronologie, pas de tracé de zones — voir [`.decisions/implementation-plan.md`](.decisions/implementation-plan.md) pour la suite.
+> Mémoire technique d'un bien immobilier. L'étape 0 a posé les fondations (schéma complet, authentification, catalogue de types, CRUD avec formulaire dynamique), l'étape 1 la capture opportuniste (photo d'abord, hors ligne, boîte d'envoi), l'étape 2 la recherche plein texte classée et les facettes, l'étape 3 la **projection** de la même base selon qui la regarde — un lien de partage donne à voir une partie du bien, à un plafond de visibilité et sur une portée de zones ou de systèmes, sans compte et sans installation. L'étape 4 a ajouté le **plan** (des points en pourcentage sur le scan, servis sans script au bout d'un lien), l'étape 7 un démarrage sans page blanche (squelette de niveaux et de zones, RegBL en enrichissement, aucune adresse en base), l'étape 5 l'**historique** (événements, intervenants, garanties, sous le même modèle de visibilité) et l'étape 6 les **contours** de zone tracés sur le scan, qui proposent la zone d'un objet sans jamais la décider. L'étape 8 met tout cela **en service** : un Raspberry Pi 5, Caddy devant, un vrai domaine, des sauvegardes restaurées, et les protections sans lesquelles `/p/:jeton` n'avait pas à être joignable depuis Internet — limite de débit, en-têtes et politique de sécurité, inscription fermée, identifiants de démonstration refusés en production. Ce qui reste à faire sur la machine cible est dit tel quel dans [Mise en service](#mise-en-service).
 
 <br/>
 
@@ -46,6 +46,7 @@
 - [Migrations](#migrations)
 - [Charger les données](#charger-les-données)
 - [Tests](#tests)
+- [Mise en service](#mise-en-service)
 - [Modèle de données](#modèle-de-données)
 
 </td>
@@ -78,11 +79,11 @@
 
 ```bash
 cp .env.example .env
-# éditer .env : POSTGRES_PASSWORD et SESSION_SECRET
+# éditer .env : POSTGRES_PASSWORD et SESSION_SECRET (openssl rand -base64 48), et DOMAINE
 docker compose up
 ```
 
-L'application applique ses migrations automatiquement au démarrage (`scripts/migrate.mjs`) et écoute sur `http://localhost:3000`. Les photos sont écrites dans le volume `fichiers_data`, monté sur `/donnees`. La base est vide : voir [Charger les données](#charger-les-données) ci-dessous.
+Trois services : `postgres`, `app`, et `caddy`, qui termine TLS et est le **seul** publié sur le réseau (80 et 443). Avec `DOMAINE=localhost`, Caddy signe lui-même et l'application répond sur `https://localhost` (avertissement du navigateur attendu) ; avec un vrai nom qui pointe sur la machine, il obtient et renouvelle le certificat seul. L'application applique ses migrations automatiquement au démarrage (`scripts/migrate.mjs`). Les photos sont écrites dans le volume `fichiers_data`, monté sur `/donnees`. La base est vide : voir [Charger les données](#charger-les-données) ci-dessous, et **[Mise en service](#mise-en-service)** pour la machine réelle.
 
 ## Démarrage (développement local, hors Docker pour l'app)
 
@@ -113,7 +114,7 @@ npm run seed:catalogue   # 33 types système avec alias — idempotent, rafraîc
 npm run seed:exemple     # propriété "Maison d'exemple" complète — idempotent
 ```
 
-Identifiants de démonstration créés par `seed:exemple` : `demo@gestion-immobiliere.local` / `demo1234`. **Jetables : à ne jamais utiliser en production.**
+Identifiants de démonstration créés par `seed:exemple` : `demo@gestion-immobiliere.local` / `demo1234`. Ils sont publics, donc le script **refuse** de les créer dans trois cas : sous `NODE_ENV=production` (ce que pose le conteneur), dès que la base contient un compte qui n'est pas celui de la démonstration, et sur une base **migrée mais sans aucun compte** — l'état d'une instance neuve dont le propriétaire ne s'est pas encore inscrit, où charger la démonstration lui prendrait le premier compte. Ce dernier cas se lève par `SEED_EXEMPLE=1`, sur une base de développement. Pas un avertissement, un code de sortie 1 (décision #132, tests dans `tests/scripts/`).
 
 ## Tests
 
@@ -123,6 +124,140 @@ cp .env.test.example .env.test
 set -a && source .env.test && set +a && npx tsx scripts/seed-catalogue.ts    # une fois, requis par les tests d'alias et de recherche
 npm test
 ```
+
+`tests/serveur/` éprouve `server/application.js` sur de vraies connexions HTTP (boucle locale, port éphémère) avec un gestionnaire factice à la place de React Router : `trust proxy`, en-têtes, limite de débit, borne de taille. Le limiteur lui-même est une fonction pure testée avec une horloge injectée.
+
+<p align="right"><a href="#top">↑ haut de page</a></p>
+
+---
+
+## Mise en service
+
+L'application tourne sur un Raspberry Pi 5 (arm64), chez le propriétaire, derrière un nom de domaine et un certificat réels. Une machine, un `docker compose`, un proxy, des sauvegardes — rien d'autre (pas de CI, pas de supervision, pas d'orchestration : la discipline du plan vaut aussi pour l'infrastructure).
+
+### Topologie
+
+```
+Internet ──443/80──▶ caddy (TLS, redirection HTTP→HTTPS, compression, borne du corps)
+                        │ réseau interne du compose, X-Forwarded-For/Proto/Host
+                        ▼
+                     app (node server/app.js, PROXYS_DE_CONFIANCE=1)
+                        │ en-têtes de sécurité, CSP à nonce, limite de débit, borne Content-Length
+                        │ puis React Router
+                        ▼
+                     postgres (127.0.0.1:5432 sur la machine, jamais le réseau)
+
+volumes : postgres_data (la base) · fichiers_data (les photos, /donnees) · caddy_data (certificats, compte ACME)
+```
+
+Ce qui tourne où :
+
+| Quoi | Où | Pourquoi là |
+|---|---|---|
+| TLS, renouvellement, redirection HTTP→HTTPS | Caddy | Il le fait seul, sans cron ni deuxième outil (décision #125) |
+| `X-Forwarded-*` | Caddy → app | Caddy **remplace** ce qu'un client aurait écrit ; l'app se fie à **un** saut, jamais à `true` (décision #126) |
+| En-têtes de sécurité, CSP, `X-Robots-Tag` sur `/p/` | `server/application.js` | Là où ils se testent, et valables sans Caddy (`tests/serveur/`) |
+| Limite de débit | `server/application.js` | `/p/` et `POST /connexion`+`/inscription` seulement, jamais l'usage authentifié (décision #128) |
+| Borne de taille des envois | les deux | `Content-Length` côté Express, `request_body max_size` côté Caddy pour le `chunked` |
+| Cookie `Secure`, `HttpOnly`, `SameSite=Lax` | `app/lib/auth/cookie.server.ts` | Inchangé ; `Secure` vaut par `NODE_ENV=production`, et HSTS par `req.secure`, donc par `trust proxy` |
+| Migrations | `app`, au démarrage | `scripts/migrate.mjs`, même rôle que l'application (décision #127) |
+| Journaux | Docker, `json-file` | 3 × 10 Mo par service, rotation : une carte SD ne se remplit pas |
+| Redémarrage | Docker, `restart: unless-stopped` | Au boot du Pi et après un crash, sans unité systemd à écrire |
+
+### Première mise en service
+
+Sur le Pi, avec Docker et Docker Compose installés et le service Docker activé au démarrage (`sudo systemctl enable docker`) :
+
+```bash
+git clone https://github.com/theo-bggtt/gestionImmobiliere.git && cd gestionImmobiliere
+cp .env.example .env
+# POSTGRES_PASSWORD et SESSION_SECRET : générés ici, jamais recopiés d'ailleurs
+sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -base64 48)|" .env
+sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=$(openssl rand -base64 48)|" .env
+# DOMAINE : le nom qui pointe sur l'adresse publique du Pi (A/AAAA, ou DNS dynamique)
+docker compose up -d --build
+docker compose logs -f app caddy       # « Migrations appliquées », puis le certificat obtenu
+```
+
+Dans cet ordre, et l'ordre compte :
+
+1. `docker compose up -d --build`, ports encore fermés sur la box. L'application démarre et applique ses migrations ; Caddy, lui, ne peut pas encore obtenir de certificat et réessaie tout seul.
+2. Ouvrir 80 et 443 vers le Pi. Caddy obtient le certificat dans la minute (`docker compose logs -f caddy` : « certificate obtained »).
+3. **Créer le compte du propriétaire tout de suite**, sur `https://<DOMAINE>/inscription`. L'inscription se ferme sur le premier compte (décision #130) — et `AUTORISER_INSCRIPTION=1` ne rouvre au plus qu'un **second** compte, jamais une inscription publique, même laissée en place dans `.env`. C'est le seul moment où la porte est ouverte sur Internet : entre l'ouverture des ports et cette inscription, quiconque connaîtrait déjà le domaine pourrait s'inscrire à votre place. Si `/inscription` répond « fermées » avant que vous l'ayez fait, ne cherchez pas plus loin : `docker compose down && docker volume rm gestionimmobiliere_postgres_data`, ports refermés, et recommencer. Vérifier ensuite que `/inscription` répond bien « Les inscriptions sont fermées ».
+4. Charger le catalogue **depuis un poste de développement**, par un tunnel SSH vers le port 5432 que le compose ne publie que sur la boucle locale du Pi — l'image de production n'embarque pas `tsx`, et c'est voulu : le catalogue se charge une fois, ses alias se rafraîchissent rarement, et un outil de plus dans l'image ne vaut pas ce cas. `--env-file` laisse l'environnement gagner sur `.env`, donc :
+
+   ```bash
+   ssh -N -L 5433:127.0.0.1:5432 pi@<adresse-du-pi> &
+   DATABASE_URL="postgres://gestion:<POSTGRES_PASSWORD du Pi>@127.0.0.1:5433/gestion_immobiliere" npm run seed:catalogue
+   ```
+
+   **Pas `seed:exemple`** : il refuse de toute façon une base où un compte réel existe, et — c'est le cas d'ici, si l'étape 3 n'était pas encore faite — une base migrée sans aucun compte, à moins de forcer `SEED_EXEMPLE=1` (décision #132). Les identifiants de démonstration sont publiés dans ce fichier : ils n'ont rien à faire sur la machine qui porte la maison, ni comme compte de plus, ni surtout comme premier compte.
+5. Depuis un téléphone **hors du réseau local** (4G), ouvrir `https://<DOMAINE>/` et constater dans les en-têtes réels, pas dans le code :
+
+```bash
+curl -sI https://<DOMAINE>/connexion | grep -iE "strict-transport|content-security|x-frame|x-content"
+curl -sI https://<DOMAINE>/p/x | grep -iE "x-robots|content-security|cache-control"
+curl -si -X POST -d 'email=a@b.c&motDePasse=xxxxxxxx' https://<DOMAINE>/connexion | grep -i set-cookie   # doit porter Secure
+for i in $(seq 1 11); do curl -s -o /dev/null -w "%{http_code} " -X POST -d 'email=a@b.c&motDePasse=xxxxxxxx' https://<DOMAINE>/connexion; done   # le 11e : 429
+curl -sI http://<DOMAINE>/ | head -1    # 308 vers https
+```
+
+6. Vérifier le renouvellement : Caddy renouvelle à deux tiers de la durée de vie (soit vers 60 jours pour Let's Encrypt) et l'écrit dans son journal. Aujourd'hui, noter la date d'expiration ; dans deux mois, la relire :
+
+```bash
+echo | openssl s_client -connect <DOMAINE>:443 -servername <DOMAINE> 2>/dev/null | openssl x509 -noout -dates
+docker compose logs caddy | grep -iE "obtain|renew"
+```
+
+### Ce que le Pi fait tout seul
+
+- **Au redémarrage** (coupure, mise à jour du système) : Docker relance les trois services, `app` attend que `postgres` soit sain, applique les migrations en attente, et écoute. Rien à faire. Le limiteur repart à zéro (il est en mémoire), les sessions non : elles sont en base.
+- **Après un crash** de l'application : `restart: unless-stopped`. Un crash en boucle se voit dans `docker compose ps` et `docker compose logs app`.
+- **Le certificat** : renouvelé par Caddy, à condition que 80 et 443 restent ouverts et que `caddy_data` ne soit jamais supprimé (le compte ACME et les certificats y vivent ; les recréer à chaque démarrage finirait bloqué par Let's Encrypt).
+
+### Sauvegarde
+
+`scripts/sauvegarde.sh` produit deux fichiers horodatés dans `SAUVEGARDES` (défaut `./sauvegardes`) : `<date>.base.dump` (`pg_dump` au format custom, depuis le conteneur) et `<date>.fichiers.tgz` (le volume des photos, `tar` depuis le conteneur de l'application). **La base seule ne restaure rien d'utile** : les chemins sont en base, les octets sur le volume, les deux ne valent qu'ensemble. Rétention locale `RETENTION_JOURS` (défaut 14). Si `SAUVEGARDE_DESTINATION` est renseigné (une cible `rsync`, un NAS ou une autre machine), le dossier y est copié à chaque sauvegarde, sans `--delete` : le Pi ne peut pas effacer ce qui le sauve. **S'il est vide, les sauvegardes ne quittent pas le Pi et ne survivent pas à ce qui le tue** — carte SD, alimentation, vol. C'est dit, pas résolu par défaut.
+
+Une fois par nuit, dans la crontab de l'utilisateur qui a cloné le dépôt (`crontab -e`) ; la sortie va dans le journal système, borné par `journald` :
+
+```
+0 3 * * * cd /home/pi/gestionImmobiliere && ./scripts/sauvegarde.sh 2>&1 | logger -t gi-sauvegarde
+```
+
+### Restauration
+
+Une sauvegarde jamais restaurée n'est pas une sauvegarde. `scripts/restauration.sh <horodatage>` restaure **dans une base vide et un volume de fichiers**, et refuse une base qui contient déjà des tables — une restauration par-dessus mélangerait deux maisons. Sur un Pi neuf, ou pour repartir de zéro :
+
+```bash
+git clone … && cd gestionImmobiliere && cp .env.example .env   # mêmes secrets qu'avant : le dump ne les contient pas, mais les sessions et le mot de passe Postgres oui
+mkdir -p sauvegardes && cp /chemin/vers/20260909-030000.* sauvegardes/
+docker compose down && docker volume rm gestionimmobiliere_postgres_data   # si la base existe déjà
+./scripts/restauration.sh 20260909-030000
+```
+
+Le script démarre `postgres`, vérifie que la base est vide, restaure le dump (extension `unaccent`, configuration `french_sans_accent`, déclencheurs et table des migrations compris), démarre `app` — dont les migrations trouvent la table de suivi restaurée et ne font rien —, décompresse les fichiers dans le volume, puis démarre le reste.
+
+**Exécutée** le 9 septembre 2026, avec ces deux scripts en mode `SANS_DOCKER=1` (mêmes commandes `pg_dump`/`pg_restore`/`tar`, sans les `docker compose exec`), sur une base de développement portant la « Maison d'exemple » et une photo téléversée par la route de capture, vers une base créée vide et un dossier vide : dix-sept tables au même compte, la photo et sa vignette présentes au chemin que la base attend, `french_sans_accent` et `unaccent` présents, `plainto_tsquery('french_sans_accent', 'Éclairage')` retrouve l'éclairage, `scripts/migrate.mjs` sur la base restaurée ne fait rien, et une seconde restauration est refusée (« la base n'est pas vide »). Ce qui reste à faire **sur le Pi** est la même procédure avec les `docker compose exec` : elle est la seule différence, et la case correspondante de l'issue #25 reste ouverte jusque-là.
+
+### Mise à jour
+
+```bash
+git pull && docker compose up -d --build   # reconstruit l'image, relance app, migrations au démarrage
+```
+
+Sauvegarder avant, si la mise à jour porte une migration : `./scripts/sauvegarde.sh`.
+
+### Ce qui ne s'exécute que sur la machine cible
+
+Ces points sont les critères de l'étape 8 qu'aucune machine de développement ne peut cocher, et cette section ne prétend pas le contraire. Ils se cochent dans l'issue #25 après exécution, et leurs résultats — les secondes de la capture, ce que la revue de fuite a trouvé face à la vraie maison — vont dans ce README (section « Chronométrage ») et dans le corps de la PR :
+
+- `docker compose up` construit et démarre sur arm64, migrations appliquées depuis une base vide ;
+- HTTPS avec certificat valide, renouvellement constaté, HTTP redirigé ;
+- **HSTS** présent sur une réponse réelle derrière Caddy : c'est lui, et non le cookie, qui prouve que `trust proxy` fait son travail — `Strict-Transport-Security` n'est posé que si `req.secure`, donc que si l'application lit bien le `X-Forwarded-Proto` du proxy. Le cookie de session est `Secure` par `NODE_ENV=production` : le constater est bien, mais ça ne dit rien du proxy ;
+- une sauvegarde restaurée **sur le Pi**, avec les `docker compose exec` ;
+- la vraie propriété créée, la capture chronométrée sur téléphone réel y compris à la cave sans réseau, un lien de partage ouvert depuis un téléphone hors du réseau local ;
+- la revue de fuite relue ligne par ligne face à la vraie propriété — avec les vrais noms de zones, le vrai plan et ce qui est imprimé dedans.
 
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
@@ -259,6 +394,8 @@ Autrement dit, les chiffres ci-dessus disent ce que coûte le **logiciel**, pas 
 | 1 | | | | *à remplir* | |
 | 2 | | | | *à remplir* | |
 | 3 | | | | *à remplir* | |
+
+Ces lignes se remplissent **sur le Pi, avec la vraie maison** (étape 8, voir [Mise en service](#mise-en-service)) : sur le réseau réel, plusieurs fois, y compris à la cave sans réseau. Les chiffres ci-dessus ont été mesurés sur une machine de développement ; l'écart sera commenté ici, à côté.
 
 ### La boîte d'envoi
 
@@ -567,6 +704,8 @@ Les routes de partage portent `handle.sansScripts`, que `root.tsx` lit dans `use
 **Mesuré sur le jeu d'exemple** : 4 064 octets de HTML, zéro `<script>`, zéro référence au manifeste ou au service worker, zéro `/proprietes/`. Les composants de la page ne reçoivent que `liensPartage(jeton)` — ils n'ont pas les moyens de fabriquer une URL de l'arbre protégé, ni de mentionner un identifiant de propriété.
 
 En-têtes sur toutes les surfaces du partage : `Cache-Control: private, no-store`, `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow`, plus une `<meta name="robots">`. Les images font exception sur le cache : `private, max-age=300` — le contenu d'un identifiant ne change jamais, mais le droit de le lire se révoque.
+
+Depuis l'étape 8, **le navigateur tient la règle lui aussi** : le serveur Express pose sur tout `/p/` une `Content-Security-Policy: default-src 'none'` sans `script-src`, c'est-à-dire aucun script, inline ou non, même si une route oubliait un jour `handle.sansScripts`. Les mêmes trois en-têtes y sont posés par le serveur pour les réponses que les routes ne produisent pas — un 429 du limiteur, une URL que rien ne reconnaît sous `/p/` — et la page d'erreur (`PageErreur`, en français, sans script) remplace celle de React Router, qui était en anglais et portait un script inline. Constaté au navigateur : zéro `<script>` et zéro violation sur la page, la fiche, la chronologie, la recherche et les deux 404. Détail dans [Mise en service](#mise-en-service), décision #129.
 
 ### Jeton, expiration, révocation
 
@@ -986,6 +1125,8 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 | **Chemin d'une zone** | `batiment.nom · niveau.nom` | **Non filtré indépendamment.** Un lien limité à une zone intérieure révèle le nom du bâtiment et de l'étage qui la portent. C'est l'adresse interne d'une zone déjà montrée, pas une donnée de plus — mais ce n'est pas rien, et ce n'est pas filtré. |
 | **Alias d'une fiche et d'un type** | `element.alias`, `type_element.alias` | **Cherchables (poids B), jamais rendus.** Un alias est du vocabulaire de recherche porté par une fiche déjà visible ; il n'a pas de `niveauMin`. Le jour où quelqu'un y écrit autre chose que du vocabulaire, il fuit. |
 | **Identifiants numériques** | `zone.id`, `element.id`, `fichier.id`… | **Séquentiels et visibles dans les URL.** Ils permettent d'énumérer : `/p/:jeton/objets/1…N` répond 404 sur tout ce qui est filtré et 200 sur ce qui est visible — donc rien de plus que ce que la page montre déjà. Un identifiant de **propriété** n'apparaît nulle part. |
+| Page d'erreur (404, 500) | `PageErreur` | Rien de la base : un titre et un message fixes, en français, sans script ni style inline. Un jeton inconnu, une URL sans route sous `/p/` et une erreur serveur rendent la même famille de document, sous les mêmes en-têtes que le reste de `/p/` (posés par le serveur, pas par une route). Le message d'une erreur n'est jamais rendu : il va au journal. |
+| Réponse 429 du limiteur | `server/application.js` | Texte fixe, `Retry-After`, mêmes en-têtes que `/p/`. Le compteur est par adresse et non par jeton : un refus ne dit rien de l'existence d'un jeton. |
 
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
@@ -994,7 +1135,7 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 ## Structure des dossiers
 
 - `app/db/schema/` — schéma Drizzle, une table (ou un petit groupe de tables liées) par fichier.
-- `app/lib/auth/` — hachage, cookie, sessions.
+- `app/lib/auth/` — hachage, cookie, sessions, et la porte de l'inscription (`inscription.server.ts` : ouverte pour le premier compte, fermée ensuite ; `inscription.ts`, neutre, porte le message que l'écran rend).
 - `app/lib/forms/` — validation des `details` dynamiques contre `type_element.champs`.
 - `app/lib/capture/` — instantané hors ligne (`instantane.server.ts` le produit, `instantane.ts` le recopie), boîte d'envoi IndexedDB (`file.ts`), compression (`image.ts`), synchro (`synchro.ts`), amorçage de la coquille (`coquille.ts`).
 - `app/lib/recherche/` — la requête et ses variantes (`recherche.server.ts` : recherche, facettes, grille de zones, clause de portée exportée), les types partagés client/serveur (`types.ts`), la lecture/écriture des paramètres d'URL (`params.ts`).
@@ -1004,7 +1145,8 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 - `app/lib/images/` — orientation puis effacement EXIF, vignette, rotation et recadrage.
 - `app/lib/stockage/` — interface `sauvegarder` / `lire` / `supprimer`, adossée au système de fichiers.
 - `app/lib/zoneTree.ts` — construction de l'arbre bâtiment → niveau → zone (+ zones extérieures).
-- `app/components/` — `ZoneSelector`, `DynamicElementFields`, `ChampEditor`, `AideInstallationIOS`.
+- `app/components/` — `ZoneSelector`, `DynamicElementFields`, `ChampEditor`, `AideInstallationIOS`, et `PageErreur` (le document rendu par l'`ErrorBoundary` racine : français, sans script).
+- `app/entry.server.tsx` — révélé depuis le défaut de React Router pour une seule raison : passer le nonce de la politique de sécurité au rendu.
 - `app/components/capture/` — `Capture` (déclencheur, feuille, confirmation), `Selecteur`, `IndicateurFile`.
 - `app/components/recherche/` — `BarreRecherche` (et l'anti-rebond), `ListeResultats`, `GrilleZones`, `PastillesFacettes`, et `liens.ts` : les URL fabriquées d'avance (`liensPropriete` / `liensPartage`), pour qu'une page de partage n'ait pas les moyens d'écrire une route protégée.
 - `app/components/plan/` — `VuePlan` (zoom, déplacement, regroupement, glissement d'un point, tracé d'un contour) et `EditeurImagePlan` (recadrage et rotation avant envoi). Aucun des deux n'est rendu par une page de partage.
@@ -1015,8 +1157,10 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 - `app/routes/_app/` — tout le reste, protégé, scopé par `proprieteId` dans l'URL.
 - `app/routes/_partage/` — `/p/:jeton` (page, fiche, chronologie, événement, images). Hors de l'arbre protégé, sans session, sans PWA, servi en HTML seul.
 - `public/` — manifeste, icônes, service worker.
-- `scripts/` — migration au démarrage, seeds.
-- `tests/` — tests d'intégration base de données, traitement d'images, réception d'une capture, recherche, partage (filtrage et routes), plans, démarrage, historique (portée, routes, saisie), et les gardes statiques : vocabulaire, exports de route, adresse jamais écrite.
+- `server/` — `app.js` (le point d'entrée : choix du build, écoute), `application.js` (la fabrique Express testable : `trust proxy`, en-têtes et politique de sécurité, limite de débit, borne de taille, nonce), `limiteur.js` (le compteur à fenêtre fixe, pur). Du JavaScript sans compilation : le conteneur lance `node server/app.js`.
+- `Caddyfile`, `docker-compose.yml`, `Dockerfile`, `.dockerignore` — la topologie d'une machine : Caddy devant, l'application et la base derrière. Voir [Mise en service](#mise-en-service).
+- `scripts/` — migration au démarrage, seeds, et les deux scripts de la sauvegarde (`sauvegarde.sh`) et de sa restauration (`restauration.sh`).
+- `tests/` — tests d'intégration base de données, traitement d'images, réception d'une capture, recherche, partage (filtrage et routes), plans, démarrage, historique (portée, routes, saisie), le serveur (`serveur/` : HTTP réel sur la boucle locale), l'inscription (`auth/`), la page d'erreur (`erreurs/`), et les gardes statiques : vocabulaire, exports de route, adresse jamais écrite.
 
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
@@ -1221,6 +1365,24 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 122. **Le tracé s'efface à la confirmation, jamais au clic — et c'est une fonction pure qui le dit.** `traceApres` (`app/lib/plans/tracage.ts`) rend le tracé inchangé, c'est-à-dire la MÊME référence, quand il n'y a rien à décider : `setTracage` court-circuite alors le rendu, et l'écran n'a pas de troisième cas à traiter. Le drapeau `envoye` n'est pas de la ceinture et des bretelles : le même fetcher sert à effacer le contour d'une autre zone, et cet effacement réussi jetterait sinon les clics en cours. Le refus rouvre l'envoi (`envoye: false`), sans quoi corriger et renvoyer serait impossible. Testée sans base ni DOM comme `regrouper` — c'est la seule chose que cet écran décide.
 123. **L'état d'un contour se lit dans `ZoneTracable.sommets`, pas dans `polygones`.** Le champ était chargé, typé, testé et jamais lu : l'écran cherchait le contour dans la liste servie par `chargerPolygonesDuPlan`. Les deux n'ont pas le même contrat — l'une prend une `Portee` et sert aussi les pages de partage, l'autre est réservée au propriétaire et n'en prend pas. L'écran passe `PORTEE_PROPRIETAIRE`, donc le filtre est inerte et les deux s'accordent, ce qui est exactement ce qui rendait le couplage invisible. Le jour où ce loader passerait autre chose — prévisualiser ce que voit un lien est l'envie évidente — « Retracer » redeviendrait « Tracer » sur une zone qui a un contour, et « Tracer » l'écrase (`ON CONFLICT DO UPDATE`). Trancher dans l'autre sens (supprimer le champ, sa requête et son test) laissait l'écran lire la liste filtrée ; celui-ci fait lire à la ligne le compte qui la décrit, et le test qui tenait une colonne morte tient maintenant un affichage.
 
+<summary><strong>Étape 8 — 10 décisions (mise en service : exposition, proxy, protections, sauvegardes)</strong></summary>
+<br/>
+
+> Hors du plan initial, qui s'arrêtait à l'étape 7 : la mise en service n'a pas de numéro d'étape dans `.decisions/implementation-plan.md` avant celle-ci. Première étape où la règle #9 (aucun secret dans l'app) porte sur des données réelles.
+
+124. **Une seule application publique, l'arbre authentifié compris.** Un lien de partage doit s'ouvrir chez un artisan qui n'a rien à installer : `/p/` est donc public, sans discussion. L'arbre du propriétaire l'est aussi, et c'est un choix : la capture se fait depuis le jardin en 4G, et depuis la cave hors ligne avec synchronisation au retour du réseau, depuis n'importe où — un VPN ou un filtrage d'adresses devant `/proprietes/` casserait précisément le geste que l'étape 1 protège, et un sous-domaine séparé ne changerait rien au fait que la session est le seul mur. Ce que ça coûte, et ce qui le paie : la connexion est joignable par tous, donc limite de débit sur `POST /connexion` et `/inscription` (#128), inscription fermée dès le premier compte (#130), cookie `Secure` + `HttpOnly` + `SameSite=Lax`, HSTS, CSP à nonce (#129), et une page d'erreur qui ne dit rien (#133). **La redirection après connexion en fait partie depuis la relecture externe** (issue #28) : `?depuis=` était recopié tel quel dans le `Location` du 302, donc `https://<DOMAINE>/connexion?depuis=https://exemple-malveillant.test/phishing` amenait un formulaire authentique — bon domaine, bon certificat, bon cadenas — puis déposait le propriétaire chez l'attaquant, identifiants tapés. C'est précisément ce que l'exposition publique change : sans elle, il faut déjà être sur le réseau pour tendre le lien. `cheminInterne` n'accepte plus qu'un chemin de la même origine (`app/lib/auth/redirection.ts`, neutre, testé sans base ni HTTP). Ce qui rouvrirait la question : un second propriétaire, ou des tentatives ciblées constatées dans le journal.
+125. **Caddy comme proxy inverse.** Certificat Let's Encrypt obtenu et renouvelé seul, redirection HTTP→HTTPS implicite, un Caddyfile de quinze lignes, image officielle arm64. Écartés : nginx + certbot — deux pièces mobiles et un cron de renouvellement à surveiller, c'est-à-dire exactement ce qu'on ne veut pas administrer sur un Pi ; Traefik — configuration par étiquettes Docker et tableau de bord, une surface pensée pour des dizaines de services quand il y en a un. Les en-têtes de sécurité ne sont **pas** dans le Caddyfile mais dans Express, où ils se testent et valent aussi sans Caddy ; Caddy ne fait que TLS, la compression et la borne du corps en `chunked`.
+126. **`trust proxy` vaut `1`, un entier, jamais `true`.** Avec N sauts de confiance, Express lit l'adresse du client à N positions de la fin de `X-Forwarded-For` — là où le dernier proxy digne de confiance l'a écrite. `true` la lirait au **début**, c'est-à-dire là où le client lui-même peut l'écrire, et la limite de débit se contournerait avec un en-tête. Un saut, parce qu'il y a exactement un proxy et que le port de l'application n'est pas publié : le seul pair possible est Caddy, qui par défaut **remplace** les `X-Forwarded-*` entrants par ce qu'il voit lui-même (sans `trusted_proxies`, aucun client n'est cru). La valeur vient de l'environnement (`PROXYS_DE_CONFIANCE`, 1 dans le compose, 0 partout ailleurs) parce qu'elle décrit la machine, pas le code. Ce que ça fait concrètement, et qu'un test constate sur de vraies connexions : `req.ip` vaut l'adresse écrite par Caddy et non celle que le client a mise devant, `req.secure` vaut vrai derrière TLS, donc HSTS part et l'URL vue par React Router est en `https`.
+127. **Un seul rôle Postgres, propriétaire de la base, pour les migrations et l'application.** La migration 0005 demande `CREATE EXTENSION unaccent` — extension *trusted* depuis PostgreSQL 13 : le propriétaire de la base suffit, le superutilisateur n'est pas requis — et `CREATE TEXT SEARCH CONFIGURATION`, qui demande `CREATE` sur le schéma, idem. En conteneur, `POSTGRES_USER` est de toute façon superutilisateur (c'est ce que fait l'image officielle), et c'est confirmé sur la cible par le fait que c'est **la même image**. Séparer un rôle applicatif demanderait un script d'initialisation qui ne s'exécute qu'au premier démarrage du volume (donc jamais sur une base existante, silencieusement), un second secret, et des `ALTER DEFAULT PRIVILEGES` à tenir à chaque migration — pour protéger quoi ? Une base à un seul client, dont toutes les données appartiennent à ce client, sur un port qui ne quitte pas la boucle locale. Ce que ça coûte : une injection SQL aurait les droits du propriétaire de la base et non ceux d'un lecteur ; drizzle paramètre tout, et les `sql.raw` du dépôt ne portent que des alias de table écrits en dur. Ce qui rouvrirait la question : un second client de la base, ou un port publié. L'ancienne limite connue (« à vérifier sur un hébergement géré ») tombe : il n'y a pas d'hébergement géré.
+128. **La limite de débit est un compteur maison, pas `express-rate-limit`.** Fenêtre fixe, clé `req.ip`, mémoire bornée (les fenêtres les plus anciennes partent au-delà de dix mille adresses), horloge injectable, cinquante lignes testées sans HTTP. La bibliothèque ferait la même chose avec un magasin en mémoire, pour une dépendance de plus et un lissage plus fin dont un Pi n'a pas besoin : ce qu'on protège, c'est le temps de calcul — un argon2 par essai de connexion, une fraction de seconde d'un cœur — et la disponibilité, pas une équité entre clients. Seuils : 10 envois par minute pour connexion et inscription **ensemble** (afficher le formulaire n'est jamais compté), 600 requêtes par 5 minutes sur `/p/` — une page de partage charge une vingtaine de ressources, et une famille derrière une box partage l'adresse. **Jamais sur l'arbre authentifié**, et le test épuise `/p/` et `/connexion` avant de vérifier que vingt-cinq requêtes du propriétaire passent toutes. Le 429 est du texte, sous les en-têtes de `/p/`. **Deux précisions ajoutées à la relecture.** La fenêtre est fixe, donc le pic à la bascule est de **2× la borne** — 1 200 requêtes en une milliseconde à cheval sur deux fenêtres, mesuré ; c'était assumé en esprit (« un lissage plus fin dont un Pi n'a pas besoin ») et jamais chiffré. Et la clé n'est plus `req.ip` brute : en IPv6 elle est **tronquée au /64**, parce qu'un abonné résidentiel comme un VPS en obtient un entier — 5 000 requêtes depuis 5 000 adresses d'un même /64 passaient une borne de 600, ce qui vidait de sens la protection du temps de calcul que cette décision invoque.
+129. **CSP à nonce sur l'arbre authentifié, `default-src 'none'` sur `/p/`.** Le premier réflexe était `script-src 'self' 'unsafe-inline'` — inoffensif à écrire, et inutile : `'unsafe-inline'` rend la directive décorative. React Router sait poser un nonce (`<Scripts nonce>`, `<ScrollRestoration nonce>`, `<ServerRouter nonce>`, `renderToPipeableStream({ nonce })`), au prix d'un `entry.server.tsx` révélé et d'un loader racine qui transporte le nonce du serveur Express au rendu. Un piège trouvé en développement : le navigateur **masque** l'attribut `nonce` dès qu'une politique arrive par en-tête, et `<Links>` — qui prend le nonce du contexte côté serveur, et rien côté client — faisait signaler un écart d'hydratation à chaque écran ; il reçoit `nonce=""`, ce que le DOM montre des deux côtés, et n'en a de toute façon pas besoin. Constaté au navigateur — Chromium piloté, écoute de `securitypolicyviolation` — sur dix-sept écrans, capture avec photo (aperçu en `blob:`) et pdf.js (worker) compris : zéro violation, zéro `<script>` sans nonce, service worker actif. En développement, seule différence, `connect-src` admet le WebSocket du rechargement à chaud. Sur `/p/`, la politique interdit tout script : la règle « aucun JavaScript » de l'étape 3 tenait par l'absence de `<Scripts />`, elle tient maintenant aussi par le navigateur. `style-src 'unsafe-inline'` reste, et c'est dit en limite connue.
+130. **L'inscription se ferme sur le premier compte** (issue #26). Produit à propriétaire unique : `/inscription` sur Internet sans porte était un hébergement de photos ouvert à tous, sur la carte SD qui porte la maison. Le premier compte s'inscrit librement — c'est le démarrage — et les suivants demandent `AUTORISER_INSCRIPTION=1` dans l'environnement, le temps de créer le compte. Le refus est **uniforme** (« Les inscriptions sont fermées ») que l'adresse existe ou non : porte fermée, on ne regarde même pas l'adresse, et on ne hache rien. Un verrou consultatif sérialise deux premières inscriptions simultanées, un test les lance en parallèle. La page de connexion ne propose plus le lien quand c'est fermé. **Le « temps de créer le compte » est borné en code, et ne l'était pas** : la relecture a mesuré six comptes créés d'affilée en laissant la variable en place. Un opérateur qui oublie de la retirer, ou un `docker compose up -d` qui la relit d'un `.env` jamais nettoyé, rouvrait une inscription publique. Le plafond est désormais **dur, à deux comptes** : la variable laissée en place n'ouvre pas de troisième inscription, elle ne fait plus rien. Deux et pas trois parce que le cas réel du second compte est le conjoint ; au-delà, c'est la ligne « multi-logement » du plan, et elle demandera autre chose qu'une variable d'environnement. Ce que ça coûte le jour où un second compte est légitime : une variable et un redémarrage, puis la retirer — et jusque-là, un « compte existe déjà » ne se dit qu'à qui a ouvert la porte. Écartés : une liste blanche d'adresses (un secret de plus à tenir dans `.env`) et un jeton d'invitation (un écran de plus, pour un cas qui n'est pas arrivé).
+131. **Sauvegarde = `pg_dump` + `tar`, et une restauration exécutée avant d'écrire le mot.** Format custom pour la base, archive du volume pour les photos, les deux horodatés ensemble parce que l'un sans l'autre ne restaure rien ; rétention locale de quatorze jours ; copie distante par `rsync` **sans `--delete`**, pour qu'un Pi compromis ne puisse pas effacer ce qui le sauve — la rétention distante se fait là-bas. La restauration refuse une base non vide, parce qu'une restauration par-dessus mélangerait deux maisons. Le tout a été **exécuté** (section « Mise en service »), en mode sans Docker, avec les mêmes commandes : le seul écart avec le Pi est `docker compose exec`, et la case reste ouverte jusqu'à l'exécution là-bas. La destination hors du Pi n'est pas configurée par défaut : c'est une adresse que seul le propriétaire connaît, et son absence est dite en limite connue plutôt que masquée par un défaut qui ne sauverait rien.
+132. **`seed:exemple` refuse une base réelle, par TROIS gardes.** `NODE_ENV=production` d'abord — c'est ce que pose le conteneur, donc `docker compose exec app … seed-exemple` est refusé d'office — et l'existence d'un compte qui n'est pas celui de la démonstration ensuite, quel que soit l'environnement. **La troisième a été ajoutée à la relecture, parce que les deux premières laissaient passer le cas qui fait le plus de dégâts** : une base migrée, aucun compte, `NODE_ENV` non défini. C'est l'état d'une instance NEUVE pendant la fenêtre où les ports sont ouverts et le propriétaire pas encore inscrit ; un `npm run seed:exemple` lancé depuis le shell du Pi à ce moment-là y crée `demo@gestion-immobiliere.local` / `demo1234` — identifiants publiés dans ce fichier — comme **premier** compte, ce qui referme l'inscription contre le propriétaire et laisse le seul compte de l'instance à qui sait lire le dépôt. Le raisonnement écarté était « le port 5432 ne quitte pas la boucle locale, donc *depuis un autre poste avec `NODE_ENV` vide* n'existe pas » : vrai depuis un autre poste, **faux depuis le Pi lui-même**. La troisième garde exige donc `SEED_EXEMPLE=1`, un geste explicite, et seulement quand la base n'a pas un seul compte — une fois la démonstration chargée, elle se tait. Les trois sont testées en tant que script réel, comme l'idempotence.
+133. **Une `ErrorBoundary` racine qui ne dit rien, sans script.** Trouvé en constatant les en-têtes réels : un jeton inconnu tombait sur la page par défaut de React Router — en anglais, « Unhandled Thrown Response! », avec un script inline et un message pour développeurs — sur un arbre désormais joignable depuis Internet. `PageErreur` rend un document complet en français, un titre et un message fixes par famille de statut, aucun script (l'ErrorBoundary ne rend pas `<Scripts />`, quel que soit l'arbre : une page d'erreur n'a rien à hydrater), aucun contenu d'erreur (il va au journal). Le 404 y est la même phrase pour « n'existe pas » et « n'est pas à vous », comme partout.
+
+</details>
+
 <p align="right"><a href="#top">↑ haut de page</a></p>
 
 ---
@@ -1252,7 +1414,7 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 - **Aucune reprise de contour sommet par sommet.** Corriger un coin demande de retracer la zone entière. Quelques clics, et un éditeur de poignées serait un autre chantier — celui de « éditeur de plan complet », en attente d'un besoin réel depuis le début.
 
 - **Hors ligne, seul `start_url` est garanti.** Suivre un lien dans l'app sans réseau échoue : React Router demande alors ses données de route au serveur. La capture, elle, ne navigue pas — c'est ce qui compte à cette étape.
-- **Le chronométrage sur téléphone réel reste à faire** (voir plus haut).
+- **Le chronométrage sur téléphone réel reste à faire**, sur le Pi et avec la vraie maison — c'est la moitié de l'étape 8 qui ne s'exécute pas depuis un poste de développement (voir [Mise en service](#mise-en-service)).
 - **Un refus permanent hors liste coûte cinq envois pour rien.** C'est le prix assumé du défaut « réessayable » : un statut définitivement bloquant qui ne figure pas dans `STATUTS_DEFINITIFS` sera retenté cinq fois avant de devenir visible, soit environ deux minutes et cinq téléversements de la photo. Le cas est borné, il se termine toujours par une erreur affichée, et il est de loin préférable à l'inverse — immobiliser une capture sur un code mal classé. Si un tel statut se révèle fréquent en production, il rejoint la liste plutôt que de changer le défaut.
 - **Le classement ne regarde que le code HTTP.** Une réponse `200` d'un portail captif, par exemple, est indiscernable d'une réponse applicative tant qu'on n'a pas lu son corps ; elle est traitée comme un 2xx sans identifiant, donc gardée et retentée. C'est le bon résultat, mais par accident plutôt que par analyse.
 - Le sélecteur de zone du formulaire de l'étape 0 (`ZoneSelector`) est un `<select>` sans libellé visible sur l'écran de modification. Constaté, pas corrigé : hors du périmètre de cette étape.
@@ -1261,13 +1423,20 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 - **Le compte des pastilles de facette et le compte de résultats ne parlent pas de la même chose.** Le premier décrit le fonds, le second la recherche courante. C'est un choix (décision #37), pas un bug, mais c'est une ambiguïté visuelle que des comptes recalculés à chaque frappe lèveraient — au prix d'une requête d'agrégation supplémentaire par touche et de pastilles qui disparaissent sous le doigt.
 - **`count(*) OVER ()` matérialise toutes les lignes filtrées avant la limite.** Mesuré sans effet à 5 000 fiches (28 à 36 ms) ; c'est la première chose à revoir si une propriété réelle atteignait un ordre de grandeur de plus.
 - **La recherche ne fonctionne pas hors ligne.** Elle interroge le serveur à chaque frappe. L'instantané de capture, lui, reste dans IndexedDB et couvre le seul besoin hors ligne identifié (capturer à la cave). Chercher dans la copie locale serait un autre chantier, et il n'est pas demandé.
-- **La migration 0005 demande un rôle propriétaire de la base** (`CREATE EXTENSION`, `CREATE TEXT SEARCH CONFIGURATION`). Vrai en local et en conteneur, à vérifier sur un hébergement géré.
 - **Aucune valeur de `details` n'est cherchable depuis un lien de partage**, pas même celle d'un champ que ce lien affiche. C'est le prix du correctif de l'oracle (décision #50) : l'index ne sait pas de quel champ vient un lexème. Le nom, les alias, le type, la zone et le système classent toujours. Le jour où on voudra mieux, il faudra un second `tsvector` par niveau, écrit par le déclencheur — quatre colonnes ou une colonne par plafond, ce n'est pas une ligne de code.
 - **La requête d'un partage n'utilise pas l'index GIN.** `ts_filter` s'applique après lecture de la ligne. Mesuré sous 150 ms à 200 fiches, et le filtre de propriété et de portée borne le parcours ; c'est la première chose à revoir si une propriété réelle dépassait quelques milliers de fiches.
 - **Le chemin d'une zone montre le bâtiment et le niveau** (« Maison principale · Rez-de-chaussée ») sans filtre propre. Un lien limité à une zone intérieure révèle donc le nom de l'étage qui la porte. Assumé et listé dans la revue de fuite, pas corrigé : c'est l'adresse interne d'une zone déjà montrée.
 - **Les alias sont cherchables mais jamais rendus.** Ils n'ont pas de `niveauMin` — un alias est du vocabulaire de recherche, pas une caractéristique. Si quelqu'un y écrit un jour autre chose, il devient trouvable depuis un lien.
 - **La page de partage n'est pas hors ligne.** Elle est rendue serveur et ne met rien en cache : c'est le but. Le destinataire qui la rouvre sans réseau n'a rien.
-- **Aucune limite de débit sur `/p/:jeton`.** Un jeton de 32 octets ne se devine pas par force brute dans cet univers, mais rien ne freine un client qui essaierait. À revoir avec le reste des protections d'exposition publique, pas avant.
+- **Le limiteur vit dans la mémoire du processus.** Un redémarrage remet les compteurs à zéro, et deux processus ne partageraient rien. C'est la topologie — un processus, une machine — et le jour où elle change, c'est un magasin partagé qu'il faut, pas un réglage.
+- **La fenêtre du limiteur est fixe, donc le pic tolérable est de 2× la borne.** 1 200 requêtes sur `/p/` peuvent passer en une milliseconde si elles tombent à cheval sur deux fenêtres, 20 sur `/connexion`. Assumé : ce qu'on protège est le temps de calcul sur la durée, pas la milliseconde. Une fenêtre glissante demanderait de garder les horodatages, c'est-à-dire un autre magasin.
+- **`/p/` est en `Cache-Control: private, no-store`, et compte 600 requêtes par 5 minutes par adresse.** Rien n'est mis en cache par le navigateur, donc chaque affichage d'une page de partage recharge ses ressources : une famille derrière une seule adresse publique dispose d'environ vingt-cinq à trente affichages par tranche de cinq minutes avant le 429. Confortable pour l'usage réel d'un lien — un artisan qui consulte deux fiches — et à revoir le jour où un lien est ouvert par une classe entière.
+- **La borne de taille côté Express ne voit que `Content-Length`.** Un envoi en `Transfer-Encoding: chunked` sans longueur annoncée n'est borné que par Caddy (`request_body max_size`) ; hors de Caddy, en développement, il n'est borné que par la route, une fois le corps lu. Les navigateurs annoncent toujours la longueur d'un `FormData`.
+- **Les sauvegardes ne quittent pas le Pi tant que `SAUVEGARDE_DESTINATION` est vide**, et elles ne survivent alors pas à ce qui le tue. La copie distante est un `rsync` sans `--delete` : le Pi ne peut pas effacer ce qui le sauve, et la rétention de la copie distante est à faire là-bas.
+- **La sauvegarde n'est pas atomique entre la base et les fichiers.** La base est vidée d'abord, les fichiers ensuite ; une capture qui arrive entre les deux laisse au pire un fichier sans ligne, jamais une ligne sans fichier, puisque la route écrit les octets avant la base.
+- **Le premier compte est décisif.** L'inscription se ferme sur lui, donc celui qui atteint `/inscription` avant le propriétaire *est* le propriétaire. Le certificat exige les ports ouverts, donc la porte est sur Internet pendant la minute qui sépare l'ouverture des ports de l'inscription du propriétaire ; la procédure le dit, et dit quoi faire si la porte s'est fermée avant lui (repartir d'un volume vide). C'est une procédure, pas une contrainte.
+- **`style-src 'unsafe-inline'` reste dans la politique de sécurité.** Les points d'un plan et les étiquettes de contour sont positionnés par un attribut `style` en pourcentage, des deux côtés. Un nonce sur les styles demanderait de les sortir en feuille, et ce n'est pas là que vit le risque.
+- **Le déploiement sur arm64 n'a pas été exécuté depuis ce dépôt.** Ce qui est vérifié : les quatre binaires natifs (`sharp` et sa libvips, `argon2`, `esbuild`, `rollup`) sont épinglés en variante `linux-arm64` **musl** dans `package-lock.json`, et les trois images (`node:22-alpine`, `postgres:16-alpine`, `caddy:2-alpine`) sont publiées en arm64. Ce qui ne l'est pas : `docker compose up` sur le Pi lui-même.
 
 <br/>
 

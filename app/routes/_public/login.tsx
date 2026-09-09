@@ -1,13 +1,20 @@
 // app/routes/_public/login.tsx
 import { useEffect } from "react";
-import { Form, useActionData, useSearchParams } from "react-router";
+import { Form, useActionData, useLoaderData, useSearchParams } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client";
 import { utilisateur } from "../../db/schema/index";
 import { verifierMotDePasse } from "../../lib/auth/password.server";
 import { creerSession } from "../../lib/auth/session.server";
+import { inscriptionOuverte } from "../../lib/auth/inscription.server";
 import { cheminInterne } from "../../lib/auth/redirection";
+
+// Le lien « Créer un compte » n'a de sens que tant que la porte est ouverte,
+// c'est-à-dire avant le premier compte (voir `inscription.server.ts`).
+export async function loader() {
+  return { inscriptionOuverte: await inscriptionOuverte() };
+}
 
 export async function action({ request }: ActionFunctionArgs) {
   const form = await request.formData();
@@ -28,6 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Connexion() {
+  const { inscriptionOuverte: ouverte } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [searchParams] = useSearchParams();
   const depuis = searchParams.get("depuis") ?? "/";
@@ -56,7 +64,7 @@ export default function Connexion() {
         {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
         <button type="submit">Se connecter</button>
       </Form>
-      <p><a href="/inscription">Créer un compte</a></p>
+      {ouverte && <p><a href="/inscription">Créer un compte</a></p>}
     </main>
   );
 }

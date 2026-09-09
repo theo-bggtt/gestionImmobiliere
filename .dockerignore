@@ -1,0 +1,41 @@
+# .dockerignore
+# Ce que le contexte de build n'a pas à recevoir.
+#
+# Sans ce fichier, le `COPY . .` du stage `build` embarquait `.env` — donc le
+# mot de passe Postgres et `SESSION_SECRET` — ainsi que `sauvegardes/`, c'est-
+# à-dire les dumps de la base et les photos. L'image LIVRÉE n'en portait rien,
+# le stage final ne recopiant que `build`, `server`, `scripts` et `drizzle` :
+# mais les couches intermédiaires, elles, restent dans le cache du builder sur
+# le Pi, où `docker history` les lit. La règle « aucun secret dans le dépôt »
+# de l'issue #25 vaut aussi pour ce qu'on tend au démon Docker.
+#
+# Écarter, c'est aussi accélérer : `node_modules/` local (réinstallé dans
+# l'image, et compilé pour la mauvaise architecture de toute façon) est le
+# gros du contexte.
+
+# Secrets et état local
+.env
+.env.*
+!.env.example
+
+# Données et sauvegardes — la maison elle-même
+donnees/
+sauvegardes/
+
+# Dépendances et artefacts, reconstruits dans l'image
+node_modules/
+build/
+.react-router/
+
+# Historique et outillage, sans usage au build
+.git/
+.gitignore
+.github/
+.claude/
+.playwright-mcp/
+*.log
+
+# Documentation et décisions : elles ne servent qu'aux humains
+.decisions/
+README.md
+CLAUDE.md

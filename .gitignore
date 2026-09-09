@@ -8,3 +8,6 @@ build/
 
 # Volume de fichiers en developpement local
 donnees/
+
+# Sauvegardes locales (scripts/sauvegarde.sh)
+sauvegardes/

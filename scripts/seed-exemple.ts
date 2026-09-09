@@ -1,6 +1,6 @@
 // scripts/seed-exemple.ts
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, and } from "drizzle-orm";
+import { count, eq, and, ne, sql } from "drizzle-orm";
 import pg from "pg";
 import * as schema from "../app/db/schema/index";
 import { hacherMotDePasse } from "../app/lib/auth/password.server";
@@ -19,11 +19,69 @@ async function idType(nom: string) {
   return t.id;
 }
 
+// Deux gardes, pas un avertissement. Les identifiants de démonstration sont
+// publics (ils sont dans ce fichier et dans le README) : sur une base qui
+// porte une vraie maison, ils seraient une porte ouverte dessus.
+//
+// 1. `NODE_ENV=production` est ce que le conteneur pose : lancer ce script
+//    depuis `docker compose exec app` est refusé d'office.
+// 2. Un compte qui n'est pas celui de la démonstration signale une base
+//    réelle, quel que soit l'environnement — le seul cas où ce script a un
+//    sens est une base de développement ou de test, où il n'y a personne.
+async function refuserSiBaseReelle(): Promise<string | null> {
+  if (process.env.NODE_ENV === "production") {
+    return "NODE_ENV=production : les identifiants de démonstration n'ont rien à faire sur une base de production.";
+  }
+  const [autre] = await db
+    .select({ email: schema.utilisateur.email })
+    .from(schema.utilisateur)
+    .where(ne(schema.utilisateur.email, EMAIL_DEMO))
+    .limit(1);
+  if (autre) {
+    return `la base contient déjà un compte réel (${autre.email}) : la démonstration ne se charge que sur une base vide.`;
+  }
+
+  // Troisième garde, et c'est elle qui manquait. Les deux premières laissent
+  // passer le cas exact qui fait le plus de dégâts : une base MIGRÉE et sans
+  // aucun compte, `NODE_ENV` non défini. C'est l'état d'une instance neuve
+  // pendant la fenêtre où les ports sont ouverts et le propriétaire pas encore
+  // inscrit — et un `npm run seed:exemple` lancé depuis le shell du Pi à ce
+  // moment-là crée `demo@…/demo1234`, identifiants PUBLIÉS DANS LE README,
+  // comme PREMIER compte de l'instance. Ça referme l'inscription contre le
+  // propriétaire et laisse le seul compte à qui sait lire le dépôt.
+  //
+  // La décision #132 écartait ce cas en disant que le 5432 ne quitte pas la
+  // boucle locale : vrai depuis un autre poste, faux depuis le Pi lui-même.
+  // On exige donc un geste explicite plutôt qu'une absence de signal.
+  const [migration] = await db
+    .select({ hash: sql<string>`hash` })
+    .from(sql`drizzle.__drizzle_migrations`)
+    .limit(1);
+  const [{ comptes }] = await db.select({ comptes: count() }).from(schema.utilisateur);
+  // « Migrée ET pas UN SEUL compte », pas seulement « pas de compte réel » :
+  // une fois la démonstration chargée une première fois, son propre compte
+  // existe et la garde se tait. Le geste explicite n'est donc demandé qu'une
+  // fois par base neuve — c'est le prix, et il tombe précisément là où le
+  // risque est.
+  if (migration && comptes === 0 && process.env.SEED_EXEMPLE !== "1") {
+    return "la base porte des migrations mais aucun compte : c'est l'état d'une instance neuve, pas d'un poste de développement. Relancez avec SEED_EXEMPLE=1 si c'est bien ce que vous voulez.";
+  }
+  return null;
+}
+
 async function main() {
   const [existe] = await db.select().from(schema.propriete).where(eq(schema.propriete.nom, NOM_PROPRIETE));
   if (existe) {
     console.log(`"${NOM_PROPRIETE}" existe déjà (id ${existe.id}) — rien à faire.`);
     await pool.end();
+    return;
+  }
+
+  const refus = await refuserSiBaseReelle();
+  if (refus) {
+    console.error(`seed:exemple refusé — ${refus}`);
+    await pool.end();
+    process.exitCode = 1;
     return;
   }
 
