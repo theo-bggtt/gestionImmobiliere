@@ -11,7 +11,7 @@
 // typés.
 import { randomBytes } from "node:crypto";
 import express from "express";
-import { creerLimiteur } from "./limiteur.js";
+import { cleDeFrein, creerLimiteur } from "./limiteur.js";
 
 /** Un envoi légitime est une photo de capture (≤ 15 Mo, déjà compressée par
  *  le navigateur) ou l'image d'un plan (≤ 25 Mo). La route vérifie ces bornes
@@ -117,11 +117,16 @@ const ENTETES_A_VALEUR_UNIQUE = new Set([
   "cache-control",
   "referrer-policy",
   "x-robots-tag",
-  "content-security-policy",
-  "strict-transport-security",
-  "x-frame-options",
-  "x-content-type-options",
 ]);
+
+// Ces trois-là et pas un de plus. La liste avait d'abord été étendue à la
+// politique de sécurité, HSTS et les deux `X-` — or pour la CSP le navigateur
+// applique l'INTERSECTION de plusieurs en-têtes : empiler y est le
+// comportement sûr, et remplacer laisserait une route affaiblir la ligne de
+// base du serveur. Aucune route n'en pose aujourd'hui, donc c'était latent ;
+// c'est justement pour ça qu'il fallait le refermer avant que ça devienne
+// vrai. (Sur `/p/` l'intersection ne changerait rien — `default-src 'none'`
+// est déjà le plancher — mais la règle vaut pour tout l'arbre.)
 
 function laRouteRemplaceLeDefaut(res) {
   const append = res.append.bind(res);
@@ -180,7 +185,17 @@ export function creerApplication({
     // `preload` ni sous-domaines — le domaine ne porte que cette application.
     if (req.secure) res.setHeader("Strict-Transport-Security", "max-age=31536000");
 
-    if (req.path === "/p" || req.path.startsWith("/p/")) {
+    // Comparé en minuscules parce que le routeur de React Router, lui, ne
+    // distingue pas la casse (`caseSensitive: false` par défaut) : `/P/<jeton>`
+    // servait la page de partage avec la politique de l'arbre AUTHENTIFIÉ,
+    // c'est-à-dire `default-src 'self'` au lieu de `'none'`, et sans
+    // `X-Robots-Tag` ni `Cache-Control` sur les réponses qu'aucune route ne
+    // produit — un 404 de jeton inconnu, par exemple, dont l'URL porte le
+    // jeton. Poser `caseSensitive: true` sur les routes ferait de `/P/` un 404
+    // franc, mais ce 404-là resterait hors de ces en-têtes : c'est ici que le
+    // problème se ferme, pas dans la table de routes.
+    const chemin = req.path.toLowerCase();
+    if (chemin === "/p" || chemin.startsWith("/p/")) {
       res.setHeader("Content-Security-Policy", CSP_PARTAGE);
       for (const [nom, valeur] of Object.entries(ENTETES_PARTAGE_SERVEUR)) res.setHeader(nom, valeur);
     } else {
@@ -194,12 +209,23 @@ export function creerApplication({
     next();
   });
 
-  // Refus sur la longueur annoncée, avant que quiconque lise le corps. Le
-  // 413 est rendu sans lire la requête : Node détruit alors la connexion à la
-  // fin de la réponse, ce qui coupe court à l'envoi.
+  // Refus sur la longueur annoncée, avant que quiconque lise le corps.
+  //
+  // Répondre 413 ne suffit PAS à couper l'envoi, contrairement à ce que ce
+  // commentaire affirmait : Node appelle `req._dump()`, qui DRAINE le corps
+  // restant au lieu d'interrompre la connexion. Mesuré — un `Content-Length`
+  // de 200 Mo contre une borne de 1 000 octets rend bien un 413, puis
+  // 8 388 608 octets sont acceptés, socket toujours ouvert. Le refus
+  // protégeait donc les routes, pas la bande passante ni la carte SD.
+  //
+  // `req.destroy()` une fois la réponse partie ferme ça. Caddy borne déjà le
+  // corps (`request_body max_size`), mais cette borne-ci est la seule qui
+  // vaille quand on n'est pas derrière lui : réseau local, port publié par
+  // erreur, autre conteneur du même réseau.
   app.use((req, res, next) => {
     const longueur = Number(req.headers["content-length"]);
     if (Number.isFinite(longueur) && longueur > tailleMaxCorps) {
+      res.on("finish", () => req.destroy());
       res.status(413).type("text/plain").send("Envoi trop volumineux.");
       return;
     }
@@ -207,7 +233,7 @@ export function creerApplication({
   });
 
   const freiner = (limiteur) => (req, res, next) => {
-    const verdict = limiteur.consommer(req.ip ?? "");
+    const verdict = limiteur.consommer(cleDeFrein(req.ip));
     if (verdict.autorise) return next();
     res.setHeader("Retry-After", String(Math.max(1, Math.ceil(verdict.reessaiDansMs / 1000))));
     res.status(429).type("text/plain").send("Trop de requêtes. Réessayez dans un instant.");

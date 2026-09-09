@@ -106,6 +106,25 @@ describe("en-têtes de sécurité", () => {
     expect(v2.nonce).not.toBe(v1.nonce);
   });
 
+  it("sur /P/ aussi : le routeur ne distingue pas la casse, ce garde-fou non plus", async () => {
+    // Le test de chemin était sensible à la casse quand le routeur de React
+    // Router ne l'est pas (`caseSensitive: false` par défaut) : `/P/<jeton>`
+    // servait la page de partage avec la politique de l'arbre AUTHENTIFIÉ —
+    // `default-src 'self'` au lieu de `'none'` — et un 404 de jeton inconnu en
+    // casse haute partait sans `X-Robots-Tag` ni `Cache-Control`, l'URL
+    // portant pourtant le jeton.
+    const { appeler } = await demarrer();
+    for (const chemin of ["/P/jeton-quelconque", "/P/JETON/HISTORIQUE", "/P"]) {
+      const r = await appeler(chemin);
+      const csp = r.headers.get("Content-Security-Policy") ?? "";
+      expect(csp, chemin).toContain("default-src 'none'");
+      expect(csp, chemin).not.toContain("script-src");
+      expect(r.headers.get("X-Robots-Tag"), chemin).toBe("noindex, nofollow");
+      expect(r.headers.get("Cache-Control"), chemin).toBe("private, no-store");
+      expect(r.headers.get("Referrer-Policy"), chemin).toBe("no-referrer");
+    }
+  });
+
   it("sur /p/, interdisent tout script, et refusent cache, référent et indexation même hors des routes", async () => {
     const { appeler } = await demarrer();
     for (const chemin of ["/p/jeton-quelconque", "/p/jeton/fichiers/12?taille=vignette", "/p"]) {

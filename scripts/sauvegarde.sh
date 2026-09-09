@@ -16,6 +16,15 @@
 # La restauration est `scripts/restauration.sh`. Une sauvegarde jamais
 # restaurée n'est pas une sauvegarde : la procédure du README a été exécutée.
 set -eu
+
+# 0600 sur les fichiers, 0700 sur le dossier. Sans ça le dump sortait en 644 :
+# il contient TOUTES les fiches, les `details` de niveau 3, les téléphones et
+# e-mails des intervenants, les coûts, les JETONS DE PARTAGE EN CLAIR et le
+# hash du mot de passe du propriétaire ; le tar contient toutes les photos.
+# Lisible par n'importe quel utilisateur local du Pi, c'est-à-dire le modèle de
+# permission entier annulé par un `chmod` qu'on n'a pas posé.
+umask 077
+
 cd "$(dirname "$0")/.."
 
 # .env ne fournit que ce que l'environnement ne dit pas déjà : la même
@@ -36,22 +45,39 @@ BASE="$DOSSIER/$HORODATAGE.base.dump"
 FICHIERS="$DOSSIER/$HORODATAGE.fichiers.tgz"
 mkdir -p "$DOSSIER"
 
+# On écrit dans des fichiers temporaires et on renomme à la fin. La
+# redirection `>` TRONQUE sa cible avant que la commande tourne : un pg_dump
+# qui échoue à mi-course laissait donc un `.base.dump` partiel, portant
+# l'horodatage du jour, à côté des bons — c'est-à-dire quelque chose qui a
+# l'air d'une sauvegarde et n'en est pas. Le renommage est atomique : ce qui
+# porte le nom final a été écrit en entier.
+BASE_PARTIELLE="$BASE.partiel"
+FICHIERS_PARTIELS="$FICHIERS.partiel"
+trap 'rm -f "$BASE_PARTIELLE" "$FICHIERS_PARTIELS"' EXIT
+
 if [ "${SANS_DOCKER:-0}" = "1" ]; then
-  pg_dump --format=custom --dbname="$DATABASE_URL" > "$BASE"
+  pg_dump --format=custom --dbname="$DATABASE_URL" > "$BASE_PARTIELLE"
   mkdir -p "$STOCKAGE_RACINE"
-  tar -czf "$FICHIERS" -C "$STOCKAGE_RACINE" .
+  tar -czf "$FICHIERS_PARTIELS" -C "$STOCKAGE_RACINE" .
 else
   # Les identifiants viennent de l'environnement DU conteneur : rien à
   # recopier ici, et le mot de passe ne passe par aucune ligne de commande.
-  docker compose exec -T postgres sh -c 'pg_dump --format=custom -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$BASE"
-  docker compose exec -T app sh -c 'mkdir -p /donnees/fichiers && tar -czf - -C /donnees/fichiers .' > "$FICHIERS"
+  docker compose exec -T postgres sh -c 'pg_dump --format=custom -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$BASE_PARTIELLE"
+  docker compose exec -T app sh -c 'mkdir -p /donnees/fichiers && tar -czf - -C /donnees/fichiers .' > "$FICHIERS_PARTIELS"
 fi
+
+mv "$BASE_PARTIELLE" "$BASE"
+mv "$FICHIERS_PARTIELS" "$FICHIERS"
 
 # Rétention locale. La copie distante, elle, n'est jamais élaguée d'ici :
 # une machine compromise ne doit pas pouvoir effacer ce qui la sauve.
 find "$DOSSIER" -maxdepth 1 -type f \( -name '*.base.dump' -o -name '*.fichiers.tgz' \) -mtime +"$RETENTION_JOURS" -delete
 
 if [ -n "${SAUVEGARDE_DESTINATION:-}" ]; then
+  # Sans `--delete`, délibérément : une machine compromise ne doit pas pouvoir
+  # effacer ce qui la sauve. Corollaire assumé, à savoir avant de choisir la
+  # cible : LA DESTINATION DISTANTE GROSSIT SANS FIN. `RETENTION_JOURS` n'y
+  # touche pas, il faut une rétention là-bas.
   rsync -a "$DOSSIER/" "$SAUVEGARDE_DESTINATION"
 fi
 

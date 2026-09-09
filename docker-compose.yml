@@ -47,10 +47,13 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?définir SESSION_SECRET dans .env}
       STOCKAGE_RACINE: /donnees/fichiers
       # Exactement un proxy devant l'application : Caddy, ci-dessous. C'est
-      # ce qui rend `req.secure` vrai derrière TLS (cookie `Secure`, HSTS) et
-      # `req.ip` juste (limite de débit). Voir `server/application.js`.
+      # ce qui rend `req.secure` vrai derrière TLS — donc HSTS — et `req.ip`
+      # juste, donc la limite de débit. Le cookie de session, lui, ne dépend
+      # PAS de ça : son `Secure` vient de `NODE_ENV=production`, ci-dessus
+      # (`app/lib/auth/cookie.server.ts`). Voir `server/application.js`.
       PROXYS_DE_CONFIANCE: 1
-      # Fermée dès le premier compte ; 1 pour en créer un autre, puis retirer.
+      # Fermée dès le premier compte ; 1 pour en créer UN autre (plafond dur
+      # à deux comptes : laissée en place, elle n'ouvre rien de plus).
       AUTORISER_INSCRIPTION: ${AUTORISER_INSCRIPTION:-0}
     # Pas de `ports:` : seul Caddy atteint l'application.
     expose:

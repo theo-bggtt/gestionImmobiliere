@@ -13,6 +13,56 @@
 // d'un magasin partagé.
 
 /**
+ * Ce qui compte comme « le même client » pour un compteur.
+ *
+ * En IPv4, une adresse est un client. En IPv6, non : le plus petit bloc qu'un
+ * fournisseur délègue à un abonné est un /64, et un VPS en obtient un aussi.
+ * Compter par adresse complète y revient à ne pas compter du tout — mesuré,
+ * 5 000 requêtes depuis 5 000 adresses d'un même /64 passent une borne de 600.
+ * Ça vaut surtout pour `POST /connexion` : dix argon2 par minute et par
+ * adresse, multipliés par 2^64 adresses, ne freinent rien, et c'est justement
+ * le temps de calcul que le frein protège.
+ *
+ * On tronque donc aux quatre premiers groupes. Le prix est qu'un /64 partagé
+ * — deux abonnés derrière le même préfixe, ce qui n'arrive pas chez un
+ * fournisseur résidentiel — partagerait un compteur : c'est le même arbitrage
+ * que la famille derrière une adresse NAT en IPv4, et il penche du même côté.
+ *
+ * @param {string | undefined} ip  `req.ip`, éventuellement absent
+ * @returns {string} la clé du compteur
+ */
+export function cleDeFrein(ip) {
+  if (!ip) return "";
+  // Express rend parfois la forme « mappée » `::ffff:1.2.3.4` : c'est de
+  // l'IPv4, elle n'a pas de préfixe à tronquer.
+  if (!ip.includes(":") || ip.startsWith("::ffff:")) return ip;
+
+  // `req.ip` rend la forme ABRÉGÉE — `2001:db8::1` et non les huit groupes.
+  // Compter ses `:` ne dit donc rien du préfixe : il faut déplier le `::` en
+  // autant de groupes nuls qu'il en manque avant de couper. (Premier jet de ce
+  // correctif : il exigeait huit groupes et ne tronquait par conséquent
+  // aucune adresse réelle.)
+  const [gauche, droite] = ip.split("::");
+  const avant = gauche ? gauche.split(":") : [];
+  const apres = droite === undefined ? [] : droite ? droite.split(":") : [];
+  const manquants = 8 - avant.length - apres.length;
+  if (droite === undefined) {
+    if (avant.length !== 8) return ip;
+  } else if (manquants < 0) {
+    return ip;
+  }
+  const groupes =
+    droite === undefined ? avant : [...avant, ...Array(manquants).fill("0"), ...apres];
+
+  // Les zéros de tête sont retirés groupe par groupe : `2001:0db8:0000:0000`
+  // et `2001:db8:0:0` sont le même préfixe, et deux écritures d'un même
+  // préfixe ne doivent pas ouvrir deux compteurs. `req.ip` rend la forme
+  // canonique, donc c'est une ceinture — mais elle coûte un `replace`.
+  const prefixe = groupes.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, "").toLowerCase());
+  return `${prefixe.join(":")}::/64`;
+}
+
+/**
  * @typedef {object} Verdict
  * @property {boolean} autorise   la requête passe
  * @property {number}  restant    ce qui reste dans la fenêtre courante

@@ -30,7 +30,12 @@ describe("idempotence des seeds", () => {
 
   it("seed-exemple exécuté deux fois ne crée qu'une seule propriété d'exemple", async () => {
     executerScript("scripts/seed-catalogue.ts");
-    executerScript("scripts/seed-exemple.ts");
+    // `beforeEach` vide la table des comptes : la base est donc « migrée et
+    // sans un seul compte », l'état exact que la troisième garde refuse. Le
+    // test fournit le geste explicite qu'un opérateur devrait fournir — c'est
+    // le point de la garde, pas un contournement.
+    executerScript("scripts/seed-exemple.ts", { SEED_EXEMPLE: "1" });
+    // Le second passage n'en a plus besoin : le compte de démonstration existe.
     executerScript("scripts/seed-exemple.ts");
 
     const proprietes = await db.select().from(propriete).where(eq(propriete.nom, "Maison d'exemple"));
@@ -42,6 +47,23 @@ describe("idempotence des seeds", () => {
 // pouvoir les créer là où il y a une vraie maison. Deux gardes, testées en
 // tant que script réel comme ci-dessus.
 describe("seed-exemple refuse une base réelle", () => {
+  it("refuse une base migrée sans aucun compte, sans SEED_EXEMPLE", async () => {
+    // Le trou que les deux premières gardes laissaient : `NODE_ENV` non défini
+    // et pas de compte réel — c'est-à-dire l'état d'une instance NEUVE pendant
+    // la fenêtre où les ports sont ouverts et le propriétaire pas encore
+    // inscrit. Un `npm run seed:exemple` lancé depuis le shell du Pi à ce
+    // moment-là y créait `demo@…/demo1234`, identifiants publiés dans le
+    // README, comme PREMIER compte de l'instance.
+    executerScript("scripts/seed-catalogue.ts");
+    expect(() => executerScript("scripts/seed-exemple.ts")).toThrow();
+
+    const comptes = await db.select().from(utilisateur);
+    expect(comptes).toHaveLength(0);
+    const proprietes = await db.select().from(propriete).where(eq(propriete.nom, "Maison d'exemple"));
+    expect(proprietes).toHaveLength(0);
+  }, 30000);
+
+
   it("refuse sous NODE_ENV=production, et ne crée rien", async () => {
     executerScript("scripts/seed-catalogue.ts");
     expect(() => executerScript("scripts/seed-exemple.ts", { NODE_ENV: "production" })).toThrow();
