@@ -905,6 +905,15 @@ input.partage-lien { font-size: 0.8rem; min-height: 40px; }
 .chrono-objet-zone { color: var(--texte-doux); }
 .chrono-vide { color: var(--texte-doux); margin: 12px 0; }
 
+/* Pagination de la chronologie : des ancres, jamais des boutons — la page de
+   partage ne charge aucun script. Les bouts inertes gardent leur place pour
+   que « Page n sur m » ne se déplace pas d'une page à l'autre. */
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: var(--gouttiere) 0; }
+.pagination a { text-decoration: none; }
+.pagination a:hover { text-decoration: underline; }
+.pagination-rang { color: var(--texte-doux); font-size: 0.9rem; }
+.pagination-bout { color: var(--texte-doux); opacity: 0.45; font-size: 0.95rem; }
+
 .evenement-description { white-space: pre-wrap; margin: var(--gouttiere) 0; }
 
 .liste-intervenants { list-style: none; margin: 0; padding: 0; }
