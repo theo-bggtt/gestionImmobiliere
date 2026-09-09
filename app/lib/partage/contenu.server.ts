@@ -38,6 +38,7 @@ import {
 } from "../historique/historique.server";
 import type { Chronologie } from "../historique/historique.server";
 import { chargerGarantiesDeLElement } from "../historique/garanties.server";
+import { lirePage } from "../historique/pagination";
 import {
   estTypeEvenement,
   type EvenementDetail,
@@ -289,7 +290,11 @@ export async function chargerHistoriquePartage(
   url: URL,
 ): Promise<HistoriquePartage> {
   const types = [...new Set(url.searchParams.getAll("type"))].filter(estTypeEvenement);
-  const chronologie = await chargerChronologie(p.proprieteId, { portee: porteeDuPartage(p), types });
+  const chronologie = await chargerChronologie(p.proprieteId, {
+    portee: porteeDuPartage(p),
+    types,
+    page: lirePage(url.searchParams.get("page")),
+  });
   return { proprieteNom, types, ...chronologie };
 }
 

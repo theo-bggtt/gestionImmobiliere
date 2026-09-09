@@ -50,7 +50,7 @@ async function refuserSiBaseReelle(): Promise<string | null> {
   // comme PREMIER compte de l'instance. Ça referme l'inscription contre le
   // propriétaire et laisse le seul compte à qui sait lire le dépôt.
   //
-  // La décision #127 écartait ce cas en disant que le 5432 ne quitte pas la
+  // La décision #132 écartait ce cas en disant que le 5432 ne quitte pas la
   // boucle locale : vrai depuis un autre poste, faux depuis le Pi lui-même.
   // On exige donc un geste explicite plutôt qu'une absence de signal.
   const [migration] = await db

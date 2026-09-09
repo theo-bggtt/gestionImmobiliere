@@ -25,6 +25,7 @@ import {
   PORTEE_PROPRIETAIRE,
   type Portee,
 } from "../recherche/recherche.server";
+import { PAR_PAGE, nombreDePages } from "./pagination";
 import type {
   EvenementDetail,
   EvenementListe,
@@ -34,9 +35,6 @@ import type {
   PhotoEvenement,
   TypeEvenement,
 } from "./types";
-
-export const LIMITE_DEFAUT = 50;
-const LIMITE_MAX = 200;
 
 /**
  * Le prédicat de visibilité d'un événement, exporté parce que trois surfaces
@@ -123,53 +121,81 @@ type LigneListe = {
   dateFin: string | null;
   type: TypeEvenement;
   objets: ObjetLie[];
-  total: number;
 };
 
 export type Chronologie = {
   evenements: EvenementListe[];
+  /** Le fonds VISIBLE et filtré par type, jamais le fonds. */
   total: number;
   facettes: FacetteType[];
+  /** La page servie, déjà ramenée dans les bornes. */
+  page: number;
+  pages: number;
 };
+
+/**
+ * Le fonds sur lequel portent la liste ET son comptage : même propriété, même
+ * filtre par type, même clause de visibilité. Écrit une fois plutôt que deux,
+ * pour que le compte ne puisse pas dire autre chose que la page.
+ */
+const FILTRE_CHRONOLOGIE = (proprieteId: number, portee: Portee, types: TypeEvenement[]) => sql`
+  ev.propriete_id = ${proprieteId}
+  AND (${types.length === 0}::boolean OR ev.type::text = ANY(${sql.param(types)}::text[]))
+  AND ${clauseEvenementVisible(portee)}`;
 
 /**
  * La chronologie, triée du plus récent au plus ancien. `types` vide = pas de
  * restriction, exactement la sémantique des facettes de l'étape 2.
+ *
+ * Le total vient d'une requête de comptage et non plus d'un `count(*) OVER ()`
+ * posé sur la liste, et ce n'est pas un raffinement : au-delà de la dernière
+ * page la fenêtre ne rend AUCUNE ligne, donc aucun total — « 137 événements »
+ * deviendrait « Aucun événement » sur une URL tapée à la main, et il ne
+ * resterait aucun nombre de pages pour ramener la demande dans les bornes.
+ * Compter d'abord, borner, puis lister : deux allers-retours sur un écran qui
+ * n'est pas chaud, contre une page qui ment sur un cas atteignable.
+ *
+ * Le total reste celui du fonds VISIBLE (décision #102) : il est calculé sous
+ * la même clause que la liste, donc la pagination ne peut pas devenir un
+ * second moyen d'apprendre combien d'événements existent hors portée.
  */
 export async function chargerChronologie(
   proprieteId: number,
-  options: { portee?: Portee; types?: TypeEvenement[]; limite?: number; decalage?: number } = {},
+  options: { portee?: Portee; types?: TypeEvenement[]; page?: number } = {},
 ): Promise<Chronologie> {
   const portee = options.portee ?? PORTEE_PROPRIETAIRE;
   const types = options.types ?? [];
-  const limite = Math.min(Math.max(options.limite ?? LIMITE_DEFAUT, 1), LIMITE_MAX);
-  const decalage = Math.max(options.decalage ?? 0, 0);
 
-  const [lignes, facettes] = await Promise.all([
-    db.execute<LigneListe>(sql`
-      SELECT
-        ev.id,
-        ev.titre,
-        ${JOUR(sql.raw("ev.date_debut"))} AS "dateDebut",
-        ${JOUR(sql.raw("ev.date_fin"))}   AS "dateFin",
-        ev.type,
-        ${OBJETS_LIES()} AS "objets",
-        (count(*) OVER ())::int AS "total"
+  const [comptes, facettes] = await Promise.all([
+    db.execute<{ total: number }>(sql`
+      SELECT count(*)::int AS "total"
       FROM evenement ev
-      WHERE ev.propriete_id = ${proprieteId}
-        AND (${types.length === 0}::boolean OR ev.type::text = ANY(${sql.param(types)}::text[]))
-        AND ${clauseEvenementVisible(portee)}
-      ORDER BY ev.date_debut DESC, ev.id DESC
-      LIMIT ${limite} OFFSET ${decalage}
+      WHERE ${FILTRE_CHRONOLOGIE(proprieteId, portee, types)}
     `),
     chargerFacettesTypes(proprieteId, portee),
   ]);
 
-  return {
-    evenements: lignes.rows.map(({ total: _total, ...e }) => e),
-    total: lignes.rows[0]?.total ?? 0,
-    facettes,
-  };
+  const total = comptes.rows[0]?.total ?? 0;
+  const pages = nombreDePages(total);
+  // Ramenée dans les bornes, jamais rejetée : `?page=999` sur trois pages rend
+  // la troisième. `lirePage` a déjà écarté le négatif et le non numérique.
+  const page = Math.min(Math.max(options.page ?? 1, 1), pages);
+
+  const lignes = await db.execute<LigneListe>(sql`
+    SELECT
+      ev.id,
+      ev.titre,
+      ${JOUR(sql.raw("ev.date_debut"))} AS "dateDebut",
+      ${JOUR(sql.raw("ev.date_fin"))}   AS "dateFin",
+      ev.type,
+      ${OBJETS_LIES()} AS "objets"
+    FROM evenement ev
+    WHERE ${FILTRE_CHRONOLOGIE(proprieteId, portee, types)}
+    ORDER BY ev.date_debut DESC, ev.id DESC
+    LIMIT ${PAR_PAGE} OFFSET ${(page - 1) * PAR_PAGE}
+  `);
+
+  return { evenements: lignes.rows, total, facettes, page, pages };
 }
 
 /**
@@ -223,7 +249,7 @@ export async function chargerEvenementsDeLElement(
   elementId: number,
   portee: Portee = PORTEE_PROPRIETAIRE,
 ): Promise<EvenementListe[]> {
-  const lignes = await db.execute<Omit<LigneListe, "total">>(sql`
+  const lignes = await db.execute<LigneListe>(sql`
     SELECT
       ev.id,
       ev.titre,
@@ -313,7 +339,7 @@ export async function chargerEvenementDetail(
   evenementId: number,
   portee: Portee = PORTEE_PROPRIETAIRE,
 ): Promise<EvenementDetail> {
-  type Ligne = Omit<LigneListe, "total"> & { description: string | null };
+  type Ligne = LigneListe & { description: string | null };
 
   const lignes = await db.execute<Ligne>(sql`
     SELECT

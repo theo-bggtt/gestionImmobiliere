@@ -12,6 +12,7 @@
 // Corollaire assumé : un type sans événement visible n'a pas de pastille du
 // tout, donc le filtre d'un lien restreint est plus court que celui du
 // propriétaire. C'est voulu, l'absence est le filtrage.
+import { urlChronologie } from "../../lib/historique/pagination";
 import { LIBELLES_TYPE_EVENEMENT, type FacetteType, type TypeEvenement } from "../../lib/historique/types";
 
 export function FiltreTypes({
@@ -25,15 +26,11 @@ export function FiltreTypes({
 }) {
   if (facettes.length === 0) return null;
 
-  const url = (types: TypeEvenement[]) => {
-    const sp = new URLSearchParams();
-    for (const t of types) sp.append("type", t);
-    const q = sp.toString();
-    return q ? `${base}?${q}` : base;
-  };
-
+  // Sans page : basculer un filtre REVIENT à la première page. Conserver la
+  // page en cours ferait atterrir sur une page vide dès que le filtre réduit
+  // le fonds sous le rang demandé — « page 4 sur 1 », donc rien à lire.
   const bascule = (type: TypeEvenement) =>
-    url(actifs.includes(type) ? actifs.filter((t) => t !== type) : [...actifs, type]);
+    urlChronologie(base, actifs.includes(type) ? actifs.filter((t) => t !== type) : [...actifs, type]);
 
   return (
     <section className="facettes">

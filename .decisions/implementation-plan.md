@@ -239,7 +239,7 @@ WHERE e.niveau <= :niveau_max
 - [x] Inscription fermée au premier compte (#26)
 - [x] `sauvegarde.sh` + `restauration.sh`, restauration exécutée dans une base
       vide (sans Docker ; sur le Pi, même procédure avec `docker compose exec`)
-- [x] README : badge, introduction, « Mise en service », décisions #119–#128,
+- [x] README : badge, introduction, « Mise en service », décisions #124–#133,
       limites connues
 
 **Côté machine cible (issue #25, à cocher après exécution)**
