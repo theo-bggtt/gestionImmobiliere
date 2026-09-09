@@ -4,10 +4,12 @@
 // part ailleurs : la contrainte de base refuse ce qu'aucune route ne doit
 // écrire, et la géométrie PROPOSE sans jamais écrire `element.zone_id`.
 import { describe, it, expect, beforeEach } from "vitest";
+import { randomBytes } from "node:crypto";
+import type { ActionFunctionArgs } from "react-router";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../setup/test-db";
 import {
-  utilisateur, propriete, batiment, niveau, zone, typeElement, element, plan, zoneGeom,
+  utilisateur, propriete, batiment, niveau, zone, typeElement, element, plan, zoneGeom, session,
 } from "../../app/db/schema/index";
 import {
   chargerPolygonesDuPlan,
@@ -19,6 +21,8 @@ import {
   poserPoint,
   rangerElementDansZone,
 } from "../../app/lib/plans/plans.server";
+import { sessionCookie } from "../../app/lib/auth/cookie.server";
+import { action as actionContours } from "../../app/routes/_app/plans.contours";
 
 beforeEach(async () => {
   await db.execute(sql`DELETE FROM utilisateur`);
@@ -79,7 +83,12 @@ async function creerJeu() {
   const planSousSol = await nouveauPlan({ niveauId: nSousSol.id, nom: "Sous-sol" });
   const planSituation = await nouveauPlan({ type: "situation", niveauId: null, nom: "Cadastre" });
 
-  return { p, zCuisine, zSejour, zTechnique, zJardin, eInduction, planRez, planSousSol, planSituation };
+  // Une session : la route de ressource est testée telle qu'un écran l'appelle.
+  const cookieJeton = randomBytes(32).toString("hex");
+  await db.insert(session).values({ id: cookieJeton, utilisateurId: u.id, expireLe: new Date(Date.now() + 3600_000) });
+  const cookie = (await sessionCookie.serialize(cookieJeton)).split(";")[0];
+
+  return { p, zCuisine, zSejour, zTechnique, zJardin, eInduction, planRez, planSousSol, planSituation, cookie };
 }
 
 type Jeu = Awaited<ReturnType<typeof creerJeu>>;
@@ -99,6 +108,11 @@ describe("les zones qu'un plan peut porter", () => {
     expect((await chargerZonesTracables(j.p.id, j.planSituation.id)).map((z) => z.nom)).toEqual(["Jardin"]);
   });
 
+  // `sommets` est ce que l'écran lit pour dire « 4 points » ou « sans
+  // contour », et pour choisir entre « Tracer » et « Retracer ». Il l'a lu
+  // ailleurs pendant toute l'étape 6 — dans `polygones`, servi par une requête
+  // qui prend une `Portee` — et ce test tenait alors une colonne que personne
+  // ne lisait.
   it("annonce l'état du contour, et pas seulement son existence", async () => {
     const j = await creerJeu();
     expect((await chargerZonesTracables(j.p.id, j.planRez.id)).map((z) => z.sommets)).toEqual([null, null]);
@@ -347,5 +361,91 @@ describe("ranger un objet dans la zone proposée", () => {
     // Et rien n'a bougé de part et d'autre.
     expect(await zoneDe(mien.eInduction.id)).toBe(mien.zSejour.id);
     expect(await zoneDe(autre.eInduction.id)).toBe(autre.zSejour.id);
+  });
+});
+
+/**
+ * Le refus vu par l'écran, et pas seulement par la couche de données.
+ *
+ * `enregistrerContour` LANCE ses 404 (les tests ci-dessus l'épinglent), mais
+ * une `Response` lancée depuis l'action d'un fetcher ne devient pas
+ * `fetcher.data` : elle remonte à la frontière d'erreur et remplace la page —
+ * vérifié au navigateur, on obtenait un « 404 » nu. Elle emportait donc le
+ * tracé en cours avec le composant qui le tient, et « garder les clics
+ * jusqu'à confirmation » n'avait aucune prise dessus.
+ *
+ * La route rend ces 404 au lieu de les relancer. Le code reste 404 et le
+ * message ne dépend pas du motif : la règle #4 porte sur ce que la réponse
+ * apprend, pas sur la façon dont le routeur la transporte.
+ */
+describe("la route de contours rend ses refus au lieu de les lancer", () => {
+  const appeler = (j: Jeu, champs: Record<string, string>) =>
+    actionContours({
+      request: new Request("http://test/proprietes/1/plans/contours", {
+        method: "POST",
+        headers: { Cookie: j.cookie },
+        body: new URLSearchParams(champs),
+      }),
+      params: { proprieteId: String(j.p.id) },
+    } as unknown as ActionFunctionArgs);
+
+  it("rend un 404 lisible quand le plan ne couvre pas la zone", async () => {
+    const j = await creerJeu();
+    const reponse = await appeler(j, {
+      _action: "tracer",
+      planId: String(j.planSousSol.id),
+      zoneId: String(j.zCuisine.id),
+      sommets: JSON.stringify(CUISINE),
+    });
+
+    expect(reponse).toBeInstanceOf(Response);
+    expect(reponse.status).toBe(404);
+    expect(await reponse.json()).toEqual({ erreur: "Zone introuvable" });
+    // Rien écrit, évidemment : le refus vient d'avant l'écriture.
+    expect(await chargerPolygonesDuPlan(j.p.id, j.planSousSol.id)).toEqual([]);
+  });
+
+  it("rend le même 404 pour la zone d'une autre propriété", async () => {
+    const mien = await creerJeu();
+    const autre = await creerJeu();
+    const reponse = await appeler(mien, {
+      _action: "tracer",
+      planId: String(mien.planRez.id),
+      zoneId: String(autre.zCuisine.id),
+      sommets: JSON.stringify(CUISINE),
+    });
+
+    // Indiscernable du cas précédent : « n'existe pas » et « n'est pas à
+    // vous » ne se distinguent pas (règle #4).
+    expect(reponse.status).toBe(404);
+    expect(await reponse.json()).toEqual({ erreur: "Zone introuvable" });
+  });
+
+  it("rend un 400 lisible sur un contour hors bornes", async () => {
+    const j = await creerJeu();
+    const reponse = await appeler(j, {
+      _action: "tracer",
+      planId: String(j.planRez.id),
+      zoneId: String(j.zCuisine.id),
+      sommets: JSON.stringify([{ x: 0, y: 0 }, { x: 101, y: 0 }, { x: 50, y: 50 }]),
+    });
+    expect(reponse.status).toBe(400);
+    expect((await reponse.json()).erreur).toMatch(/points/);
+  });
+
+  it("accepte un contour couvert, et le rend lisible par la liste des zones", async () => {
+    const j = await creerJeu();
+    const reponse = await appeler(j, {
+      _action: "tracer",
+      planId: String(j.planRez.id),
+      zoneId: String(j.zCuisine.id),
+      sommets: JSON.stringify(CUISINE),
+    });
+    expect(reponse.status).toBe(200);
+
+    // `sommets` est ce que l'écran lit pour dire « 4 points » et pour choisir
+    // entre « Tracer » et « Retracer ».
+    const zones = await chargerZonesTracables(j.p.id, j.planRez.id);
+    expect(zones.find((z) => z.nom === "Cuisine")!.sommets).toBe(CUISINE.length);
   });
 });

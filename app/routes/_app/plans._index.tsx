@@ -21,7 +21,7 @@ import {
   chargerZonesTracables,
 } from "../../lib/plans/plans.server";
 import { SOMMETS_MIN } from "../../lib/plans/geometrie";
-import type { Sommet } from "../../lib/plans/types";
+import { traceApres, type TraceEnCours } from "../../lib/plans/tracage";
 import { VuePlan } from "../../components/plan/VuePlan";
 import { liensPropriete } from "../../components/recherche/liens";
 
@@ -84,8 +84,9 @@ export default function EcranPlans() {
   const liens = liensPropriete(propriete.id);
 
   // Le tracé en cours : des sommets et la zone visée, rien de plus. Il ne
-  // touche la base qu'au moment de « Terminer ».
-  const [tracage, setTracage] = useState<{ zoneId: number; zoneNom: string; sommets: Sommet[] } | null>(null);
+  // touche la base qu'au moment de « Terminer », et il y SURVIT — voir
+  // `traceApres`.
+  const [tracage, setTracage] = useState<TraceEnCours | null>(null);
   const [proposition, setProposition] = useState<Proposition | null>(null);
 
   // La proposition suit la dernière réponse du fetcher de points : une pose
@@ -97,8 +98,20 @@ export default function EcranPlans() {
     else if ("proposition" in fetcher.data) setProposition(fetcher.data.proposition ?? null);
   }, [fetcher.state, fetcher.data]);
 
+  // Le tracé ne s'efface qu'à la confirmation du serveur, jamais au clic sur
+  // « Terminer » : un 404 de couverture ou un contour hors bornes affichait
+  // son message ET jetait les clics, il fallait tout retracer. Il suit
+  // `contours.state` / `contours.data` comme la bannière de proposition suit
+  // ceux du fetcher de points, quelques lignes plus haut — la décision, elle,
+  // est dans `traceApres`, pure et éprouvée sans DOM.
+  useEffect(() => {
+    setTracage((t) => traceApres(t, contours.state, contours.data));
+  }, [contours.state, contours.data]);
+
   // Changer de plan abandonne un tracé en cours : ses sommets sont des
   // pourcentages de l'AUTRE image, et les garder les poserait n'importe où.
+  // Y compris pendant un envoi — ce que le tracé attend est la réponse d'un
+  // plan qu'on ne regarde plus.
   useEffect(() => {
     setTracage(null);
     setProposition(null);
@@ -127,8 +140,6 @@ export default function EcranPlans() {
       </main>
     );
   }
-
-  const contourDe = (zoneId: number) => polygones.find((g) => g.zoneId === zoneId) ?? null;
 
   return (
     <main>
@@ -197,6 +208,7 @@ export default function EcranPlans() {
               tracage && {
                 zoneNom: tracage.zoneNom,
                 sommets: tracage.sommets,
+                envoi: tracage.envoye && contours.state !== "idle",
                 onSommet: (x, y) => setTracage((t) => t && { ...t, sommets: [...t.sommets, { x, y }] }),
                 onDefaire: () => setTracage((t) => t && { ...t, sommets: t.sommets.slice(0, -1) }),
                 onAbandonner: () => setTracage(null),
@@ -207,7 +219,9 @@ export default function EcranPlans() {
                     zoneId: tracage.zoneId,
                     sommets: JSON.stringify(tracage.sommets),
                   });
-                  setTracage(null);
+                  // Marqué comme envoyé, pas effacé : c'est `traceApres` qui
+                  // décidera, une fois la réponse là.
+                  setTracage((t) => t && { ...t, envoye: true });
                 },
               }
             }
@@ -241,38 +255,50 @@ export default function EcranPlans() {
                 dedans fera <em>proposer</em> cette zone — vous gardez la main sur ce qui est rangé où.
               </p>
               <ul>
-                {zonesTracables.map((z) => {
-                  const trace = contourDe(z.id);
-                  return (
-                    <li key={z.id}>
-                      <span>{z.nom}</span>
-                      <span className="selecteur-secondaire">
-                        {trace ? `${trace.sommets.length} points` : "sans contour"}
-                      </span>
+                {/* L'état du contour vient de `z.sommets`, chargé par la même
+                    requête que la ligne, et non d'une recherche dans
+                    `polygones` : ces deux listes n'ont pas le même contrat.
+                    `chargerPolygonesDuPlan` prend une `Portee` et sert aussi
+                    les pages de partage ; `chargerZonesTracables` est réservée
+                    au propriétaire et n'en prend pas. L'écran passe
+                    aujourd'hui `PORTEE_PROPRIETAIRE`, donc le filtre est
+                    inerte et les deux listes s'accordent — c'est exactement ce
+                    qui rend le couplage invisible. Le jour où ce loader
+                    passerait autre chose (prévisualiser ce que voit un lien
+                    est l'envie évidente), « Retracer » redeviendrait
+                    « Tracer » sur une zone qui a un contour, et « Tracer »
+                    l'écrase : `enregistrerContour` est un `ON CONFLICT DO
+                    UPDATE`. Lire le compte dans la ligne qu'il décrit est la
+                    seule forme où les deux ne peuvent pas diverger. */}
+                {zonesTracables.map((z) => (
+                  <li key={z.id}>
+                    <span>{z.nom}</span>
+                    <span className="selecteur-secondaire">
+                      {z.sommets === null ? "sans contour" : `${z.sommets} points`}
+                    </span>
+                    <button
+                      type="button"
+                      className="bouton-discret"
+                      onClick={() => {
+                        setProposition(null);
+                        setTracage({ zoneId: z.id, zoneNom: z.nom, sommets: [], envoye: false });
+                      }}
+                      disabled={contours.state !== "idle"}
+                    >
+                      {z.sommets === null ? "Tracer" : "Retracer"}
+                    </button>
+                    {z.sommets !== null && (
                       <button
                         type="button"
                         className="bouton-discret"
-                        onClick={() => {
-                          setProposition(null);
-                          setTracage({ zoneId: z.id, zoneNom: z.nom, sommets: [] });
-                        }}
+                        onClick={() => envoyerContour({ _action: "effacer", planId: choisi.id, zoneId: z.id })}
                         disabled={contours.state !== "idle"}
                       >
-                        {trace ? "Retracer" : "Tracer"}
+                        Effacer
                       </button>
-                      {trace && (
-                        <button
-                          type="button"
-                          className="bouton-discret"
-                          onClick={() => envoyerContour({ _action: "effacer", planId: choisi.id, zoneId: z.id })}
-                          disabled={contours.state !== "idle"}
-                        >
-                          Effacer
-                        </button>
-                      )}
-                    </li>
-                  );
-                })}
+                    )}
+                  </li>
+                ))}
               </ul>
             </>
           )}
