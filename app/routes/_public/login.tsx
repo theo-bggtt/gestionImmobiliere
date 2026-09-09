@@ -7,19 +7,24 @@ import { db } from "../../db/client";
 import { utilisateur } from "../../db/schema/index";
 import { verifierMotDePasse } from "../../lib/auth/password.server";
 import { creerSession } from "../../lib/auth/session.server";
+import { cheminInterne } from "../../lib/auth/redirection";
 
 export async function action({ request }: ActionFunctionArgs) {
   const form = await request.formData();
   const email = String(form.get("email") ?? "").toLowerCase().trim();
   const motDePasse = String(form.get("motDePasse") ?? "");
-  const depuis = String(form.get("depuis") ?? "/");
+  // Le champ caché accepte ce qu'on y met : `?depuis=https://faux-domaine/`
+  // renvoyait le propriétaire hors du site JUSTE APRÈS une connexion réussie,
+  // sur une copie de cet écran qui redemande le mot de passe. C'est la seule
+  // chose qu'un inconnu peut faire faire à ce serveur — voir `redirection.ts`.
+  const depuis = cheminInterne(form.get("depuis"));
 
   const [ligne] = await db.select().from(utilisateur).where(eq(utilisateur.email, email));
   if (!ligne || !(await verifierMotDePasse(ligne.motDePasseHash, motDePasse))) {
     return { erreur: "Email ou mot de passe incorrect." };
   }
 
-  return creerSession(ligne.id, depuis || "/");
+  return creerSession(ligne.id, depuis);
 }
 
 export default function Connexion() {
