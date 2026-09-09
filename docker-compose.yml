@@ -1,15 +1,32 @@
+# Topologie de production, une machine : Caddy termine TLS et est le seul
+# service publié sur le réseau ; l'application et la base ne sont joignables
+# que sur le réseau interne du compose. Voir README, « Mise en service ».
+
+x-journal: &journal
+  # Ce qui remplit une carte SD, c'est un journal sans borne : trois fichiers
+  # de 10 Mo par service, puis rotation. `docker compose logs -f` les lit.
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    <<: *journal
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-gestion_immobiliere}
       POSTGRES_USER: ${POSTGRES_USER:-gestion}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD dans .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # Boucle locale de la machine seulement, jamais le réseau : le
+    # développement hors conteneur s'y connecte, et `seed:exemple` ne peut
+    # pas être lancé contre cette base depuis un autre poste.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gestion}"]
       interval: 5s
@@ -19,6 +36,7 @@ services:
   app:
     build: .
     restart: unless-stopped
+    <<: *journal
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,11 +46,42 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-gestion}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gestion_immobiliere}
       SESSION_SECRET: ${SESSION_SECRET:?définir SESSION_SECRET dans .env}
       STOCKAGE_RACINE: /donnees/fichiers
-    ports:
-      - "3000:3000"
+      # Exactement un proxy devant l'application : Caddy, ci-dessous. C'est
+      # ce qui rend `req.secure` vrai derrière TLS (cookie `Secure`, HSTS) et
+      # `req.ip` juste (limite de débit). Voir `server/application.js`.
+      PROXYS_DE_CONFIANCE: 1
+      # Fermée dès le premier compte ; 1 pour en créer un autre, puis retirer.
+      AUTORISER_INSCRIPTION: ${AUTORISER_INSCRIPTION:-0}
+    # Pas de `ports:` : seul Caddy atteint l'application.
+    expose:
+      - "3000"
     volumes:
       - fichiers_data:/donnees
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    <<: *journal
+    depends_on:
+      - app
+    environment:
+      # Le nom de domaine servi. `localhost` par défaut : Caddy signe alors
+      # lui-même, ce qui permet d'essayer la pile complète sans domaine.
+      DOMAINE: ${DOMAINE:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificats et clés de compte ACME : à ne jamais perdre entre deux
+      # redémarrages, sinon Caddy redemande un certificat à chaque fois et
+      # finit limité par Let's Encrypt.
+      - caddy_data:/data
+      - caddy_config:/config
 
 volumes:
   postgres_data:
   fichiers_data:
+  caddy_data:
+  caddy_config:

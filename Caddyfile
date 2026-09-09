@@ -1,0 +1,25 @@
+# Caddyfile — la terminaison TLS devant l'application, et rien d'autre.
+#
+# Un seul hôte, lu dans DOMAINE (.env). Avec un vrai nom qui pointe sur le Pi
+# et les ports 80 et 443 ouverts, Caddy obtient le certificat chez Let's
+# Encrypt, le renouvelle seul et redirige HTTP vers HTTPS — rien de tout ça
+# n'est à écrire ici. Avec `localhost`, il signe lui-même : le mode d'essai.
+#
+# Les en-têtes de sécurité ne sont PAS posés ici mais dans
+# `server/application.js`, où ils sont testés. Caddy ajoute seulement
+# X-Forwarded-For / -Proto / -Host, en remplaçant ce qu'un client aurait
+# écrit lui-même (comportement par défaut, sans `trusted_proxies`).
+{$DOMAINE} {
+	# Une réponse compressée coûte moins de temps d'antenne à un téléphone.
+	encode zstd gzip
+
+	# Borne du corps avant l'application, y compris pour un envoi en
+	# `Transfer-Encoding: chunked` sans longueur annoncée, que
+	# `server/application.js` ne peut pas voir. Même valeur que
+	# TAILLE_MAX_CORPS. Au-delà : 413.
+	request_body {
+		max_size 30MB
+	}
+
+	reverse_proxy app:3000
+}
