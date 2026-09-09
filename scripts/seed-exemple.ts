@@ -1,6 +1,6 @@
 // scripts/seed-exemple.ts
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import pg from "pg";
 import * as schema from "../app/db/schema/index";
 import { hacherMotDePasse } from "../app/lib/auth/password.server";
@@ -19,11 +19,43 @@ async function idType(nom: string) {
   return t.id;
 }
 
+// Deux gardes, pas un avertissement. Les identifiants de démonstration sont
+// publics (ils sont dans ce fichier et dans le README) : sur une base qui
+// porte une vraie maison, ils seraient une porte ouverte dessus.
+//
+// 1. `NODE_ENV=production` est ce que le conteneur pose : lancer ce script
+//    depuis `docker compose exec app` est refusé d'office.
+// 2. Un compte qui n'est pas celui de la démonstration signale une base
+//    réelle, quel que soit l'environnement — le seul cas où ce script a un
+//    sens est une base de développement ou de test, où il n'y a personne.
+async function refuserSiBaseReelle(): Promise<string | null> {
+  if (process.env.NODE_ENV === "production") {
+    return "NODE_ENV=production : les identifiants de démonstration n'ont rien à faire sur une base de production.";
+  }
+  const [autre] = await db
+    .select({ email: schema.utilisateur.email })
+    .from(schema.utilisateur)
+    .where(ne(schema.utilisateur.email, EMAIL_DEMO))
+    .limit(1);
+  if (autre) {
+    return `la base contient déjà un compte réel (${autre.email}) : la démonstration ne se charge que sur une base vide.`;
+  }
+  return null;
+}
+
 async function main() {
   const [existe] = await db.select().from(schema.propriete).where(eq(schema.propriete.nom, NOM_PROPRIETE));
   if (existe) {
     console.log(`"${NOM_PROPRIETE}" existe déjà (id ${existe.id}) — rien à faire.`);
     await pool.end();
+    return;
+  }
+
+  const refus = await refuserSiBaseReelle();
+  if (refus) {
+    console.error(`seed:exemple refusé — ${refus}`);
+    await pool.end();
+    process.exitCode = 1;
     return;
   }
 
