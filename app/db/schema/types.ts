@@ -1,5 +1,5 @@
 // app/db/schema/types.ts
-import { pgTable, serial, text, integer, pgEnum, jsonb, check, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, smallint, pgEnum, jsonb, check, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { propriete } from "./core";
 // La définition d'un champ vit dans `app/lib/forms/types.ts`, un module neutre :
@@ -19,7 +19,18 @@ export const typeElement = pgTable("type_element", {
   origine: typeElementOrigine("origine").notNull(),
   champs: jsonb("champs").notNull().default(sql`'[]'::jsonb`).$type<ChampDefinition[]>(),
   alias: text("alias").array().notNull().default(sql`'{}'::text[]`),
+  // Niveau proposé à la création d'une fiche de ce type, et écrit tel quel
+  // par la capture (qui ne demande rien). C'est le TYPE qui rend un objet
+  // technique, pas la zone : une prise est d'usage courant partout, un
+  // tableau électrique est technique même dans une cuisine — et la portée
+  // d'un partage filtre déjà par zone. Une suggestion, jamais une décision :
+  // `element.niveau` reste ce que lit le filtre, et lui seul.
+  niveauSuggere: smallint("niveau_suggere").notNull().default(3),
 }, (table) => ({
+  niveauSuggereValide: check(
+    "type_element_niveau_suggere_valide",
+    sql`${table.niveauSuggere} BETWEEN 0 AND 3`,
+  ),
   origineCoherente: check(
     "type_element_origine_propriete_coherente",
     sql`(${table.origine} = 'systeme' AND ${table.proprieteId} IS NULL) OR (${table.origine} = 'perso' AND ${table.proprieteId} IS NOT NULL)`

@@ -8,6 +8,7 @@ import { CHAMP_GENRES } from "../../lib/forms/types";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { ChampEditor } from "../../components/ChampEditor";
+import { LIBELLES_NIVEAU, lireNiveauSaisi } from "../../lib/partage/niveaux";
 
 const champDefinitionSchema = z
   .object({
@@ -32,7 +33,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const icone = String(form.get("icone") ?? "").trim() || null;
   const alias = String(form.get("alias") ?? "").split(",").map((a) => a.trim()).filter(Boolean);
 
+  // Absent = 3 (privé), le côté fermé, et non un refus : un type perso n'est
+  // pas une fiche — sa suggestion ne décide rien, elle pré-remplit un
+  // sélecteur que le propriétaire voit. Zéro est refusé quand même : un niveau
+  // public se décide objet par objet, jamais pour toute une famille d'objets.
+  const niveauSuggere = lireNiveauSaisi(form.get("niveauSuggere")) ?? 3;
+
   if (!nom) return { erreur: "Le nom est obligatoire." };
+  if (niveauSuggere === 0) return { erreur: "Un type ne peut pas suggérer le niveau public." };
 
   let champsBruts: unknown;
   try {
@@ -58,6 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     origine: "perso",
     champs: resultat.data,
     alias,
+    niveauSuggere,
   });
 
   return redirect(`/proprietes/${propriete.id}/elements/nouveau`);
@@ -80,6 +89,19 @@ export default function NouveauTypePerso() {
         <label>
           Alias (séparés par des virgules)
           <input type="text" name="alias" placeholder="adoucisseur, filtre à eau" />
+        </label>
+        <label>
+          Visibilité suggérée
+          <select name="niveauSuggere" defaultValue="2">
+            {LIBELLES_NIVEAU.map((libelle, valeur) => (
+              valeur === 0 ? null : <option key={valeur} value={valeur}>{valeur} · {libelle}</option>
+            ))}
+          </select>
+          <span className="formulaire-aide">
+            Pré-remplit le niveau des objets de ce type, qui reste corrigible fiche par fiche.
+            Ce qu'un locataire doit connaître pour habiter est « usage » ; ce qu'on ne touche
+            que pour intervenir est « technique ».
+          </span>
         </label>
         <ChampEditor />
         {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}

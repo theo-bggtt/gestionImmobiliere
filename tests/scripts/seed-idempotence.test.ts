@@ -1,7 +1,7 @@
 // tests/scripts/seed-idempotence.test.ts
 import { describe, it, expect, beforeEach } from "vitest";
 import { execSync } from "node:child_process";
-import { sql, eq } from "drizzle-orm";
+import { sql, and, eq } from "drizzle-orm";
 import { db } from "../setup/test-db";
 import { typeElement, propriete, utilisateur } from "../../app/db/schema/index";
 
@@ -26,6 +26,33 @@ describe("idempotence des seeds", () => {
     const noms = types.map((t) => t.nom);
     expect(noms.length).toBeGreaterThan(0);
     expect(new Set(noms).size).toBe(noms.length);
+  }, 30000);
+
+  it("un re-seed rafraîchit alias et niveau suggéré, et ne touche pas champs", async () => {
+    executerScript("scripts/seed-catalogue.ts");
+
+    // On abîme une ligne du catalogue comme le ferait une version antérieure :
+    // alias vidés, niveau suggéré retombé au défaut, et un champ retiré.
+    await db
+      .update(typeElement)
+      .set({ alias: [], niveauSuggere: 3, champs: [] })
+      .where(and(eq(typeElement.nom, "Vanne d'arrêt"), eq(typeElement.origine, "systeme")));
+
+    executerScript("scripts/seed-catalogue.ts");
+
+    const [vanne] = await db
+      .select()
+      .from(typeElement)
+      .where(and(eq(typeElement.nom, "Vanne d'arrêt"), eq(typeElement.origine, "systeme")));
+
+    // Du vocabulaire de catalogue : rafraîchi, comme les alias. Un type système
+    // n'est pas éditable, personne n'a donc rien à écraser ici — et la
+    // correction du propriétaire vit sur la fiche, pas sur le type.
+    expect(vanne.niveauSuggere).toBe(2);
+    expect(vanne.alias).toContain("robinet");
+    // `champs` reste intact : un champ retiré du catalogue doit être masqué,
+    // jamais effacé (règle non négociable #5).
+    expect(vanne.champs).toEqual([]);
   }, 30000);
 
   it("seed-exemple exécuté deux fois ne crée qu'une seule propriété d'exemple", async () => {
