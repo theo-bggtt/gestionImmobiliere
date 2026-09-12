@@ -7,6 +7,9 @@
 // `routes.test.ts` inséraient la ligne à la main, ce qui prouvait la lecture
 // et masquait l'absence de l'écriture. C'est ce que ce fichier ferme.
 import { describe, it, expect, beforeEach } from "vitest";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import sharp from "sharp";
 import { db } from "../setup/test-db";
@@ -14,15 +17,17 @@ import {
   utilisateur, propriete, batiment, niveau, zone, typeElement, element,
   evenement, evenementElement, fichier, garantie,
 } from "../../app/db/schema/index";
-import {
+import { chargerGarantiesProprietaire } from "../../app/lib/historique/garanties.server";
+
+process.env.STOCKAGE_RACINE = await mkdtemp(join(tmpdir(), "gi-photos-"));
+const {
   attacherDocumentAGarantie,
   attacherPhotoAEvenement,
   chargerPhotosProprietaire,
   detacherDocumentDeGarantie,
   detacherPhotoDEvenement,
-} from "../../app/lib/historique/photos.server";
-import { chargerGarantiesProprietaire } from "../../app/lib/historique/garanties.server";
-import { lire, cheminVignette } from "../../app/lib/stockage/fichiers.server";
+} = await import("../../app/lib/historique/photos.server");
+const { lire, cheminVignette } = await import("../../app/lib/stockage/fichiers.server");
 
 beforeEach(async () => {
   await db.execute(sql`DELETE FROM utilisateur`);
