@@ -540,6 +540,12 @@ input.partage-lien { font-size: 0.8rem; min-height: 40px; }
   font-size: 0.9rem;
 }
 .apercu-bandeau a { margin-left: auto; }
+/* Le compte d'objets au-dessus du plafond prend sa propre ligne du bandeau, et
+   son lien reste dans le texte : l'aperçu EXPLIQUE, il ne corrige pas — un
+   bouton qui monterait les niveaux serait l'opération qui fait fuiter,
+   déclenchée là où l'on a hâte que quelque chose s'affiche. */
+.apercu-au-dessus { flex-basis: 100%; margin: 0; }
+.apercu-au-dessus a { margin-left: 0; }
 
 @media (min-width: 560px) {
   .grille-zones { grid-template-columns: repeat(3, 1fr); }
@@ -946,6 +952,17 @@ input.partage-lien { font-size: 0.8rem; min-height: 40px; }
 .formulaire-ligne > label { flex: 1 1 160px; }
 
 .formulaire-aide { margin: 0; font-size: 0.85rem; color: var(--texte-doux); }
+
+/* Le re-nivelage en masse d'une zone : ce qu'il changerait est montré avant
+   d'être écrit, dans un bloc à part du formulaire de la zone. */
+.zone-renivelage { margin-top: 24px; }
+.zone-renivelage-apercu {
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  padding: 12px;
+  margin-top: 12px;
+}
+.zone-renivelage-apercu ul { margin: 0 0 12px; padding-left: 18px; }
 .formulaire-detail { color: var(--texte-doux); font-size: 0.9rem; }
 
 /* Un fait, pas une alarme : l'événement sans objet lié est parfaitement

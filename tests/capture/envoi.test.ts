@@ -121,6 +121,37 @@ describe("réception d'une capture", () => {
     expect(await db.select().from(fichier).where(eq(fichier.proprieteId, p.id))).toHaveLength(1);
   });
 
+  it("écrit le niveau SUGGÉRÉ PAR LE TYPE, et ignore celui du formulaire", async () => {
+    const { p, z, cookie } = await creerJeu();
+    // Le type de `creerJeu` reste au défaut (3) ; celui-ci suggère « usage ».
+    const [technique] = await db.insert(typeElement).values({
+      origine: "systeme", nom: `Prise-usage-${Date.now()}`, champs: [], niveauSuggere: 1,
+    }).returning();
+
+    const reponse = await envoyer(cookie, p.id, {
+      captureId: "eeeeeeee-1111-2222-3333-444444444444",
+      cibleGenre: "nouveau",
+      zoneId: String(z.id),
+      typeId: String(technique.id),
+      nom: "",
+      datePrise: String(Date.now()),
+      // La boîte d'envoi est de la donnée client : un niveau qui en sortirait
+      // serait un choix de visibilité fait par le navigateur.
+      niveau: "0",
+    }, await photoAvecExif());
+
+    expect(reponse.status).toBe(200);
+    const { elementId, fichierId } = (await reponse.json()) as { elementId: number; fichierId: number };
+
+    const [e] = await db.select().from(element).where(eq(element.id, elementId));
+    expect(e.niveau).toBe(1);
+
+    // `fichier.niveau` ne suit pas le type et reste à 3 : le droit de lire une
+    // photo vient de la fiche qui la porte, jamais de cette colonne.
+    const [f] = await db.select().from(fichier).where(eq(fichier.id, fichierId));
+    expect(f.niveau).toBe(3);
+  });
+
   it("refuse une zone qui appartient à quelqu'un d'autre", async () => {
     const mien = await creerJeu();
     const autre = await creerJeu();

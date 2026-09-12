@@ -6,6 +6,7 @@ import { db } from "../../db/client";
 import { element, typeElement, zone } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
+import { libelleNiveau } from "../../lib/partage/niveaux";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
@@ -16,6 +17,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     nom: element.nom,
     typeNom: typeElement.nom,
     zoneNom: zone.nom,
+    // Le seul écran d'où l'on voit l'ensemble, donc le seul d'où l'on repère
+    // un objet resté en privé. Pas de compte de ce qui « manque » : le niveau
+    // existe toujours, il n'y a rien à compléter (règle non négociable #2).
+    niveau: element.niveau,
   })
     .from(element)
     .innerJoin(typeElement, eq(element.typeId, typeElement.id))
@@ -34,7 +39,7 @@ export default function ListeElements() {
       <ul>
         {elements.map((e) => (
           <li key={e.id}>
-            {e.nom} — {e.typeNom} — {e.zoneNom}
+            {e.nom} — {e.typeNom} — {e.zoneNom} — {libelleNiveau(e.niveau)}
             <Link to={`/proprietes/${propriete.id}/elements/${e.id}/modifier`}> Modifier</Link>
           </li>
         ))}

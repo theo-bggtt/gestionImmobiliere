@@ -140,6 +140,11 @@ async function main() {
   // l'artisan. Sans cette répartition, toutes les fiches resteraient à 3
   // (privé, la valeur par défaut) et un lien de partage de niveau « usage »
   // — le cas le plus courant — ne montrerait rien du tout sur ce jeu.
+  //
+  // Cette répartition a servi de référence à `type_element.niveau_suggere`
+  // (issue #34) : ce qui était écrit ici fiche par fiche est désormais
+  // proposé par le type. Elle reste explicite — le seed décrit un jeu voulu,
+  // il ne se repose pas sur une suggestion qui peut changer.
   const elements: Array<{ nom: string; type: string; zoneNom: string; systemeId?: number; details?: Record<string, unknown>; niveau?: number }> = [
     { nom: "Prise plan de travail", type: "Prise 230V", zoneNom: "Cuisine", systemeId: electricite.id, niveau: 1 },
     { nom: "Interrupteur entrée cuisine", type: "Interrupteur", zoneNom: "Cuisine", systemeId: electricite.id, niveau: 1 },

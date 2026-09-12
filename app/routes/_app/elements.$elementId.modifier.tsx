@@ -25,6 +25,7 @@ import { extraireDetails } from "../../lib/forms/extraireDetails";
 import { ZoneSelector } from "../../components/ZoneSelector";
 import { DynamicElementFields } from "../../components/DynamicElementFields";
 import { Capture } from "../../components/capture/Capture";
+import { LIBELLES_NIVEAU, lireNiveauSaisi } from "../../lib/partage/niveaux";
 
 async function chargerTypesDisponibles(proprieteId: number) {
   return db.select().from(typeElement).where(or(isNull(typeElement.proprieteId), eq(typeElement.proprieteId, proprieteId)));
@@ -117,7 +118,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const zoneId = Number(form.get("zoneId"));
   const systemeIdBrut = String(form.get("systemeId") ?? "");
 
+  // Refusé et non replié sur 0, comme à la création : un formulaire amputé de
+  // ce champ publierait la fiche au cran le plus ouvert.
+  const niveau = lireNiveauSaisi(form.get("niveau"));
+
   if (!nom) return { erreur: "Le nom est obligatoire." };
+  if (niveau === null) return { erreur: "Le niveau de visibilité est obligatoire." };
   if (!zoneId) return { erreur: "La zone est obligatoire." };
   if (!(await zoneAppartientALaPropriete(propriete.id, zoneId))) return { erreur: "Zone invalide." };
 
@@ -142,6 +148,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     typeId: type.id,
     zoneId,
     systemeId,
+    niveau,
     details: resultat.data,
     majLe: new Date(),
   }).where(eq(element.id, Number(params.elementId)));
@@ -223,6 +230,21 @@ export default function ModifierElement() {
           </select>
         </label>
         <ZoneSelector arbre={arbre} name="zoneId" defaultValue={element.zoneId} />
+        <label>
+          Visibilité
+          {/* `defaultValue` et non un état : ici la valeur est réelle, pas une
+              suggestion — changer le type d'un objet déjà posé n'a pas à
+              défaire le niveau qu'on lui a choisi. */}
+          <select name="niveau" defaultValue={String(element.niveau)}>
+            {LIBELLES_NIVEAU.map((libelle, valeur) => (
+              <option key={valeur} value={valeur}>{valeur} · {libelle}</option>
+            ))}
+          </select>
+          <span className="formulaire-aide">
+            Comparé au plafond d'un lien de partage : un lien « usage » montre les objets de
+            niveau 0 et 1, jamais ceux au-dessus.
+          </span>
+        </label>
         <label>
           Système (optionnel)
           <select name="systemeId" defaultValue={element.systemeId ?? ""}>
