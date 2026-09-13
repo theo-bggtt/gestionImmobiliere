@@ -5,6 +5,7 @@
 import type { FichePartage } from "../../lib/partage/contenu.server";
 import { Chronologie } from "../historique/Chronologie";
 import { liensPartage } from "../recherche/liens";
+import { jourLisible } from "../../lib/dates";
 
 export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: string }) {
   const liens = liensPartage(jeton);
@@ -61,7 +62,7 @@ export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: strin
           <ul className="fiche-garanties-liste">
             {fiche.garanties.map((g) => (
               <li key={g.id}>
-                {g.fin ? `Jusqu'au ${g.fin}` : "Sans terme connu"}
+                {g.fin ? `Jusqu'au ${jourLisible(g.fin)}` : "Sans terme connu"}
                 {g.expiree && <span className="garantie-expiree"> · expirée</span>}
               </li>
             ))}

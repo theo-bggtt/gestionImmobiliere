@@ -1416,6 +1416,14 @@ Chaque surface de `/p/:jeton` qui rend une donnée dérivée de la base, et comm
 
 </details>
 
+<details>
+<summary><strong>Issue #42 — 1 décision (le rendu d'une date)</strong></summary>
+<br/>
+
+141. **Une date ne se rend que par `jourLisible` (`app/lib/dates.ts`, module neutre), et le découpage n'est écrit qu'une fois.** Cinq endroits interpolaient une colonne `date` directement dans du JSX, donc « Jusqu'au 2031-03-04 » dans une interface française — **dont un sur la page de partage**, c'est-à-dire la surface que voient les locataires et les artisans, la seule qui ne se corrige pas après coup puisqu'un lien est déjà parti. Le savoir-faire existait pourtant : `Chronologie.tsx` découpait déjà `YYYY-MM-DD` à la main, avec le bon commentaire — mais dans un composant, là où personne ne va le chercher. Il part donc dans un module neutre, au même titre que `CHAMP_GENRES`, `LIBELLES_NIVEAU` et `TYPES_EVENEMENT`, et pour la même raison : ce qui est écrit deux fois finit par diverger, et ici la divergence est silencieuse. **Le découpage manuel n'est pas une coquetterie** : `new Date("2026-03-01")` se lit en UTC, donc rend « 28 février » à l'ouest de Greenwich, et `toLocaleDateString` ne ferme rien puisqu'il part du même `Date` mal lu. Le test porte son propre contrôle — il vérifie d'abord que `new Date(iso).getDate()` vaut bien 28 sous un fuseau américain, sans quoi « la date est bonne » ne voudrait rien dire. Ce qui n'a pas la forme attendue ressort **tel quel** plutôt que faux : une date illisible se remarque, une date décalée d'un jour ne se remarque pas. Les `<input type="date">` ne sont pas touchés — le navigateur les rend dans la langue de l'utilisateur, et leur valeur doit rester `YYYY-MM-DD`. Aucun script n'est ajouté à la page de partage : la fonction est pure et tourne au rendu serveur, comme `centre` pour les contours.
+
+</details>
+
 <br/>
 
 <p align="right"><a href="#top">↑ haut de page</a></p>

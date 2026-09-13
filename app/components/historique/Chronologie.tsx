@@ -10,22 +10,7 @@
 // un événement n'est servi que si TOUS ses objets passent la portée.
 import type { Liens } from "../recherche/liens";
 import { LIBELLES_TYPE_EVENEMENT, type EvenementListe } from "../../lib/historique/types";
-
-const MOIS = [
-  "janvier", "février", "mars", "avril", "mai", "juin",
-  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
-];
-
-/**
- * `YYYY-MM-DD` en date lisible, découpée à la main. `new Date("2026-03-01")`
- * se lit en UTC et rendrait « 28 février » à l'ouest de Greenwich : c'est le
- * même piège que le `to_char` côté serveur, et il se ferme des deux côtés.
- */
-export function jourLisible(iso: string): string {
-  const [annee, mois, jour] = iso.split("-");
-  const nom = MOIS[Number(mois) - 1];
-  return nom ? `${Number(jour)} ${nom} ${annee}` : iso;
-}
+import { jourLisible } from "../../lib/dates";
 
 export const periode = (e: Pick<EvenementListe, "dateDebut" | "dateFin">): string =>
   e.dateFin && e.dateFin !== e.dateDebut

@@ -26,6 +26,7 @@ import { ZoneSelector } from "../../components/ZoneSelector";
 import { DynamicElementFields } from "../../components/DynamicElementFields";
 import { Capture } from "../../components/capture/Capture";
 import { LIBELLES_NIVEAU, lireNiveauSaisi } from "../../lib/partage/niveaux";
+import { jourLisible } from "../../lib/dates";
 
 async function chargerTypesDisponibles(proprieteId: number) {
   return db.select().from(typeElement).where(or(isNull(typeElement.proprieteId), eq(typeElement.proprieteId, proprieteId)));
@@ -283,12 +284,12 @@ export default function ModifierElement() {
             {garanties.map((g) => (
               <li key={g.id}>
                 <Link to={`/proprietes/${propriete.id}/garanties/${g.id}/modifier`}>
-                  {g.fin ? `Jusqu'au ${g.fin}` : "Sans terme connu"}
+                  {g.fin ? `Jusqu'au ${jourLisible(g.fin)}` : "Sans terme connu"}
                 </Link>
                 {/* Un fait, pas un jugement : une garantie expirée reste
                     affichée, savoir qu'elle l'est est justement l'intérêt. */}
                 {g.expiree && <span className="garantie-expiree"> · expirée</span>}
-                <span className="selecteur-secondaire"> · depuis le {g.debut}</span>
+                <span className="selecteur-secondaire"> · depuis le {jourLisible(g.debut)}</span>
                 {g.reference && <span className="selecteur-secondaire"> · {g.reference}</span>}
                 <Form method="post">
                   <input type="hidden" name="_action" value="garantie-supprimer" />

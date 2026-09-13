@@ -11,6 +11,7 @@ import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { chargerZonesVignettes } from "../../lib/recherche/recherche.server";
 import { creerJeton, partageActif } from "../../lib/partage/partage.server";
 import { LIBELLES_NIVEAU, libelleNiveau } from "../../lib/partage/niveaux";
+import { jourLisible } from "../../lib/dates";
 
 const NOM_MAX = 120;
 
@@ -146,7 +147,7 @@ export default function EcranPartages() {
                 </div>
                 <p className="partage-detail">
                   Jusqu'au niveau <strong>{p.plafond}</strong>, sur {p.portee}
-                  {p.expireLe ? ` · expire le ${p.expireLe}` : " · sans expiration"}
+                  {p.expireLe ? ` · expire le ${jourLisible(p.expireLe)}` : " · sans expiration"}
                 </p>
                 {p.actif && <input className="partage-lien" type="text" readOnly value={p.lien} />}
                 <div className="partage-actions">
