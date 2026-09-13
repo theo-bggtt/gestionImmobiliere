@@ -5,7 +5,7 @@
 // réel de `/p/:jeton`, avec la ligne `partage` réelle, et rend `PagePartage`,
 // le composant réel. Un aperçu qui reconstruirait l'écran à sa façon finirait
 // par diverger de la vraie page, et c'est le jour de cette divergence qu'on
-// enverrait le mauvais lien. `tests/partage/apercu.test.ts` compare les
+// enverrait le mauvais lien. `tests/partage/routes.test.ts` compare les
 // données des deux loaders plutôt que de croire ce commentaire.
 import { Link, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
