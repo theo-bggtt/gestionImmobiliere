@@ -79,7 +79,7 @@
 
 ```bash
 cp .env.example .env
-# éditer .env : POSTGRES_PASSWORD et SESSION_SECRET (openssl rand -base64 48), et DOMAINE
+# éditer .env : POSTGRES_PASSWORD et SESSION_SECRET (openssl rand -hex 32), et DOMAINE
 docker compose up
 ```
 
@@ -171,9 +171,11 @@ Sur le Pi, avec Docker et Docker Compose installés et le service Docker activé
 ```bash
 git clone https://github.com/theo-bggtt/gestionImmobiliere.git && cd gestionImmobiliere
 cp .env.example .env
-# POSTGRES_PASSWORD et SESSION_SECRET : générés ici, jamais recopiés d'ailleurs
-sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -base64 48)|" .env
-sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=$(openssl rand -base64 48)|" .env
+# POSTGRES_PASSWORD et SESSION_SECRET : générés ici, jamais recopiés d'ailleurs.
+# Hexadécimal, pas base64 : le mot de passe est interpolé dans la DATABASE_URL
+# que le compose donne à l'application, et un `/` y casse l'analyse de l'URL.
+sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -hex 32)|" .env
+sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=$(openssl rand -hex 32)|" .env
 # DOMAINE : le nom qui pointe sur l'adresse publique du Pi (A/AAAA, ou DNS dynamique)
 docker compose up -d --build
 docker compose logs -f app caddy       # « Migrations appliquées », puis le certificat obtenu
