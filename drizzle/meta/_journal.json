@@ -71,6 +71,13 @@
       "when": 1788637361149,
       "tag": "0009_zone_geom_contour",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789228431549,
+      "tag": "0010_type_niveau_suggere",
+      "breakpoints": true
     }
   ]
 }

@@ -17,6 +17,7 @@ import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
 import { chargerContenuPartage } from "../../lib/partage/contenu.server";
 import { partageActif } from "../../lib/partage/partage.server";
 import { libelleNiveau } from "../../lib/partage/niveaux";
+import { compterObjetsAuDessusDuPlafond } from "../../lib/partage/niveaux.server";
 import { PagePartage, PartageInactif } from "../../components/partage/PagePartage";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -30,8 +31,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   const donnees = await chargerContenuPartage(p, propriete.nom, new URL(request.url));
+  // Compté ICI, par le loader de l'aperçu, et jamais par `chargerContenuPartage`
+  // ni rendu par `PagePartage` : c'est le nombre d'objets que ce lien ne voit
+  // PAS, une donnée du propriétaire. `tests/partage/routes.test.ts` compare les
+  // deux loaders champ par champ, et c'est exactement ce qu'il protège.
+  const auDessus = await compterObjetsAuDessusDuPlafond(p);
   return {
     donnees,
+    auDessus,
+    proprieteId: propriete.id,
     retour: `/proprietes/${propriete.id}/partages`,
     jeton: p.jeton,
     partageNom: p.nom,
@@ -41,7 +49,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function EcranApercu() {
-  const { donnees, retour, jeton, partageNom, plafond, actif } = useLoaderData<typeof loader>();
+  const { donnees, auDessus, retour, jeton, partageNom, plafond, actif, proprieteId } =
+    useLoaderData<typeof loader>();
+  // Une seule zone concernée : on sait où aller la corriger. Plusieurs : on le
+  // dit sans choisir, l'écran des objets les montre toutes avec leur niveau.
+  const zoneUnique = auDessus.zones.length === 1 ? auDessus.zones[0] : null;
 
   return (
     <div>
@@ -49,6 +61,20 @@ export default function EcranApercu() {
         <strong>Prévisualisation</strong> — « {partageNom} », jusqu'au niveau {plafond}.
         {!actif && " Ce lien n'est plus actif : le destinataire voit la page ci-dessous."}
         <Link to={retour}>Retour aux partages</Link>
+        {auDessus.total > 0 && (
+          <p className="apercu-au-dessus">
+            {auDessus.total} objet(s) de cette propriété sont au-dessus du plafond de ce lien
+            {zoneUnique ? (
+              <>
+                , tous dans{" "}
+                <Link to={`/proprietes/${proprieteId}/zones/${zoneUnique.id}/modifier`}>{zoneUnique.nom}</Link>
+              </>
+            ) : (
+              <>, répartis sur {auDessus.zones.length} zones</>
+            )}
+            . C'est leur niveau qu'il faut corriger, pas le plafond de ce lien.
+          </p>
+        )}
       </div>
 
       {actif ? <PagePartage donnees={donnees} jeton={jeton} /> : <PartageInactif />}

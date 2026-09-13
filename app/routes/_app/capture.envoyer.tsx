@@ -55,6 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   let zoneId: number;
   let typeIdRetenu = 0;
   let nomRetenu = "";
+  let niveauRetenu = 3;
 
   if (form.get("cibleGenre") === "element") {
     const [cible] = await db
@@ -72,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (!zoneCible) return erreur("Zone invalide.");
 
     const [type] = await db
-      .select({ id: typeElement.id, nom: typeElement.nom })
+      .select({ id: typeElement.id, nom: typeElement.nom, niveauSuggere: typeElement.niveauSuggere })
       .from(typeElement)
       .where(
         and(
@@ -84,6 +85,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     zoneId = zoneCible.id;
     typeIdRetenu = type.id;
+    // Le niveau se dérive du TYPE rechargé, jamais d'un champ du formulaire :
+    // la boîte d'envoi est de la donnée client, et un `niveau` qui en sortirait
+    // serait un choix de visibilité fait par le navigateur. Même raisonnement
+    // que le nom, régénéré ici plutôt que cru. Rien n'est demandé de plus à
+    // l'écran de capture (règle non négociable #8, les 30 secondes).
+    niveauRetenu = type.niveauSuggere;
     // Le nom proposé par le client peut avoir été écrasé par l'utilisateur ;
     // s'il est vide, on le regénère ici plutôt que de faire confiance.
     nomRetenu = String(form.get("nom") ?? "").trim().slice(0, NOM_MAX) || `${type.nom} — ${zoneCible.nom}`;
@@ -99,10 +106,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       let elementId = elementExistantId;
       if (elementId === null) {
         // `details` reste vide : aucun champ du type n'est demandé à la
-        // capture (règle non négociable #7 de l'étape). Niveau 3 = privé.
+        // capture (règle non négociable #7 de l'étape). Le niveau vient du
+        // type (3 par défaut, c'est-à-dire privé) et se corrige sur la fiche.
         const [cree] = await tx
           .insert(element)
-          .values({ proprieteId: propriete.id, nom: nomRetenu, typeId: typeIdRetenu, zoneId, niveau: 3 })
+          .values({ proprieteId: propriete.id, nom: nomRetenu, typeId: typeIdRetenu, zoneId, niveau: niveauRetenu })
           .returning({ id: element.id });
         elementId = cree.id;
       }
@@ -116,6 +124,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
           taille: traitee.original.byteLength,
           datePrise,
           zoneId,
+          // `fichier.niveau` reste à 3 et ne suit PAS le type : le droit de
+          // lire une photo vient de la fiche qui la porte, jamais de cette
+          // colonne, que les trois droits nommés ignorent délibérément.
           niveau: 3,
           exifEfface: true,
           captureId,

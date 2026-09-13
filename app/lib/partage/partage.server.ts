@@ -34,6 +34,16 @@ export function porteeDuPartage(p: Partage): Portee {
 export const partageActif = (p: Partage, maintenant = new Date()) =>
   p.revoqueLe === null && (p.expireLe === null || p.expireLe > maintenant);
 
+/**
+ * Les liens encore ouverts d'une propriété. Le prédicat d'activité reste
+ * `partageActif`, en JavaScript : une seconde écriture en SQL de « ni révoqué
+ * ni expiré » dériverait de celle-ci au premier changement.
+ */
+export async function chargerPartagesActifs(proprieteId: number): Promise<Partage[]> {
+  const lignes = await db.select().from(partage).where(eq(partage.proprieteId, proprieteId));
+  return lignes.filter((p) => partageActif(p));
+}
+
 export type EtatPartage =
   | { statut: "actif"; partage: Partage; proprieteNom: string }
   | { statut: "inactif" };
