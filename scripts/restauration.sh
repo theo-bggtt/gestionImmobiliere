@@ -17,16 +17,14 @@ cd "$(dirname "$0")/.."
 
 [ $# -eq 1 ] || { echo "usage : $0 <horodatage>  (ex. 20260909-030000)" >&2; exit 2; }
 
-# .env ne fournit que ce que l'environnement ne dit pas déjà : la même
-# priorité que docker compose, et ce qui permet de restaurer dans une AUTRE
-# base en passant DATABASE_URL sur la ligne de commande.
-if [ -f .env ]; then
-  while IFS= read -r ligne || [ -n "$ligne" ]; do
-    case "$ligne" in ''|'#'*) continue ;; esac
-    nom="${ligne%%=*}"
-    if eval "[ -z \"\${$nom+x}\" ]"; then export "$ligne"; fi
-  done < .env
-fi
+# `.env` ne fournit que ce que l'environnement ne dit pas déjà, et SEULEMENT
+# les variables listées ici. Ce script démarre `postgres` sur un volume VIDE :
+# un `POSTGRES_PASSWORD` exporté d'ici et lu autrement que par compose fixerait
+# le mot de passe du rôle sur une valeur qu'aucun `docker compose up` ultérieur
+# ne présenterait. Il n'est donc plus lu du tout, pas plus que `SESSION_SECRET`.
+# Voir `scripts/lire-env.sh`, issue #35.
+. ./scripts/lire-env.sh
+lire_env "SAUVEGARDES DATABASE_URL STOCKAGE_RACINE"
 
 DOSSIER="${SAUVEGARDES:-./sauvegardes}"
 BASE="$DOSSIER/$1.base.dump"
