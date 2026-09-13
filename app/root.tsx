@@ -1,5 +1,5 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteError, useRouteLoaderData } from "react-router";
-import type { LinksFunction, LoaderFunctionArgs } from "react-router";
+import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { documentSansScripts } from "./lib/partage/document";
 import { PageErreur, decrireErreur } from "./components/PageErreur";
 import feuilleDeStyle from "./styles/app.css?url";
@@ -12,6 +12,27 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: feuilleDeStyle },
   { rel: "icon", href: "/icones/icone-192.png", type: "image/png" },
 ];
+
+/**
+ * Le titre par défaut du document, et la seule chose que la racine dise
+ * d'elle-même.
+ *
+ * Il vivait en dur dans le `<head>`, APRÈS `<Meta />` — donc il gagnait, et
+ * aucune route ne pouvait donner le sien. Personne ne l'avait vu parce
+ * qu'aucune route n'en exportait : les seuls `meta` du dépôt étaient ceux de
+ * `_partage`, qui ne portaient que `robots`.
+ *
+ * Le rendre ici plutôt que dans le `<head>` change la règle qui s'applique :
+ * dans React Router v7, le `meta` d'une route REMPLACE celui de son parent
+ * (vérifié dans le `Meta` de la version installée : `meta = [...routeMeta]`),
+ * et une route qui n'en exporte pas hérite de celui de son plus proche
+ * ancêtre. Tout l'arbre authentifié hérite donc de ce titre sans rien écrire,
+ * et une route qui veut le sien l'obtient — ce qui n'était pas le cas avant.
+ *
+ * Corollaire à connaître : une route qui exporte un `meta` perd TOUT ce qui
+ * précède, titre compris. C'est pourquoi `META_PARTAGE` porte les deux.
+ */
+export const meta: MetaFunction = () => [{ title: "gestionImmobiliere" }];
 
 // Le nonce de la politique de sécurité, généré par requête par le serveur
 // Express et remis ici par `getLoadContext`. C'est la seule donnée de ce
@@ -56,7 +77,6 @@ export default function App() {
             `style-src 'self'` et `script-src 'self'` couvrent une feuille et
             un `modulepreload` par leur URL. */}
         <Links nonce="" />
-        <title>gestionImmobiliere</title>
       </head>
       <body>
         <Outlet />

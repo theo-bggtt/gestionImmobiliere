@@ -28,4 +28,30 @@ export const ENTETES_PARTAGE = {
   "X-Robots-Tag": "noindex, nofollow",
 };
 
-export const META_PARTAGE = [{ name: "robots", content: "noindex, nofollow" }];
+/**
+ * Le titre d'une page de partage. NEUTRE et FIXE — jamais `propriete.nom`.
+ *
+ * Un titre d'onglet part dans toutes les captures d'écran, et `propriete.nom`
+ * est déjà le champ le plus exposé du modèle : rendu sans filtrage en `<h1>`,
+ * plus exposé que `plan.nom` que `etiquettePlan`, lui, filtre. Ce qui n'est
+ * pas dérivé de la base ne peut pas en divulguer.
+ *
+ * Le même pour les quatre routes, et pas un par écran : « fixe » est la
+ * propriété qui se vérifie, « choisi avec soin route par route » ne l'est pas.
+ */
+export const TITRE_PARTAGE = "Informations partagées";
+
+/**
+ * Ce qu'une page de partage dit au navigateur d'elle-même.
+ *
+ * Le titre ET `robots` dans le MÊME tableau, délibérément : dans React Router
+ * v7 le `meta` d'une route remplace celui de son parent au lieu de s'y
+ * ajouter, donc une route de `/p/` qui exporte celui-ci perd le titre par
+ * défaut de `root.tsx`. Les porter ensemble fait qu'on ne peut pas en oublier
+ * un — ni le titre, qui laisserait la page sans titre du tout, ni `robots`,
+ * qui laisserait un jeton entrer dans un index de moteur de recherche.
+ */
+export const META_PARTAGE = [
+  { title: TITRE_PARTAGE },
+  { name: "robots", content: "noindex, nofollow" },
+];
