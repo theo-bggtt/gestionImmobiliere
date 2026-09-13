@@ -16,6 +16,7 @@ import { BarreRecherche, useAntiRebond } from "../../components/recherche/BarreR
 import { ListeResultats } from "../../components/recherche/ListeResultats";
 import { GrilleZones } from "../../components/recherche/GrilleZones";
 import { liensPropriete } from "../../components/recherche/liens";
+import { jourLisible } from "../../lib/dates";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
@@ -144,7 +145,13 @@ function Echeances({ echeances }: { echeances: GarantieProprietaire[] }) {
       <ul>
         {echeances.map((g) => (
           <li key={g.id}>
-            <Link to={`garanties/${g.id}/modifier`}>{g.fin}</Link>
+            {/* `chargerEcheances` filtre `fin IS NOT NULL` : une garantie sans
+                terme connu n'est pas une échéance. Le type est celui de la
+                liste d'un objet, où le cas existe — d'où ce garde, qui ne se
+                déclenche pas ici. */}
+            <Link to={`garanties/${g.id}/modifier`}>
+              {g.fin ? jourLisible(g.fin) : "Sans terme connu"}
+            </Link>
             {g.expiree && <span className="garantie-expiree"> · expirée</span>}
             <span className="chrono-objet-zone">
               {" · "}
