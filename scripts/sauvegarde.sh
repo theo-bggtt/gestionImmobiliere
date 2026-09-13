@@ -27,16 +27,13 @@ umask 077
 
 cd "$(dirname "$0")/.."
 
-# .env ne fournit que ce que l'environnement ne dit pas déjà : la même
-# priorité que docker compose, et ce qui permet de restaurer dans une AUTRE
-# base en passant DATABASE_URL sur la ligne de commande.
-if [ -f .env ]; then
-  while IFS= read -r ligne || [ -n "$ligne" ]; do
-    case "$ligne" in ''|'#'*) continue ;; esac
-    nom="${ligne%%=*}"
-    if eval "[ -z \"\${$nom+x}\" ]"; then export "$ligne"; fi
-  done < .env
-fi
+# `.env` ne fournit que ce que l'environnement ne dit pas déjà, et SEULEMENT
+# les variables listées ici : ce script démarre des conteneurs, et tout ce
+# qu'il exporte remplace pour eux ce que compose aurait lu. `POSTGRES_USER` et
+# `POSTGRES_DB` n'y sont pas — ils ne sont lus que DANS le conteneur, par le
+# `sh -c` en quotes simples plus bas. Voir `scripts/lire-env.sh`, issue #35.
+. ./scripts/lire-env.sh
+lire_env "SAUVEGARDES RETENTION_JOURS SAUVEGARDE_DESTINATION DATABASE_URL STOCKAGE_RACINE"
 
 DOSSIER="${SAUVEGARDES:-./sauvegardes}"
 RETENTION_JOURS="${RETENTION_JOURS:-14}"
