@@ -16,11 +16,29 @@ import { cleDeFrein, creerLimiteur } from "./limiteur.js";
 /** Un envoi légitime est une photo de capture (≤ 15 Mo, déjà compressée par
  *  le navigateur) ou l'image d'un plan (≤ 25 Mo). La route vérifie ces bornes
  *  sur le fichier une fois le corps lu ; celle-ci refuse AVANT de lire, sur
- *  `Content-Length`, ce qu'aucune route n'accepterait de toute façon. Un
- *  corps en `Transfer-Encoding: chunked` sans longueur annoncée passe ici :
- *  c'est `request_body max_size` dans le Caddyfile qui le borne, et les
- *  navigateurs annoncent toujours la longueur d'un `FormData`. */
+ *  `Content-Length`, ce qu'aucune route n'accepterait de toute façon. Un corps
+ *  qui n'annonce pas sa longueur ne passe plus : il est refusé en 411, voir
+ *  `METHODES_A_CORPS`. */
 export const TAILLE_MAX_CORPS = 30 * 1024 * 1024;
+
+/** Les méthodes sur lesquelles un corps sans longueur annoncée est refusé.
+ *
+ *  Ce processus ne parle que HTTP/1.1 (`node:http`), et là un corps sans
+ *  longueur annoncée EST un `Transfer-Encoding: chunked` : sans l'un ni
+ *  l'autre en-tête, la requête n'a pas de corps du tout — vérifié au socket,
+ *  les octets qui suivent sont ignorés par Node. Tester `transfer-encoding`
+ *  est donc ici le critère exact, sans faux positif : un POST sans corps
+ *  passe, un envoi annoncé passe.
+ *
+ *  Caddy, lui, teste l'absence de `Content-Length` — il termine HTTP/2, où
+ *  `Transfer-Encoding` n'existe pas. Les deux critères disent la même chose
+ *  sur le protocole que chacun voit, et le Caddyfile porte la même remarque.
+ *
+ *  Pourquoi refuser ici aussi, alors que Caddy est devant : c'est la seule
+ *  borne qui vaille quand on ne l'est pas — réseau local, `npm run dev`, port
+ *  publié par erreur, autre conteneur du même réseau. Même raisonnement que
+ *  le 413 plus bas, et c'est celle-ci que la suite peut éprouver. */
+export const METHODES_A_CORPS = new Set(["POST", "PUT", "PATCH"]);
 
 /**
  * Les limites par défaut. `/p/` compte les pages ET les images d'un lien :
@@ -223,6 +241,16 @@ export function creerApplication({
   // vaille quand on n'est pas derrière lui : réseau local, port publié par
   // erreur, autre conteneur du même réseau.
   app.use((req, res, next) => {
+    // Un corps sans longueur annoncée n'est bornable par personne : ni par
+    // celui-ci, qui n'a rien à comparer, ni par `request_body max_size` de
+    // Caddy quand aucune route ne lit le corps. Il est donc refusé, et non
+    // laissé passer avec une note dans le README (issue #33).
+    if (METHODES_A_CORPS.has(req.method) && req.headers["transfer-encoding"] !== undefined) {
+      res.on("finish", () => req.destroy());
+      res.status(411).type("text/plain").send("Longueur de l'envoi non annoncée.");
+      return;
+    }
+
     const longueur = Number(req.headers["content-length"]);
     if (Number.isFinite(longueur) && longueur > tailleMaxCorps) {
       res.on("finish", () => req.destroy());
