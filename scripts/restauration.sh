@@ -4,10 +4,10 @@
 # déjà des tables : restaurer par-dessus mélangerait deux maisons, et une
 # base à demi restaurée est pire qu'une base absente.
 #
-#   ./scripts/restauration.sh 20260909-030000                # sur le Pi
+#   ./scripts/restauration.sh 20260909-030000                # sur le VPS
 #   SANS_DOCKER=1 ./scripts/restauration.sh 20260909-030000  # pg_restore local
 #
-# Sur le Pi, la base vide s'obtient en repartant du volume :
+# Sur le VPS, la base vide s'obtient en repartant du volume :
 #   docker compose down && docker volume rm <projet>_postgres_data
 # puis ce script démarre postgres, restaure, démarre l'application (ses
 # migrations trouvent la table de suivi restaurée et ne font rien) et

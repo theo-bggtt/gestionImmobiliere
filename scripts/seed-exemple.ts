@@ -45,13 +45,14 @@ async function refuserSiBaseReelle(): Promise<string | null> {
   // passer le cas exact qui fait le plus de dégâts : une base MIGRÉE et sans
   // aucun compte, `NODE_ENV` non défini. C'est l'état d'une instance neuve
   // pendant la fenêtre où les ports sont ouverts et le propriétaire pas encore
-  // inscrit — et un `npm run seed:exemple` lancé depuis le shell du Pi à ce
-  // moment-là crée `demo@…/demo1234`, identifiants PUBLIÉS DANS LE README,
+  // inscrit — et un `npm run seed:exemple` lancé depuis un shell SUR LA
+  // MACHINE à ce moment-là crée `demo@…/demo1234`, identifiants PUBLIÉS,
   // comme PREMIER compte de l'instance. Ça referme l'inscription contre le
   // propriétaire et laisse le seul compte à qui sait lire le dépôt.
   //
   // La décision #132 écartait ce cas en disant que le 5432 ne quitte pas la
-  // boucle locale : vrai depuis un autre poste, faux depuis le Pi lui-même.
+  // boucle locale : vrai depuis un autre poste, faux depuis la machine
+  // elle-même — et un VPS ne s'administre QUE par un shell dessus.
   // On exige donc un geste explicite plutôt qu'une absence de signal.
   const [migration] = await db
     .select({ hash: sql<string>`hash` })

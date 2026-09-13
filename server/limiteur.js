@@ -7,10 +7,10 @@
 //
 // Pourquoi pas `express-rate-limit` : il ferait exactement ceci (un Map en
 // mémoire par défaut) pour une dépendance de plus, et son magasin mémoire
-// n'est pas plus juste qu'un compteur par fenêtre. Ce qui compte pour un
-// Raspberry Pi exposé n'est pas la finesse du lissage, c'est qu'un client ne
-// puisse pas le tenir occupé, et qu'un processus unique n'ait pas besoin
-// d'un magasin partagé.
+// n'est pas plus juste qu'un compteur par fenêtre. Ce qui compte pour une
+// machine exposée sur une adresse publique n'est pas la finesse du lissage,
+// c'est qu'un client ne puisse pas la tenir occupée, et qu'un processus
+// unique n'ait pas besoin d'un magasin partagé.
 
 /**
  * Ce qui compte comme « le même client » pour un compteur.
@@ -112,7 +112,7 @@ export function creerLimiteur({ fenetreMs, maximum, clesMax = 10_000, maintenant
       c.nombre += 1;
 
       // Un balayage depuis des milliers d'adresses ne doit pas remplir la
-      // mémoire du Pi : au-delà de la borne, les fenêtres les plus anciennes
+      // mémoire de la machine : au-delà de la borne, les plus anciennes
       // partent. Elles se rouvrent si leur adresse revient — c'est une perte
       // de mémoire du limiteur, pas une ouverture : la fenêtre repart à zéro
       // pour un client qui n'avait de toute façon plus de compteur récent.

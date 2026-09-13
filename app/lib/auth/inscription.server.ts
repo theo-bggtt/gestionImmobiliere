@@ -1,7 +1,7 @@
 // app/lib/auth/inscription.server.ts
 // L'inscription est fermée dès qu'un compte existe. C'est un produit à
 // propriétaire unique : `/inscription` sur Internet sans cette porte est un
-// hébergement de photos ouvert à tous, sur la carte SD qui porte la maison
+// hébergement de photos ouvert à tous, sur le disque qui porte la maison
 // (issue #26). Le premier compte s'inscrit librement — c'est le démarrage —
 // et les suivants demandent une décision explicite du propriétaire :
 // `AUTORISER_INSCRIPTION=1` dans l'environnement, le temps de créer le
