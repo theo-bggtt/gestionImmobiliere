@@ -48,7 +48,7 @@ describe("idempotence des seeds", () => {
     // Du vocabulaire de catalogue : rafraîchi, comme les alias. Un type système
     // n'est pas éditable, personne n'a donc rien à écraser ici — et la
     // correction du propriétaire vit sur la fiche, pas sur le type.
-    expect(vanne.niveauSuggere).toBe(2);
+    expect(vanne.niveauSuggere).toBe(1);
     expect(vanne.alias).toContain("robinet");
     // `champs` reste intact : un champ retiré du catalogue doit être masqué,
     // jamais effacé (règle non négociable #5).
