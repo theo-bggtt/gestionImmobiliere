@@ -50,18 +50,18 @@ export default function Confidentialite() {
 
       <h2>Ce que l'application refuse de stocker</h2>
       <p>
-        Aucun mot de passe de vos appareils, aucun code de portail ou d'alarme, aucun numéro de
-        contrat d'assurance, aucune coordonnée bancaire. Ce n'est pas un coffre-fort, et un coffre-fort
-        qui ne dit pas son nom est pire qu'un carnet. Les mots de passe des comptes, eux, ne sont pas
-        stockés : seule une empreinte qui ne permet pas de les retrouver l'est.
+        Aucun mot de passe de vos appareils, aucun code de portail ou d'alarme, aucune combinaison de
+        coffre, aucun emplacement de clé, aucune coordonnée bancaire. Ce n'est pas un coffre-fort, et
+        un coffre-fort qui ne dit pas son nom est pire qu'un carnet. Les mots de passe des comptes,
+        eux, ne sont pas stockés : seule une empreinte qui ne permet pas de les retrouver l'est.
       </p>
 
       <h2>Ce qui ne sort jamais d'un lien de partage</h2>
       <p>
-        Le coût d'une intervention. Le téléphone, l'adresse et les notes concernant un artisan. Les
-        documents de garantie et de contrat. Le nom privé que vous donnez à un plan ou à un lien. Ces
-        champs ne sont pas masqués à l'affichage : ils ne sont pas chargés du tout, et le code qui
-        tenterait de les servir ne compilerait pas.
+        Le coût d'une intervention. Le téléphone, l'adresse et les notes concernant un artisan. La
+        référence d'une garantie, son numéro de contrat, et le document qui va avec. Le nom privé que
+        vous donnez à un plan ou à un lien. Ces champs ne sont pas masqués à l'affichage : ils ne sont
+        pas chargés du tout, et le code qui tenterait de les servir ne compilerait pas.
       </p>
       <p>
         Une page de partage ne charge par ailleurs aucun script, ne pose aucun traceur, et demande

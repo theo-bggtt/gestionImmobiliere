@@ -32,9 +32,11 @@ export default function Fonctionnalites() {
         là. Le reste des champs attend.
       </p>
       <p>
-        Une saisie interrompue n'est pas perdue : elle part quand le réseau revient. Une cave, un
-        garage en sous-sol, un fond de jardin sont exactement les endroits où l'on a besoin de
-        consigner quelque chose, et exactement ceux où le réseau manque.
+        Une cave, un garage en sous-sol, un fond de jardin sont exactement les endroits où l'on a
+        besoin de consigner quelque chose, et exactement ceux où le réseau manque. La capture est
+        conçue pour ça : ce qui est photographié sans réseau attend sur le téléphone, et part quand il
+        revient. C'est le dessein, constaté au navigateur ; tant qu'il n'a pas été éprouvé sur un vrai
+        téléphone, dans une vraie cave, cette page ne le promet pas.
       </p>
 
       <h2>Retrouver</h2>
