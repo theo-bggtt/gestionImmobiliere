@@ -17,6 +17,13 @@ export const champ = (partial: Omit<ChampDefinition, "niveauMin" | "obligatoire"
   ...partial,
 });
 
+// `niveauSuggere` répond à « quelqu'un peut-il avoir besoin de TROUVER cet
+// objet ? », et à rien d'autre. Ce qu'on en APPREND est décidé champ par champ
+// par `niveauMin` : le calibre d'un disjoncteur, ce que coupe une vanne, le
+// nombre de disjoncteurs d'un tableau, le diamètre d'un siphon sont en 2, donc
+// une fiche en usage ne laisse sortir aucune de ces valeurs. Confondre les deux
+// questions masque au locataire la vanne d'arrêt qu'il cherche à deux heures du
+// matin pour protéger un numéro de série qui, lui, est déjà protégé.
 export const CATALOGUE: Entree[] = [
   // ── Intérieur ──────────────────────────────────────────────────────
   { nom: "Prise 230V", icone: "power-plug", alias: ["prise", "prise électrique", "prise de courant"], niveauSuggere: 1, champs: [
@@ -33,12 +40,12 @@ export const CATALOGUE: Entree[] = [
     champ({ cle: "type_interrupteur", label: "Type", genre: "choix", options: ["simple", "va-et-vient", "variateur", "détecteur"] }),
     champ({ cle: "commande", label: "Commande quoi", genre: "texte" }),
   ]},
-  { nom: "Tableau électrique", icone: "layout-grid", alias: ["tableau électrique", "panneau électrique", "disjoncteur général", "coffret électrique"], niveauSuggere: 2, champs: [
+  { nom: "Tableau électrique", icone: "layout-grid", alias: ["tableau électrique", "panneau électrique", "disjoncteur général", "coffret électrique"], niveauSuggere: 1, champs: [
     champ({ cle: "marque", label: "Marque", genre: "texte" }),
     champ({ cle: "nombre_disjoncteurs", label: "Nombre de disjoncteurs", genre: "nombre", niveauMin: 2 }),
     champ({ cle: "date_installation", label: "Date d'installation", genre: "date" }),
   ]},
-  { nom: "Disjoncteur", icone: "circle-power", alias: ["disjoncteur", "fusible", "coupe-circuit"], niveauSuggere: 2, champs: [
+  { nom: "Disjoncteur", icone: "circle-power", alias: ["disjoncteur", "fusible", "coupe-circuit"], niveauSuggere: 1, champs: [
     champ({ cle: "calibre", label: "Calibre", genre: "nombre", unite: "A", niveauMin: 2 }),
     champ({ cle: "type", label: "Type", genre: "choix", niveauMin: 2, options: ["différentiel", "magnétothermique"] }),
     champ({ cle: "circuit_protege", label: "Circuit protégé", genre: "texte" }),
@@ -48,7 +55,7 @@ export const CATALOGUE: Entree[] = [
     champ({ cle: "puissance", label: "Puissance", genre: "nombre", unite: "W" }),
     champ({ cle: "commande", label: "Commandé par", genre: "texte" }),
   ]},
-  { nom: "Vanne d'arrêt", icone: "droplet", alias: ["robinet", "arrêt d'eau", "stop-eau", "vanne"], niveauSuggere: 2, champs: [
+  { nom: "Vanne d'arrêt", icone: "droplet", alias: ["robinet", "arrêt d'eau", "stop-eau", "vanne"], niveauSuggere: 1, champs: [
     champ({ cle: "reseau", label: "Réseau", genre: "choix", options: ["eau froide", "eau chaude", "gaz"] }),
     champ({ cle: "coupe_quoi", label: "Coupe quoi", genre: "texte", niveauMin: 2 }),
     champ({ cle: "notes", label: "Notes", genre: "texte" }),
@@ -57,7 +64,7 @@ export const CATALOGUE: Entree[] = [
     champ({ cle: "type", label: "Type", genre: "choix", options: ["mitigeur", "mélangeur", "simple"] }),
     champ({ cle: "notes", label: "Notes", genre: "texte" }),
   ]},
-  { nom: "Siphon", icone: "droplet", alias: ["bonde", "évacuation", "siphon de sol"], niveauSuggere: 2, champs: [
+  { nom: "Siphon", icone: "droplet", alias: ["bonde", "évacuation", "siphon de sol"], niveauSuggere: 1, champs: [
     champ({ cle: "emplacement", label: "Emplacement", genre: "texte" }),
     champ({ cle: "diametre", label: "Diamètre", genre: "nombre", unite: "mm", niveauMin: 2 }),
   ]},
