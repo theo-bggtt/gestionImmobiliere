@@ -44,7 +44,7 @@ export const METHODES_A_CORPS = new Set(["POST", "PUT", "PATCH"]);
  * Les limites par défaut. `/p/` compte les pages ET les images d'un lien :
  * une page de partage en charge une vingtaine, et une famille derrière la
  * même adresse NAT partage le compteur — la borne est large pour eux, et
- * reste une borne pour qui tient le Pi occupé. La connexion et l'inscription
+ * reste une borne pour qui tient la machine occupée. La connexion et l'inscription
  * partagent un compteur serré : chaque essai coûte un argon2, c'est-à-dire
  * un cœur pendant une fraction de seconde, et un formulaire public sans
  * frein devant est une attaque à quatre cœurs.
@@ -234,7 +234,7 @@ export function creerApplication({
   // restant au lieu d'interrompre la connexion. Mesuré — un `Content-Length`
   // de 200 Mo contre une borne de 1 000 octets rend bien un 413, puis
   // 8 388 608 octets sont acceptés, socket toujours ouvert. Le refus
-  // protégeait donc les routes, pas la bande passante ni la carte SD.
+  // protégeait donc les routes, pas la bande passante ni le disque.
   //
   // `req.destroy()` une fois la réponse partie ferme ça. Caddy borne déjà le
   // corps (`request_body max_size`), mais cette borne-ci est la seule qui

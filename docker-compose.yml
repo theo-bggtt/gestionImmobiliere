@@ -3,7 +3,7 @@
 # que sur le réseau interne du compose. Voir README, « Mise en service ».
 
 x-journal: &journal
-  # Ce qui remplit une carte SD, c'est un journal sans borne : trois fichiers
+  # Ce qui remplit un disque, c'est un journal sans borne : trois fichiers
   # de 10 Mo par service, puis rotation. `docker compose logs -f` les lit.
   logging:
     driver: json-file
@@ -25,6 +25,14 @@ services:
     # Boucle locale de la machine seulement, jamais le réseau : le
     # développement hors conteneur s'y connecte, et `seed:exemple` ne peut
     # pas être lancé contre cette base depuis un autre poste.
+    #
+    # CE PRÉFIXE EST LA SEULE CHOSE QUI TIENT LA BASE HORS D'INTERNET, et la
+    # cible est un VPS à adresse publique (décision #142). Un pare-feu ne
+    # suffit pas : Docker écrit ses propres règles dans la chaîne iptables
+    # `DOCKER`, traversée AVANT celles d'`ufw`, donc un port publié sur
+    # `0.0.0.0` reste joignable pendant qu'`ufw status` affiche « deny ».
+    # `tests/serveur/compose-ports.test.ts` relit ce fichier et échoue si un
+    # service autre que `caddy` publie ailleurs que sur la boucle locale.
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:

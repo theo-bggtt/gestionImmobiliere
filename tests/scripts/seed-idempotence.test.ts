@@ -78,8 +78,8 @@ describe("seed-exemple refuse une base réelle", () => {
     // Le trou que les deux premières gardes laissaient : `NODE_ENV` non défini
     // et pas de compte réel — c'est-à-dire l'état d'une instance NEUVE pendant
     // la fenêtre où les ports sont ouverts et le propriétaire pas encore
-    // inscrit. Un `npm run seed:exemple` lancé depuis le shell du Pi à ce
-    // moment-là y créait `demo@…/demo1234`, identifiants publiés dans le
+    // inscrit. Un `npm run seed:exemple` lancé depuis un shell sur la machine
+    // (le seul accès à un VPS) y créait `demo@…/demo1234`, publiés dans le
     // README, comme PREMIER compte de l'instance.
     executerScript("scripts/seed-catalogue.ts");
     expect(() => executerScript("scripts/seed-exemple.ts")).toThrow();

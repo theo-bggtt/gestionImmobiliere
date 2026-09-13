@@ -221,9 +221,21 @@ WHERE e.niveau <= :niveau_max
       balayage de toutes les colonnes de toutes les tables
 
 ### Étape 8 — Mise en service · hors plan initial
-> Une machine (Raspberry Pi 5, arm64), un `docker compose`, un proxy, des
-> sauvegardes. Pas de CI, pas de supervision, pas d'orchestration. Première
-> étape où la règle #9 porte sur des données réelles.
+> **La machine cible diverge de ce que cette étape avait écrit depuis le
+> 10 septembre 2026 : ce n'est plus un Raspberry Pi 5 chez le propriétaire,
+> c'est un VPS.** Une VM Linux chez un hébergeur, avec le même `docker
+> compose` et le même Caddy — pas un PaaS : le volume des photos et `pg_dump`
+> restent. Ce qui a changé n'est pas le mot : l'adresse est publique (tout
+> port publié est sur Internet, et Docker contourne `ufw`), une sauvegarde
+> qui reste sur la VM ne survit pas à la perte de la VM, et le build tourne
+> sur la machine qui sert l'application. Le raisonnement complet est dans la
+> décision #142 du README ; six décisions de cette étape y sont amendées en
+> place. Le fournisseur, l'offre et le pays ne sont pas choisis. Même forme
+> que la note d'ordre de l'étape 7 : ce que le plan voulait reste lisible.
+>
+> Une machine, un `docker compose`, un proxy, des sauvegardes. Pas de CI, pas
+> de supervision, pas d'orchestration. Première étape où la règle #9 porte sur
+> des données réelles.
 
 **Côté dépôt (PR de l'étape)**
 - [x] Caddy devant, TLS et renouvellement, HTTP→HTTPS ; `app` et `postgres`
@@ -238,15 +250,21 @@ WHERE e.niveau <= :niveau_max
 - [x] `seed:exemple` refusé en production et sur une base qui a un compte réel
 - [x] Inscription fermée au premier compte (#26)
 - [x] `sauvegarde.sh` + `restauration.sh`, restauration exécutée dans une base
-      vide (sans Docker ; sur le Pi, même procédure avec `docker compose exec`)
+      vide (sans Docker le 9 septembre, puis avec les vrais `docker compose
+      exec` le 12 ; reste à rejouer sur le VPS, et depuis la destination hors
+      machine)
 - [x] README : badge, introduction, « Mise en service », décisions #124–#133,
       limites connues
 
 **Côté machine cible (issue #25, à cocher après exécution)**
-- [ ] `docker compose up` sur arm64, migrations depuis une base vide
-- [ ] Certificat valide, renouvellement constaté, cookie `Secure` derrière le
-      proxy dans les en-têtes réels
-- [ ] Restauration sur le Pi
+- [ ] `docker compose up` sur le VPS, migrations depuis une base vide (l'amd64
+      est construit depuis le 12 septembre ; l'arm64 ne l'est pas, si l'offre
+      retenue en est)
+- [ ] SSH par clé, pare-feu, et 5432/3000 injoignables depuis l'extérieur —
+      constaté depuis le PC, pas déduit du compose
+- [ ] Certificat valide, renouvellement constaté, **HSTS** derrière le proxy
+      dans les en-têtes réels (le cookie `Secure`, lui, ne dit rien du proxy)
+- [ ] Restauration sur le VPS, et depuis une destination hors machine
 - [ ] La vraie maison : structure, objets réels, capture chronométrée sur
       téléphone (cave sans réseau comprise), lien ouvert hors du réseau local
 - [ ] Revue de fuite relue face à la vraie propriété, résultat dans la PR
@@ -262,6 +280,7 @@ WHERE e.niveau <= :niveau_max
 | Import IFC / DXF | 4 à 8 semaines | Si un jour on vend aux pros du bâtiment. |
 | Orthophotos swisstopo | ~1 semaine | Deux usages d'un coup. L'orthophoto **courante** sert de plan de situation pour les zones extérieures dès l'étape 4. Les orthophotos **historiques** (depuis 1979) remplacent l'idée d'archiver Google Maps, impossible en API et interdite par les CGU. Usage commercial autorisé, attribution `©swisstopo` obligatoire. |
 | Multi-logement (immeuble) | 3 à 5 semaines | **Décision non prise.** Le modèle gère plusieurs bâtiments et plusieurs niveaux, mais pas plusieurs *logements* indépendants dans un bâtiment, chacun avec son propriétaire ou son locataire. C'est un autre produit : parties communes, quotes-parts, plusieurs comptes par bâtiment. À trancher avant de démarcher des gérances. |
+| Construire l'image ailleurs que sur la VM | ~1 jour | Demanderait un registre d'images, donc une pièce de plus à tenir et un secret de plus. Aujourd'hui `git pull && docker compose up -d --build` compile sur le VPS : ~90 s à froid et de l'ordre de 0,5 Go de mémoire au pic (mesure du 12 septembre 2026, approximative — voir « Limites connues » du README). **Déclencheur : le jour où le build échoue sur la VM retenue**, faute de mémoire ou de temps. |
 | Rappel d'échéance de garantie par mail | ~1 jour | **Décidé le 4 septembre 2026 : rappel visuel seul pour l'instant.** Il n'y a ni SMTP, ni file, ni ordonnanceur ; un envoi voudrait soit un `setInterval` dans le process Express (qui meurt avec lui et double si on le réplique), soit un cron externe. Et la question n'est pas calendaire : personne ne se demande si la garantie de sa chaudière expire aujourd'hui, on se demande « est-ce encore sous garantie » devant la chaudière qui fuit, ce à quoi une pastille sur la fiche répond au bon moment. Le coût du report est quasi nul — « quelles garanties expirent dans N jours » est la même requête qu'un cron exécuterait. **Déclencheur : le jour où une échéance est ratée pour de bon.** Perte assumée en attendant : le cas « il reste trois mois, fais faire la révision gratuite » est sacrifié, puisqu'on découvre l'expiration en allant chercher, donc après la panne. |
 | Téléversement d'un champ de fiche de genre `fichier` | ~2 jours | Le genre existe dans la liste fermée depuis l'étape 0 et son champ est rendu avec une mention disant qu'il n'est pas construit. **Aucune étape ne le portait**, et il est resté tel quel au terme des huit — ce qui se téléverse aujourd'hui est la photo d'une capture, la photo d'un événement et l'image d'un plan, chacune par son propre chemin. Le construire voudrait dire un quatrième chemin d'écriture de `fichier`, plus une quatrième branche de droit sur la route à jeton, alors que le compte de droits nommés est tenu à **trois** depuis l'étape 5 et que c'est ce compte qui rend la revue de fuite lisible. Déclencheur : le jour où un type demande une pièce jointe que ni la fiche, ni l'événement, ni la garantie ne savent porter. |
 | Relations entre éléments | ~1 semaine | Table de liaison `element ↔ element` typée, pour répondre à « qu'est-ce que je coupe si je ferme cette vanne ». |
@@ -270,6 +289,7 @@ WHERE e.niveau <= :niveau_max
 ## À vérifier avant de s'appuyer dessus
 
 - ~~**Étendue exacte des attributs RegBL librement accessibles.**~~ **Vérifié le 3 septembre 2026**, voir `note-2026-09-03-regbl.md`. Réponse : gratuit, sans clé ni compte, usage commercial autorisé, attribution seulement recommandée (plus permissif que swisstopo) ; année de construction, nombre de niveaux, nombre de logements et agent énergétique du chauffage sont tous servis. Deux réserves qui portent sur l'écran, pas sur le droit : le service de recherche d'adresse **ne dit jamais « pas trouvé »** (il répond en `fuzzy` une adresse suisse plausible à une adresse parisienne), et `gastw` **ne compte pas les caves** — le sous-sol se demande au propriétaire, il ne se déduit pas.
+- **Hébergement en Suisse : ni décidé, ni écarté.** La cible est un VPS (décision #142) ; ni le fournisseur ni le pays ne sont choisis, et rien dans le dépôt n'en dépend. **Déclencheur : avant d'ouvrir l'inscription à un autre compte que celui du propriétaire** (#130) — tant que les seules données hébergées sont celles du propriétaire, la question ne regarde que lui. Aucune affirmation juridique n'est faite ici ni ailleurs dans le dépôt.
 - **Quotas iOS réels** sur les appareils visés, en conditions réelles avec des photos pleine résolution.
 - **Limites de débit swisstopo** si l'usage devient intensif : un contrat est requis au-delà d'un certain volume.
 

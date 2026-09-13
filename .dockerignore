@@ -6,7 +6,8 @@
 # à-dire les dumps de la base et les photos. L'image LIVRÉE n'en portait rien,
 # le stage final ne recopiant que `build`, `server`, `scripts` et `drizzle` :
 # mais les couches intermédiaires, elles, restent dans le cache du builder sur
-# le Pi, où `docker history` les lit. La règle « aucun secret dans le dépôt »
+# la machine qui construit — le VPS, puisque `docker compose up --build` y
+# compile —, où `docker history` les lit. La règle « aucun secret dans le dépôt »
 # de l'issue #25 vaut aussi pour ce qu'on tend au démon Docker.
 #
 # Écarter, c'est aussi accélérer : `node_modules/` local (réinstallé dans
