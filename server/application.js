@@ -129,12 +129,16 @@ const CSP_PARTAGE = [
  *  - `form-action 'self'` porte quelque chose ici : la liste d'attente est un
  *    formulaire natif en POST. Sur `/p/` il ne couvrait qu'un formulaire GET.
  *
- * Pas de `font-src` : le dépôt n'a aucun `@font-face`, tout est en polices
- * système. Pas de `connect-src` : sans script, rien ne peut émettre.
+ * `font-src 'self'` : la vitrine charge UNE police de titrage, depuis ce
+ * serveur (`public/polices/`), et c'est la seule origine admise. Aucune
+ * police chez un tiers : `/confidentialite` l'affirme, et une police chargée
+ * chez Google ferait mentir la page qui vend la confidentialité. Pas de
+ * `connect-src` : sans script, rien ne peut émettre.
  */
 const CSP_VITRINE = [
   "default-src 'none'",
   "style-src 'self'",
+  "font-src 'self'",
   "img-src 'self'",
   "form-action 'self'",
   "base-uri 'none'",

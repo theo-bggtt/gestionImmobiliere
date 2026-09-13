@@ -6,33 +6,66 @@
 
    Les variables de `:root` viennent d'`app.css`, qui est servie partout par
    `root.tsx` : la vitrine doit RESSEMBLER au produit, c'est la moitié de
-   l'intérêt d'une vitrine maison plutôt qu'un site à part.
+   l'intérêt d'une vitrine maison plutôt qu'un site à part. Même vert, même
+   papier, mêmes rayons. Ce qu'elle ajoute, c'est une voix : un titrage à
+   empattements, des grilles, un rythme de page de vente. Le corps du texte
+   reste en police système, comme l'application.
+
+   UNE SEULE police chargée, et depuis ce serveur : Fraunces, pour les titres
+   seulement. Latin seul (67 Ko), variable en graisse, OFL (la licence est à
+   côté du fichier). Elle ne vient pas d'un service tiers, et ce n'est pas un
+   détail : `/confidentialite` affirme qu'aucune police n'est chargée chez un
+   tiers, et `server/application.js` n'ouvre `font-src` qu'à `'self'`.
 
    Aucun attribut `style` en ligne nulle part dans cet arbre : sa politique de
-   sécurité n'a pas de `'unsafe-inline'`, contrairement à celle de `/p/` qui
-   en a besoin pour la géométrie des plans. */
+   sécurité n'a pas d'`'unsafe-inline'`, contrairement à celle de `/p/` qui
+   en a besoin pour la géométrie des plans. Le schéma de l'accueil est donc un
+   SVG dont chaque trait est une CLASSE, jamais un attribut `style`. */
 
-.v-corps {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 0 var(--gouttiere) 64px;
+@font-face {
+  font-family: "Fraunces";
+  src: url("/polices/fraunces-latin.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* ── En-tête et pied ──────────────────────────────────────────────── */
+:root {
+  --v-titrage: "Fraunces", Georgia, "Times New Roman", serif;
+  --v-largeur: 1080px;
+  /* L'accent dilué : fonds de zone du schéma, colonne gagnante d'un tableau.
+     En `rgba` sur la valeur d'`--accent` (#1f4f46) plutôt qu'en `color-mix`,
+     que les navigateurs d'il y a trois ans ne lisent pas. */
+  --v-teinte: rgba(31, 79, 70, 0.08);
+  --v-teinte-forte: rgba(31, 79, 70, 0.16);
+}
+
+/* ── Charpente ────────────────────────────────────────────────────── */
+
+.v-corps {
+  max-width: var(--v-largeur);
+  margin: 0 auto;
+  padding: 0 var(--gouttiere) 72px;
+}
 
 .v-tete {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px 20px;
-  max-width: 760px;
+  max-width: var(--v-largeur);
   margin: 0 auto;
-  padding: 14px var(--gouttiere);
+  padding: 16px var(--gouttiere);
 }
 .v-marque {
+  font-family: var(--v-titrage);
   font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
   text-decoration: none;
-  color: var(--texte);
+  color: var(--accent);
 }
 /* C'est la navigation qui pousse « Mon espace » à droite, et non une marge
    automatique sur la marque : une marge `auto` absorbe TOUT l'espace libre
@@ -46,106 +79,144 @@
   min-width: 0;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px 14px;
+  gap: 8px 18px;
   font-size: 0.92rem;
 }
-/* La page courante se marque par un soulignement et non par une graisse :
-   passer en gras ÉLARGIT le lien, donc la navigation, donc l'en-tête — et
-   « Mon espace » passait à la ligne sur les pages du menu et seulement sur
-   elles (mesuré : navigation à 533 px sur `/partage` contre 372 sur `/`).
-   Un marqueur d'état ne doit pas changer la mise en page. */
+.v-nav a {
+  color: var(--texte-doux);
+  text-decoration: none;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+}
+.v-nav a:hover { color: var(--texte); }
+/* La page courante se marque par un trait et non par une graisse : passer en
+   gras ÉLARGIT le lien, donc la navigation, donc l'en-tête, et « Mon espace »
+   passait à la ligne sur les pages du menu et seulement sur elles (mesuré :
+   navigation à 533 px sur `/partage` contre 372 sur `/`). Le trait est
+   réservé sur chaque lien, transparent, pour que l'état n'ait aucune largeur
+   à lui. */
 .v-nav a[aria-current="page"] {
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
   color: var(--texte);
+  border-bottom-color: var(--accent);
 }
 /* Sur un téléphone, l'en-tête passe à trois lignes : aligner à droite une
    navigation qui a déjà replié laisse « À propos » seul et décalé. Elle
    revient à gauche, sous la marque. */
 @media (max-width: 620px) {
-  .v-nav { justify-content: flex-start; }
+  .v-nav {
+    justify-content: flex-start;
+    /* Resserrée d'un cran pour que les quatre entrées tiennent sur une ligne
+       à 390 px (mesuré : « À propos » passait seul à la ligne, et l'en-tête
+       prenait quatre rangées). */
+    gap: 8px 14px;
+    font-size: 0.88rem;
+  }
 }
 
 .v-espace {
   border: 1px solid var(--accent);
   border-radius: var(--rayon);
-  padding: 7px 16px;
+  padding: 8px 16px;
   text-decoration: none;
   font-weight: 600;
   white-space: nowrap;
 }
+.v-espace:hover { background: var(--v-teinte); }
 
 .v-pied {
   border-top: 1px solid var(--trait);
-  margin-top: 56px;
-  padding: 24px var(--gouttiere) 40px;
+  margin-top: 72px;
+  padding: 28px var(--gouttiere) 44px;
   color: var(--texte-doux);
   font-size: 0.9rem;
+}
+.v-pied-int {
+  max-width: var(--v-largeur);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px 28px;
 }
 .v-pied-liens {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  max-width: 760px;
-  margin: 0 auto 10px;
 }
-.v-pied p { max-width: 760px; margin: 0 auto; }
+.v-pied p { margin: 0; }
 
 /* ── Titres et texte ──────────────────────────────────────────────── */
 
-.v-titre {
-  font-size: 2rem;
-  line-height: 1.2;
-  margin: 40px 0 16px;
-  letter-spacing: -0.01em;
+.v-surtitre {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--accent);
+  margin: 0 0 12px;
 }
+.v-titre {
+  font-family: var(--v-titrage);
+  font-weight: 500;
+  font-size: clamp(2.1rem, 1.2rem + 3.4vw, 3.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin: 0 0 20px;
+  max-width: 18ch;
+}
+/* Le mot qu'on souligne dans un titre : en vert, pas en italique. Le fichier
+   de police ne porte que le droit, et un italique synthétisé par le
+   navigateur est ce qui donne aux titres leur air de brouillon. */
+.v-titre em { font-style: normal; color: var(--accent); }
 .v-chapeau {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   line-height: 1.55;
   color: var(--texte-doux);
   margin: 0 0 28px;
-  max-width: 58ch;
+  max-width: 56ch;
 }
 .v-corps h2 {
-  font-size: 1.25rem;
-  margin: 40px 0 10px;
+  font-family: var(--v-titrage);
+  font-weight: 500;
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.2rem);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  margin: 0 0 12px;
 }
 .v-corps h3 {
-  font-size: 1rem;
-  margin: 24px 0 6px;
+  font-size: 1.05rem;
+  margin: 0 0 6px;
 }
-.v-corps p,
-.v-corps li { max-width: 68ch; }
-
-/* ── Blocs ────────────────────────────────────────────────────────── */
-
-.v-carte {
-  background: var(--surface);
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon);
-  padding: 20px;
+.v-intro {
+  font-size: 1.05rem;
+  color: var(--texte-doux);
+  margin: 0;
+  max-width: 60ch;
 }
-.v-grille {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  margin: 20px 0;
-  padding: 0;
-  list-style: none;
+/* Le lien qui clôt une section et mène à la page suivante. */
+.v-suite {
+  margin: 22px 0 0;
+  font-weight: 600;
 }
-.v-grille h3 { margin-top: 0; }
-.v-grille p { margin: 0; color: var(--texte-doux); }
 
-/* Le trait de couleur d'une audience : quatre lecteurs, quatre vues de la
-   même base. Une bordure, pas une icône — rien à télécharger. */
-.v-audience {
-  border-left: 3px solid var(--accent);
-  padding-left: 16px;
-  margin: 22px 0;
+.v-section { padding: 52px 0 8px; }
+.v-section-tete { max-width: 64ch; margin-bottom: 26px; }
+
+/* Les pages écrites (« À propos », « Vos données ») : une colonne de lecture,
+   même rythme de titres. */
+.v-prose { max-width: 720px; }
+.v-prose h2 { margin-top: 44px; }
+.v-prose p,
+.v-prose li { max-width: 68ch; }
+.v-prose p { line-height: 1.6; }
+
+.v-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
-.v-audience h3 { margin: 0 0 4px; }
-.v-audience p { margin: 0; color: var(--texte-doux); }
-
 .v-appel {
   display: inline-block;
   background: var(--accent);
@@ -157,6 +228,486 @@
   margin: 8px 0;
 }
 .v-appel:hover { background: var(--accent-clair); }
+.v-appel-second {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  color: var(--texte);
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: var(--rayon);
+  padding: 13px 22px;
+  margin: 8px 0;
+}
+.v-appel-second:hover { border-color: var(--accent); }
+
+/* ── L'entrée de page ─────────────────────────────────────────────── */
+
+.v-heros {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 32px 56px;
+  align-items: center;
+  padding: 48px 0 56px;
+}
+/* Le papier millimétré d'un plan, sous l'entrée seulement, qui s'efface vers
+   le bas. Un dégradé radial répété et non une image : rien à télécharger,
+   rien à autoriser dans la politique.
+
+   Il déborde de la gouttière exactement, et pas plus : à `-24px` sur une
+   gouttière de 16, il dépassait la page de 8 px sur téléphone, c'est-à-dire
+   un défilement horizontal que rien de visible n'expliquait (mesuré au
+   navigateur : `scrollWidth` à +8 sur les cinq pages, aucun élément plus
+   large que la fenêtre). Un pseudo-élément n'apparaît dans aucun
+   `querySelectorAll`, c'est ce qui le rend difficile à trouver. */
+.v-heros::before {
+  content: "";
+  position: absolute;
+  inset: -16px calc(var(--gouttiere) * -1) 0;
+  z-index: -1;
+  background-image: radial-gradient(var(--trait) 1.2px, transparent 1.3px);
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+}
+.v-heros-simple {
+  grid-template-columns: minmax(0, 1fr);
+  padding-bottom: 24px;
+}
+@media (max-width: 860px) {
+  .v-heros {
+    grid-template-columns: 1fr;
+    padding: 24px 0 40px;
+  }
+}
+
+/* Une seule apparition orchestrée au chargement, et rien d'autre qui bouge :
+   la vitrine n'a pas de script, donc tout ce qui s'anime est ici, et tout ce
+   qui s'anime respecte le réglage de mouvement réduit. */
+@media (prefers-reduced-motion: no-preference) {
+  .v-heros-texte > *,
+  .v-schema {
+    animation: v-apparition 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .v-heros-texte > :nth-child(2) { animation-delay: 0.08s; }
+  .v-heros-texte > :nth-child(3) { animation-delay: 0.16s; }
+  .v-heros-texte > :nth-child(4) { animation-delay: 0.24s; }
+  .v-schema { animation-delay: 0.3s; }
+}
+@keyframes v-apparition {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── Le schéma de l'accueil ───────────────────────────────────────── */
+
+/* Un plan abstrait, dessiné en SVG dans la page : trois zones, trois objets
+   repérés, une légende. Ce n'est la maison de personne. */
+.v-schema {
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  padding: 18px;
+  box-shadow: 0 28px 56px -36px rgba(31, 79, 70, 0.5);
+}
+.v-schema svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.v-schema-legende {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--texte-doux);
+}
+.v-schema-legende li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.v-schema-legende strong { color: var(--texte); font-weight: 600; }
+.v-pastille {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.s-terrain {
+  fill: var(--fond);
+  stroke: var(--texte-doux);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+.s-mur {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+.s-cloison {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.s-zone { fill: var(--v-teinte); }
+.s-etiquette {
+  font: 600 10.5px system-ui, -apple-system, "Segoe UI", sans-serif;
+  fill: var(--texte-doux);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.s-halo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+.s-point {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.s-num {
+  font: 700 11px system-ui, -apple-system, "Segoe UI", sans-serif;
+  fill: #fff;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* ── Blocs ────────────────────────────────────────────────────────── */
+
+.v-cartes {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.v-carte {
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  padding: 22px;
+}
+.v-carte h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+.v-carte p { margin: 0; color: var(--texte-doux); }
+.v-carte p + p { margin-top: 10px; }
+/* Les cartes de « Ce que ça fait » : deux paragraphes chacune, donc plus
+   larges, trois par rangée au bureau et une sur téléphone. */
+.v-cartes-larges { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.v-carte-jour {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+
+/* Les trois gestes, numérotés en grand. */
+.v-etapes {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+@media (max-width: 760px) {
+  .v-etapes { grid-template-columns: 1fr; }
+}
+.v-etape {
+  border-top: 2px solid var(--accent);
+  padding-top: 14px;
+}
+.v-etape-num {
+  font-family: var(--v-titrage);
+  font-weight: 300;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--accent);
+  margin: 0 0 10px;
+}
+.v-etape h3 { font-size: 1.15rem; }
+.v-etape p { margin: 0; color: var(--texte-doux); }
+
+/* Les quatre lecteurs de la même base. Chaque carte porte une échelle à
+   quatre barreaux, les niveaux de détail du produit (public, usage,
+   technique, privé), remplie jusqu'au plafond du lien. La première est
+   inversée : c'est vous, et vous voyez tout. */
+.v-lecteurs {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+}
+@media (max-width: 900px) {
+  .v-lecteurs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .v-lecteurs { grid-template-columns: 1fr; }
+}
+.v-lecteur {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  padding: 20px;
+}
+.v-lecteur h3 { margin: 0; font-size: 1.15rem; }
+.v-lecteur p { margin: 0; color: var(--texte-doux); }
+.v-echelle {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 4px;
+}
+.v-barreau {
+  flex: 1;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--trait);
+}
+.v-barreau.plein { background: var(--accent); }
+.v-plafond {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  color: var(--texte-doux);
+  margin: 0;
+}
+.v-lecteur-vous {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.v-lecteur-vous p,
+.v-lecteur-vous .v-plafond { color: rgba(255, 255, 255, 0.82); }
+.v-lecteur-vous .v-barreau { background: rgba(255, 255, 255, 0.28); }
+.v-lecteur-vous .v-barreau.plein { background: #fff; }
+
+/* Les quatre niveaux, expliqués un par un sur la page du partage : une barre
+   qui s'allonge, du public au privé. */
+.v-niveaux {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.v-niveaux li {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.v-niveau-nom {
+  font-weight: 600;
+  border-left: 4px solid var(--accent);
+  padding-left: 10px;
+}
+.v-niveau-nom.n1 { border-color: var(--trait); }
+.v-niveau-nom.n2 { border-color: var(--v-teinte-forte); }
+.v-niveau-nom.n3 { border-color: var(--accent-clair); }
+.v-niveaux span:last-child { color: var(--texte-doux); }
+
+/* Deux arguments côte à côte. */
+.v-duo {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 760px) {
+  .v-duo { grid-template-columns: 1fr; }
+}
+.v-duo article {
+  border-top: 1px solid var(--trait);
+  padding-top: 18px;
+}
+.v-duo p { color: var(--texte-doux); }
+
+/* Une liste de ce qu'on obtient (coche) ou de ce qui ne sort pas (croix). */
+.v-coches {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+.v-coches li {
+  position: relative;
+  padding-left: 30px;
+  max-width: 68ch;
+}
+.v-coches li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--v-teinte-forte);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.v-croix li::before {
+  content: "×";
+  background: rgba(140, 47, 31, 0.12);
+  color: var(--alerte);
+}
+
+/* Le document contre le lien. Le tableau déborde dans son cadre, jamais la
+   page. */
+.v-tableau-cadre {
+  overflow-x: auto;
+  margin: 26px 0 0;
+}
+.v-tableau {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.v-tableau th,
+.v-tableau td {
+  text-align: left;
+  vertical-align: top;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--trait);
+}
+.v-tableau th { font-weight: 600; }
+.v-tableau thead th {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+  color: var(--texte-doux);
+  border-bottom-color: var(--accent);
+}
+.v-tableau td:nth-child(2) { color: var(--texte-doux); }
+.v-tableau td:last-child { background: var(--v-teinte); }
+/* Sur téléphone, le tableau ne défile pas : il s'empile. Faire défiler
+   cachait précisément la colonne « Avec un lien », c'est-à-dire l'argument
+   (mesuré à 390 px : seules les deux premières colonnes étaient visibles).
+   Chaque ligne devient un bloc, et le libellé de colonne revient par
+   `data-libelle`, un attribut de donnée et non un attribut `style`. */
+@media (max-width: 700px) {
+  .v-tableau { min-width: 0; }
+  .v-tableau thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .v-tableau tr {
+    display: block;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--trait);
+  }
+  .v-tableau th,
+  .v-tableau td {
+    display: block;
+    padding: 4px 0;
+    border: 0;
+  }
+  .v-tableau th[scope="row"] {
+    font-family: var(--v-titrage);
+    font-weight: 500;
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+  .v-tableau th[scope="row"]::before { content: "Le jour où "; }
+  .v-tableau td::before {
+    content: attr(data-libelle);
+    display: block;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+    color: var(--texte-doux);
+  }
+  .v-tableau td:last-child {
+    background: transparent;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    margin-top: 8px;
+  }
+  .v-tableau td:last-child::before { color: var(--accent); }
+}
+
+/* La bande verte : l'argument qu'on ne met pas dans une carte. */
+.v-bande {
+  position: relative;
+  overflow: hidden;
+  margin: 60px 0 0;
+  padding: clamp(28px, 5vw, 56px);
+  border-radius: calc(var(--rayon) * 1.5);
+  background: var(--accent);
+  color: #fff;
+}
+.v-bande::after {
+  content: "";
+  position: absolute;
+  right: -90px;
+  top: -90px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  border: 64px solid rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+.v-bande h2 {
+  color: #fff;
+  max-width: 20ch;
+}
+.v-bande p {
+  position: relative;
+  margin: 0;
+  max-width: 60ch;
+  font-size: 1.1rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* L'appel de fin de page. */
+.v-final {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px 32px;
+  margin: 60px 0 0;
+  padding: clamp(24px, 4vw, 40px);
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: calc(var(--rayon) * 1.5);
+}
+@media (max-width: 760px) {
+  .v-final { grid-template-columns: 1fr; }
+}
+.v-final h2 { margin: 0 0 6px; }
+.v-final p {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--texte-doux);
+}
 
 .v-note {
   color: var(--texte-doux);

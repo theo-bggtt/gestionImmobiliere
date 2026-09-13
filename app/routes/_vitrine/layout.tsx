@@ -53,13 +53,15 @@ export default function VitrineLayout() {
       </main>
 
       <footer className="v-pied">
-        <div className="v-pied-liens">
-          <Link to="/fonctionnalites">Ce que ça fait</Link>
-          <Link to="/partage">Partager</Link>
-          <Link to="/confidentialite">Vos données</Link>
-          <Link to="/a-propos">À propos</Link>
+        <div className="v-pied-int">
+          <div className="v-pied-liens">
+            <Link to="/fonctionnalites">Ce que ça fait</Link>
+            <Link to="/partage">Partager</Link>
+            <Link to="/confidentialite">Vos données</Link>
+            <Link to="/a-propos">À propos</Link>
+          </div>
+          <p>Né dans une vraie maison. Construit pour la vôtre.</p>
         </div>
-        <p>Un projet développé pour une maison, puis ouvert à d'autres.</p>
       </footer>
     </>
   );
