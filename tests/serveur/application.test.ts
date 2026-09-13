@@ -185,10 +185,13 @@ describe("en-têtes de sécurité", () => {
   });
 
   it("n'admettent le WebSocket du rechargement à chaud qu'en développement", async () => {
+    // `/proprietes` et non `/` : la racine appartient désormais à la vitrine,
+    // dont la politique n'a ni `connect-src` ni `script-src`. Il faut un
+    // chemin de l'arbre AUTHENTIFIÉ pour éprouver la politique à nonce.
     const prod = await demarrer();
-    expect((await prod.appeler("/")).headers.get("Content-Security-Policy")).toContain("connect-src 'self';");
+    expect((await prod.appeler("/proprietes")).headers.get("Content-Security-Policy")).toContain("connect-src 'self';");
     const dev = await demarrer({ developpement: true });
-    const csp = (await dev.appeler("/")).headers.get("Content-Security-Policy") ?? "";
+    const csp = (await dev.appeler("/proprietes")).headers.get("Content-Security-Policy") ?? "";
     expect(csp).toContain("connect-src 'self' ws:");
     expect(csp).toContain("script-src 'self' 'nonce-");
     // Le développement ne relâche rien d'autre, et rien sur /p/.

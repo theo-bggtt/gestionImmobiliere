@@ -13,30 +13,12 @@
 import { describe, it, expect } from "vitest";
 import { readFile } from "node:fs/promises";
 import routes from "../../app/routes";
+import { cheminsServis } from "../aides/routes";
 import { ACCUEIL } from "../../app/lib/auth/redirection";
 import { COQUILLE } from "../../app/lib/capture/coquille";
 
-/** Une entrée de la table de routes, telle que la rendent `route`, `index`,
- *  `layout` et `prefix`. Le type exact du plugin n'est pas importé : ce qui
- *  est lu ici en est un sous-ensemble stable. */
-type Entree = { path?: string; index?: boolean; children?: Entree[] };
-
-/**
- * Les chemins réellement servis par une table de routes.
- *
- * Une entrée sans enfants est une route servie ; une entrée qui en a est une
- * mise en page, qui ne sert que par eux. `prefix` ayant déjà joint les
- * segments, il ne reste qu'à enchaîner les niveaux d'imbrication.
- */
-function cheminsServis(entrees: Entree[], base = ""): string[] {
-  const sortie: string[] = [];
-  for (const e of entrees) {
-    const ici = e.path === undefined ? base : `${base}/${e.path}`.replace(/\/{2,}/g, "/");
-    if (e.children) sortie.push(...cheminsServis(e.children, ici));
-    else sortie.push(ici === "" ? "/" : ici);
-  }
-  return sortie;
-}
+/** Les chemins servis, sans les modules : ce garde ne regarde que les URL. */
+const chemins = () => cheminsServis(routes).map((c) => c.chemin);
 
 const manifeste = JSON.parse(await readFile("public/manifest.webmanifest", "utf-8")) as {
   start_url: string;
@@ -45,11 +27,11 @@ const manifeste = JSON.parse(await readFile("public/manifest.webmanifest", "utf-
 
 describe("le manifeste et la table de routes disent la même chose", () => {
   it("le start_url correspond à une route qui existe", () => {
-    const chemins = cheminsServis(routes as Entree[]);
+    const servis = chemins();
     // Le balayage doit voir quelque chose, sinon il passerait sur une table
     // qu'il n'a pas su lire.
-    expect(chemins.length).toBeGreaterThan(20);
-    expect(chemins).toContain(manifeste.start_url);
+    expect(servis.length).toBeGreaterThan(20);
+    expect(servis).toContain(manifeste.start_url);
   });
 
   it("le start_url est celui qu'écrit le code, et la portée est la même", () => {
@@ -69,7 +51,7 @@ describe("le manifeste et la table de routes disent la même chose", () => {
     // worker contrôlerait une page qui ne lui appartient pas).
     expect(manifeste.start_url.startsWith(manifeste.scope)).toBe(true);
 
-    const deborde = cheminsServis(routes as Entree[]).filter(
+    const deborde = chemins().filter(
       (c) => c.startsWith(manifeste.scope) && c !== ACCUEIL && !c.startsWith(`${ACCUEIL}/`),
     );
     expect(deborde).toEqual([]);
@@ -78,13 +60,13 @@ describe("le manifeste et la table de routes disent la même chose", () => {
   it("détecte une portée qui déborde (contrôle du balayage)", () => {
     // Sans ce contrôle, « aucune route ne déborde » ne voudrait rien dire :
     // il faut prouver que le balayage verrait le cas.
-    const chemins = cheminsServis([
-      { path: "proprietes", index: true },
-      { path: "proprietes-publiques" },
-    ] as Entree[]);
-    expect(chemins).toEqual(["/proprietes", "/proprietes-publiques"]);
+    const inventes = cheminsServis([
+      { path: "proprietes", index: true, file: "a.tsx" },
+      { path: "proprietes-publiques", file: "b.tsx" },
+    ] as unknown as typeof routes).map((c) => c.chemin);
+    expect(inventes).toEqual(["/proprietes", "/proprietes-publiques"]);
     expect(
-      chemins.filter((c) => c.startsWith("/proprietes") && c !== "/proprietes" && !c.startsWith("/proprietes/")),
+      inventes.filter((c) => c.startsWith("/proprietes") && c !== "/proprietes" && !c.startsWith("/proprietes/")),
     ).toEqual(["/proprietes-publiques"]);
   });
 });

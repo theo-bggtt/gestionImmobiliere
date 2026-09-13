@@ -2,11 +2,17 @@
 import { type RouteConfig, route, index, layout, prefix } from "@react-router/dev/routes";
 
 export default [
-  // `/` n'appartient plus à l'application : elle vit sous `/proprietes`, et la
-  // racine est libérée pour la vitrine publique. En attendant celle-ci, une
-  // redirection — livrée seule pour que si la PWA casse, ce soit la seule
-  // chose qui ait bougé.
-  index("routes/_public/racine.tsx"),
+  // Arbre de la vitrine publique. Le QUATRIÈME, et le seul SANS PRÉFIXE : ses
+  // chemins sont énumérés un à un dans `server/chemins-vitrine.js`, parce que
+  // c'est à cet ensemble que `application.js` reconnaît une page de vitrine
+  // pour lui poser sa politique — `startsWith("/")` attraperait tout le site.
+  // Une page ajoutée ici et pas là-bas perdrait sa politique en silence ;
+  // `tests/vitrine/arbre.test.ts` compare les deux listes.
+  //
+  // Hors de `layout.tsx` : pas de session, pas de barre de capture, pas de
+  // manifeste ni de service worker. Ces routes portent `handle.sansScripts`,
+  // et leur politique n'a pas de `script-src` du tout.
+  index("routes/_vitrine/accueil.tsx"),
 
   route("connexion", "routes/_public/login.tsx"),
   route("inscription", "routes/_public/register.tsx"),
