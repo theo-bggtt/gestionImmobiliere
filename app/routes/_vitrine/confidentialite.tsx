@@ -8,6 +8,7 @@
 // et une vitrine n'est pas l'endroit où commencer — une phrase juridique
 // fausse coûte plus cher que l'absence de phrase.
 import { Link } from "react-router";
+import { CONTACT_RETRAIT } from "../../lib/vitrine/document";
 
 export const meta = () => [
   { title: "Vos données — gestionImmobiliere" },
@@ -54,6 +55,27 @@ export default function Confidentialite() {
           Conséquence assumée : le nom que vous donnez à votre propriété est du texte libre, et c'est
           le titre d'une page de partage. N'y écrivez pas votre adresse — l'application ne vous la
           propose jamais, et c'est délibéré.
+        </p>
+
+        <h2>L'adresse que vous laissez sur la liste d'attente</h2>
+        <p>
+          Si vous laissez une adresse e-mail sur la page d'accueil, elle est écrite dans une table
+          avec la date du jour, et <strong>rien d'autre</strong> : pas votre adresse IP, pas votre
+          navigateur, pas la page d'où vous venez, pas de champ libre. Elle ne sert qu'à une chose,
+          vous prévenir le jour où l'inscription ouvre.
+        </p>
+        <p>
+          Elle n'est transmise à personne. Il n'y a pas d'outil d'envoi de courrier dans ce projet,
+          donc pas de liste de diffusion chez un tiers, et pas de message de confirmation non plus —
+          c'est dit sur la page au moment où vous la laissez.
+        </p>
+        <p>
+          <strong>Pour être retiré</strong>, écrivez à{" "}
+          <a href={`mailto:${CONTACT_RETRAIT}`}>{CONTACT_RETRAIT}</a> depuis l'adresse concernée, et
+          la ligne est supprimée. Il n'y a pas de bouton, et c'est une conséquence directe de
+          l'absence de mailer : un bouton de désinscription honnête suppose de pouvoir vérifier que
+          c'est bien vous qui le pressez, ce qui suppose de vous envoyer un message. Une adresse de
+          contact est la réponse vraie ; un bouton serait la réponse rassurante.
         </p>
 
         <h2>Ce que l'application refuse de stocker</h2>

@@ -49,3 +49,17 @@ export const ENTETES_VITRINE = {
   "Cache-Control": "public, max-age=300",
   "Referrer-Policy": "strict-origin-when-cross-origin",
 };
+
+/**
+ * L'adresse à laquelle on demande à être retiré de la liste d'attente.
+ *
+ * À REMPLACER par une adresse réelle avant la mise en service — c'est la
+ * seule valeur de la vitrine qui promet quelque chose à quelqu'un d'autre, et
+ * une adresse qui ne reçoit pas transforme la page la plus honnête du site en
+ * la plus mensongère. Elle est nommée ici plutôt qu'écrite dans la page pour
+ * qu'il n'y ait qu'un endroit à changer, et que ce changement se voie.
+ *
+ * Une adresse de rôle sur le domaine du site, et non une adresse personnelle :
+ * elle sera lue par des inconnus et moissonnée par des robots.
+ */
+export const CONTACT_RETRAIT = "contact@gestion-immobiliere.invalid";

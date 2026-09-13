@@ -20,7 +20,16 @@ import { dirname, join, resolve, relative } from "node:path";
 const RACINE = "app/routes/_vitrine";
 const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
-/** Ce qu'un module de la vitrine ne doit atteindre par aucun chemin. */
+/**
+ * La SEULE porte ouverte sur la base, et ce qu'elle autorise : écrire une
+ * adresse sur la liste d'attente. Elle n'en lit rien — `enregistrerInteresse`
+ * ne rend même pas si la ligne existait, pour que « vous êtes déjà inscrit »
+ * soit impossible à écrire. Tout autre chemin vers `db` reste fermé.
+ */
+const PORTE = "app/lib/vitrine/liste-attente.server.ts";
+
+/** Ce qu'un module de la vitrine ne doit atteindre par aucun chemin, sauf en
+ *  passant par `PORTE`. */
 const INTERDITS = [
   { test: (c: string) => c.includes("app/db/"), quoi: "le schéma ou le client de la base" },
   { test: (c: string) => /\.server\.(ts|tsx|js)$/.test(c), quoi: "un module serveur (`.server`)" },
@@ -52,7 +61,10 @@ async function resoudre(depuis: string, specificateur: string): Promise<string |
   if (!specificateur.startsWith(".")) return null;
   const base = resolve(dirname(depuis), specificateur);
   const candidats = [base, ...EXTENSIONS.map((e) => base + e), ...EXTENSIONS.map((e) => join(base, "index" + e))];
-  for (const c of candidats) if (await existe(c)) return relative(process.cwd(), c);
+  // Normalisé ici et pas au moment de comparer : `relative` rend des `\` sous
+  // Windows, et `PORTE` s'écrit avec des `/`. La porte n'y était donc jamais
+  // reconnue, et le test échouait sur le seul import qu'il autorise.
+  for (const c of candidats) if (await existe(c)) return relative(process.cwd(), c).replace(/\\/g, "/");
   return null;
 }
 
@@ -81,7 +93,9 @@ async function atteignables(depart: string[]): Promise<Map<string, string[]>> {
 
 describe("l'arbre de la vitrine n'atteint pas la base", () => {
   it("aucun module, par aucun chemin d'import", async () => {
-    const depart = (await readdir(RACINE)).map((n) => join(RACINE, n));
+    // `/` et non `join` : même raison que dans `resoudre`, et sans quoi une
+    // même route serait vue deux fois, une par séparateur.
+    const depart = (await readdir(RACINE)).map((n) => `${RACINE}/${n}`);
     // Le balayage doit partir de quelque chose.
     expect(depart.length).toBeGreaterThan(0);
 
@@ -89,10 +103,20 @@ describe("l'arbre de la vitrine n'atteint pas la base", () => {
     const fautifs: string[] = [];
     for (const [module, via] of tous) {
       const normalise = module.replace(/\\/g, "/");
+      // Ce qui passe par la porte est autorisé — c'est le chemin d'écriture
+      // de la liste d'attente. Ce qui l'atteint par un AUTRE chemin ne l'est
+      // pas : la porte est nominative, pas une permission générale.
+      if (via.includes(PORTE)) continue;
       for (const i of INTERDITS) if (i.test(normalise)) fautifs.push(`${i.quoi} : ${via.join(" → ")}`);
       if (PAQUETS_INTERDITS.includes(normalise)) fautifs.push(`le paquet ${normalise} : ${via.join(" → ")}`);
     }
     expect(fautifs).toEqual([]);
+
+    // Et la porte est bien la seule : une SECONDE ouverture se verrait ici.
+    const portes = [...tous.entries()]
+      .filter(([m]) => /\.server\.(ts|tsx|js)$/.test(m.replace(/\\/g, "/")))
+      .map(([m]) => m.replace(/\\/g, "/"));
+    expect(portes).toEqual([PORTE]);
 
     // Et le balayage doit avoir réellement suivi des imports, sinon
     // « aucun fautif » ne dirait rien : les routes importent au moins
@@ -109,17 +133,27 @@ describe("l'arbre de la vitrine n'atteint pas la base", () => {
     expect(touche).toBe(true);
   });
 
-  it("aucune route de la vitrine n'exporte de loader ni d'action", async () => {
-    // Corollaire lisible de l'étanchéité, et ce qui permet le cache public :
-    // ces pages ne savent pas qui les regarde. (L'action de la liste
-    // d'attente viendra ; ce test dira alors exactement ce qui a changé.)
+  it("aucune route de la vitrine n'exporte de loader", async () => {
+    // C'est le vrai invariant, et il survit à l'arrivée de la liste
+    // d'attente : la vitrine n'a rien À LIRE en base. Un loader serait une
+    // requête sur une page publique, et une page dont le contenu dépend de
+    // la base ne peut plus être servie en cache public.
     const fautives: string[] = [];
     for (const nom of await readdir(RACINE)) {
       const source = await readFile(join(RACINE, nom), "utf-8");
-      for (const quoi of ["loader", "action"]) {
-        if (new RegExp(`export (async )?(function|const) ${quoi}\\b`).test(source)) fautives.push(`${nom} : ${quoi}`);
-      }
+      if (/export (async )?(function|const) loader\b/.test(source)) fautives.push(nom);
     }
     expect(fautives).toEqual([]);
+  });
+
+  it("une seule route exporte une action : celle de la liste d'attente", async () => {
+    // Une action ÉCRIT, elle ne rend pas de donnée : c'est la seule chose que
+    // la vitrine a le droit de faire en base, et une seule page la fait.
+    const avecAction: string[] = [];
+    for (const nom of await readdir(RACINE)) {
+      const source = await readFile(join(RACINE, nom), "utf-8");
+      if (/export (async )?(function|const) action\b/.test(source)) avecAction.push(nom);
+    }
+    expect(avecAction).toEqual(["accueil.tsx"]);
   });
 });

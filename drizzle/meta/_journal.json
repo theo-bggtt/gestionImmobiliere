@@ -78,6 +78,13 @@
       "when": 1789228431549,
       "tag": "0010_type_niveau_suggere",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789320926517,
+      "tag": "0011_liste_attente",
+      "breakpoints": true
     }
   ]
 }

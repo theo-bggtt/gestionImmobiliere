@@ -713,3 +713,69 @@
   color: var(--texte-doux);
   font-size: 0.9rem;
 }
+
+/* ── Liste d'attente ──────────────────────────────────────────────── */
+
+/* Le formulaire vit dans la carte de fin de l'accueil, où `.v-final p` met
+   toutes les marges à zéro pour serrer le titre et sa ligne. Ce qui s'y
+   ajoute doit les reposer, sinon la note et les messages se collent. */
+.v-final .v-note { margin: 14px 0 0; }
+.v-final .v-confirmation,
+.v-final .v-erreur { margin: 12px 0 0; }
+
+/* La même carte sur trois pages, mais seule celle de l'accueil porte le
+   formulaire : sa colonne de texte devient haute, et l'appel du propriétaire,
+   centré, pendait au milieu du vide. Il descend au niveau de la ligne
+   d'envoi, et le formulaire prend la mesure des paragraphes au lieu de courir
+   sur toute la carte. D'où une classe en plus : `fonctionnalites` et
+   `partage` gardent la carte courte, qui est bien centrée. */
+.v-final-liste { align-items: end; }
+.v-final-liste .v-formulaire { max-width: 52ch; }
+
+.v-formulaire { margin: 16px 0 8px; }
+.v-formulaire label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.v-formulaire-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+.v-formulaire input {
+  font: inherit;
+  flex: 1 1 16rem;
+  min-width: 0;
+  padding: 0 14px;
+  /* Même plancher de cible que l'application : la taille d'un pouce. */
+  min-height: var(--cible);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--texte);
+}
+.v-formulaire input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.v-formulaire button {
+  border: none;
+  min-height: var(--cible);
+  margin: 0;
+}
+
+.v-confirmation,
+.v-erreur {
+  border-radius: var(--rayon);
+  padding: 12px 16px;
+  margin: 12px 0;
+  max-width: 68ch;
+}
+.v-confirmation {
+  background: var(--surface);
+  border: 1px solid var(--accent);
+}
+.v-erreur {
+  background: var(--surface);
+  border: 1px solid var(--alerte);
+  color: var(--alerte);
+}

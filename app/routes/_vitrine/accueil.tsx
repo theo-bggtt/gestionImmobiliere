@@ -9,8 +9,21 @@
 // déjà. Le schéma est un SVG dessiné dans la page, sans balise image ni
 // attribut `style` : la politique de cet arbre n'a ni `img-src` externe ni
 // `'unsafe-inline'`, et ce n'est la maison de personne.
-import { Link } from "react-router";
+//
+// La liste d'attente est le seul envoi de tout l'arbre : un formulaire natif
+// en POST, sans une ligne de script — l'arbre porte `handle.sansScripts` et sa
+// politique n'a pas de `script-src`, donc un envoi par `fetch` ne partirait
+// même pas. Elle est l'appel du visiteur sans compte, là où « Mon espace » est
+// celui du propriétaire.
+import { Form, Link, data, useActionData } from "react-router";
+import type { ActionFunctionArgs, HeadersArgs } from "react-router";
 import { ACCUEIL } from "../../lib/auth/redirection";
+import { ENTETES_VITRINE } from "../../lib/vitrine/document";
+import {
+  adressePlausible,
+  enregistrerInteresse,
+  normaliser,
+} from "../../lib/vitrine/liste-attente.server";
 
 export const meta = () => [
   { title: "gestionImmobiliere — la mémoire technique de votre maison" },
@@ -20,6 +33,39 @@ export const meta = () => [
       "Où passe la gaine, quelle vanne coupe quoi, qui a posé la chaudière : consigné au moment où vous l'avez sous les yeux, retrouvé d'un mot, et montré à chacun selon ce qui le concerne.",
   },
 ];
+
+/**
+ * La liste d'attente. L'action re-rend la page.
+ *
+ * Elle rend LA MÊME chose que l'adresse ait été ajoutée ou qu'elle y fût
+ * déjà — `enregistrerInteresse` ne le lui dit pas, et c'est délibéré : voir
+ * ce module. Ici on ne peut donc pas se tromper, même en le voulant.
+ */
+export async function action({ request }: ActionFunctionArgs) {
+  const email = normaliser((await request.formData()).get("email"));
+
+  if (!adressePlausible(email)) {
+    return data(
+      { issue: "adresse-invalide" as const },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  await enregistrerInteresse(email);
+  // `no-store` : une réponse à un envoi ne concerne que celui qui l'a fait,
+  // et cette page est par ailleurs servie en cache PUBLIC. Ce que la route
+  // pose remplace le défaut du serveur (`ENTETES_A_VALEUR_UNIQUE`).
+  return data({ issue: "enregistre" as const }, { headers: { "Cache-Control": "no-store" } });
+}
+
+/**
+ * Le cache de la page, sauf quand la réponse est celle d'un envoi : l'action
+ * pose alors son propre `Cache-Control`, et c'est lui qui vaut.
+ */
+export function headers({ actionHeaders }: HeadersArgs) {
+  const cache = actionHeaders.get("Cache-Control");
+  return cache ? { ...ENTETES_VITRINE, "Cache-Control": cache } : ENTETES_VITRINE;
+}
 
 /** Les quatre barreaux de l'échelle d'un lecteur : public, usage, technique,
  *  privé. Remplis jusqu'au plafond, de un à quatre. */
@@ -34,6 +80,7 @@ function Echelle({ plafond }: { plafond: 1 | 2 | 3 | 4 }) {
 }
 
 export default function Accueil() {
+  const resultat = useActionData<typeof action>();
   return (
     <>
       <section className="v-heros">
@@ -278,16 +325,55 @@ export default function Accueil() {
         </p>
       </section>
 
-      <section className="v-final">
+      <section className="v-final v-final-liste">
         <div>
           <h2>Commencez par la vanne d'arrêt.</h2>
           <p>
             Le premier objet prend le temps d'une photo. Les suivants viennent en marchant dans la
             maison. <Link to="/confidentialite">Ce que l'application stocke, et ce qu'elle refuse</Link>.
           </p>
+
+          <p className="v-note">
+            L'inscription n'est pas encore ouverte. Laissez une adresse et vous serez prévenu quand
+            elle le sera. Pour être franc sur ce qui va se passer : rien, tout de suite. Il n'y a pas
+            d'envoi automatique de courrier dans ce projet, donc vous ne recevrez aucun message de
+            confirmation. Votre adresse est écrite dans une table, avec la date, et rien d'autre —
+            pas votre adresse IP, pas votre navigateur, pas d'où vous venez.
+          </p>
+
+          <Form method="post" className="v-formulaire">
+            <label htmlFor="email">Votre adresse e-mail</label>
+            <div className="v-formulaire-ligne">
+              <input
+                id="email"
+                type="email"
+                name="email"
+                required
+                autoComplete="email"
+                placeholder="vous@exemple.net"
+              />
+              <button type="submit" className="v-appel">
+                M'ajouter
+              </button>
+            </div>
+          </Form>
+
+          {resultat?.issue === "enregistre" && (
+            <p className="v-confirmation" role="status">
+              C'est noté. Vous serez prévenu à cette adresse le jour où l'inscription ouvre.
+            </p>
+          )}
+          {resultat?.issue === "adresse-invalide" && (
+            <p className="v-erreur" role="alert">
+              Cette adresse ne ressemble pas à une adresse e-mail. Rien n'a été enregistré.
+            </p>
+          )}
         </div>
-        <Link to={ACCUEIL} className="v-appel">
-          Ouvrir mon espace
+        {/* Second, et pas par modestie : dans cette carte, l'appel premier est
+            la liste d'attente. « Mon espace » est celui du propriétaire, qui
+            l'a déjà en haut de chaque page. */}
+        <Link to={ACCUEIL} className="v-appel-second">
+          Mon espace
         </Link>
       </section>
     </>

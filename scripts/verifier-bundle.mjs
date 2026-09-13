@@ -32,6 +32,7 @@ const MARQUEURS = [
   { motif: "zone_geom", quoi: "le schéma de la base (drizzle)" },
   { motif: "fichier_lien", quoi: "le schéma de la base (drizzle)" },
   { motif: "type_element", quoi: "le schéma de la base (drizzle)" },
+  { motif: "interesse", quoi: "le schéma de la base (drizzle)" },
   { motif: "SCRAM-SHA-256", quoi: "le client PostgreSQL (pg)" },
   { motif: "pg_catalog", quoi: "le client PostgreSQL (pg)" },
 ];
