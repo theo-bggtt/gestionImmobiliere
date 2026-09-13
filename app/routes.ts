@@ -12,7 +12,13 @@ export default [
   // Hors de `layout.tsx` : pas de session, pas de barre de capture, pas de
   // manifeste ni de service worker. Ces routes portent `handle.sansScripts`,
   // et leur politique n'a pas de `script-src` du tout.
-  index("routes/_vitrine/accueil.tsx"),
+  layout("routes/_vitrine/layout.tsx", [
+    index("routes/_vitrine/accueil.tsx"),
+    route("fonctionnalites", "routes/_vitrine/fonctionnalites.tsx"),
+    route("partage", "routes/_vitrine/partage.tsx"),
+    route("a-propos", "routes/_vitrine/a-propos.tsx"),
+    route("confidentialite", "routes/_vitrine/confidentialite.tsx"),
+  ]),
 
   route("connexion", "routes/_public/login.tsx"),
   route("inscription", "routes/_public/register.tsx"),
