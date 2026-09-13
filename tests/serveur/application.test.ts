@@ -7,7 +7,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
-import type { Server } from "node:http";
+import { request, type Server } from "node:http";
 import type { RequestHandler } from "express";
 import { creerApplication, LIMITES, TAILLE_MAX_CORPS } from "../../server/application.js";
 
@@ -43,7 +43,26 @@ async function demarrer(options: Partial<Parameters<typeof creerApplication>[0]>
   const { port } = serveur.address() as AddressInfo;
   const url = `http://127.0.0.1:${port}`;
   const appeler = (chemin: string, init?: RequestInit) => fetch(url + chemin, init);
-  return { appeler, appels };
+  return { appeler, appels, port };
+}
+
+/**
+ * Un POST en `Transfer-Encoding: chunked` — le seul cadrage HTTP/1.1 qui
+ * n'annonce pas sa longueur. `fetch` ne sait pas le produire : le client de
+ * `node:http` le choisit dès qu'on écrit sans `Content-Length`.
+ */
+function enChunked(port: number, chemin: string, corps: string): Promise<{ statut: number }> {
+  return new Promise((resoudre, rejeter) => {
+    const requete = request({ port, host: "127.0.0.1", path: chemin, method: "POST" }, (reponse) => {
+      reponse.resume();
+      reponse.on("end", () => resoudre({ statut: reponse.statusCode ?? 0 }));
+    });
+    // La connexion est coupée après la réponse (`req.destroy()` côté serveur) :
+    // l'erreur qui s'ensuit est le comportement voulu, pas un échec de test.
+    requete.on("error", (e) => rejeter(e));
+    requete.write(corps);
+    requete.end();
+  });
 }
 
 describe("trust proxy", () => {
@@ -251,6 +270,32 @@ describe("borne de taille des envois", () => {
     const petit = await appeler("/proprietes/1/capture/envoyer", { method: "POST", body: "x".repeat(50) });
     expect(petit.status).toBe(200);
     expect(appels).toHaveLength(1);
+  });
+
+  it("rend 411 sur un corps sans longueur annoncée, sans que le gestionnaire voie la requête", async () => {
+    // `fetch` annonce toujours la longueur : il faut le client bas niveau de
+    // Node pour produire un `chunked`, ce que fait `write()` sans
+    // `Content-Length`. C'est aussi ce qu'envoyait le `curl` de l'issue #33.
+    const { appeler, appels, port } = await demarrer({ tailleMaxCorps: 100 });
+
+    const chunked = await enChunked(port, "/proprietes/1", "x".repeat(500));
+    expect(chunked.statut).toBe(411);
+    expect(appels).toHaveLength(0);
+
+    // Et le chemin annoncé continue de marcher : ni la borne de taille ni ce
+    // refus ne touchent un envoi ordinaire.
+    const annonce = await appeler("/proprietes/1", { method: "POST", body: "x".repeat(50) });
+    expect(annonce.status).toBe(200);
+    expect(appels).toHaveLength(1);
+  });
+
+  it("ne refuse ni un GET ni un POST sans corps : le critère est le cadrage, pas la méthode", async () => {
+    const { appeler, appels } = await demarrer();
+    // Un POST sans corps annonce `Content-Length: 0` — mesuré, undici comme
+    // les navigateurs. Il n'a rien d'un envoi non borné.
+    expect((await appeler("/proprietes/1", { method: "POST" })).status).toBe(200);
+    expect((await appeler("/proprietes/1")).status).toBe(200);
+    expect(appels).toHaveLength(2);
   });
 
   it("laisse passer par défaut l'image de plan la plus grosse qu'une route accepte", () => {

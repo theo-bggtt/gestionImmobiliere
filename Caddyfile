@@ -13,12 +13,45 @@
 	# Une réponse compressée coûte moins de temps d'antenne à un téléphone.
 	encode zstd gzip
 
-	# Borne du corps avant l'application, y compris pour un envoi en
-	# `Transfer-Encoding: chunked` sans longueur annoncée, que
-	# `server/application.js` ne peut pas voir. Même valeur que
-	# TAILLE_MAX_CORPS. Au-delà : 413.
+	# Borne du corps avant l'application, sur la longueur annoncée. Même
+	# valeur que TAILLE_MAX_CORPS. Au-delà : 413.
+	#
+	# Elle ne borne QUE la lecture, et c'est tout ce qu'elle a jamais fait :
+	# `max_size` enveloppe le corps dans un lecteur borné, donc l'erreur ne
+	# survient qu'au moment où quelqu'un lit. Avec une longueur annoncée Caddy
+	# refuse d'emblée ; sans elle, si le gestionnaire en aval ne lit pas le
+	# corps — n'importe quel 404, n'importe quelle route sans action — personne
+	# ne lit, donc personne ne borne. Mesuré (issue #33) : 40 Mo en `chunked`
+	# vers /proprietes traversaient Caddy ET Express pour rendre un 404.
 	request_body {
 		max_size 30MB
+	}
+
+	# D'où ce refus, qui ferme le cas au lieu de le documenter : un corps dont
+	# la longueur n'est pas annoncée n'entre pas.
+	#
+	# Le critère est l'ABSENCE de `Content-Length`, et non la présence de
+	# `Transfer-Encoding: chunked` : Caddy termine HTTP/2, où `Transfer-
+	# Encoding` n'existe pas et où un corps de longueur inconnue n'a aucun
+	# en-tête à montrer non plus. Le viser fermerait HTTP/1.1 et laisserait
+	# la même porte ouverte un étage plus haut.
+	#
+	# Rien de légitime n'entre ici, mesuré au navigateur plutôt que supposé
+	# (Chromium, HTTP/1.1 et HTTP/2) : un `FormData` envoyé par `fetch` — la
+	# boîte d'envoi de la capture —, un POST de formulaire natif, un envoi de
+	# plan et même un POST sans corps annoncent tous leur longueur. Seul un
+	# corps en `ReadableStream` s'en passe, et l'application n'en envoie aucun.
+	#
+	# `close` coupe la connexion après la réponse : sans ça Go draine le corps
+	# restant, exactement le défaut que `req.destroy()` corrige côté Express.
+	# `respond` passe avant `reverse_proxy` dans l'ordre par défaut de Caddy,
+	# donc le refus tombe avant que quoi que ce soit soit relayé.
+	@corps_sans_longueur {
+		method POST PUT PATCH
+		header !Content-Length
+	}
+	respond @corps_sans_longueur 411 {
+		close
 	}
 
 	reverse_proxy app:3000
