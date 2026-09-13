@@ -3,7 +3,19 @@
 // Écrit à la main plutôt que généré : la stratégie tient en trente lignes et
 // un générateur ajouterait une chaîne de build pour rien.
 
-const VERSION = "v1";
+// `v2` : l'application est passée de `/` à `/proprietes`. Sans ce changement
+// de version, un navigateur qui a déjà installé l'app porte l'ancienne racine
+// dans `coquille-v1` et continuerait de l'ouvrir hors ligne — le handler
+// `activate` ci-dessous ne supprime que les caches dont le nom ne finit PAS
+// par la version courante.
+//
+// Ces deux noms sont écrits une seconde fois dans `app/lib/capture/coquille.ts`,
+// qui amorce le cache depuis la page et ne peut rien importer d'ici : ce
+// fichier est un script classique servi depuis `public/`, hors du graphe de
+// modules de l'application. Duplication assumée et signalée des deux côtés,
+// comme le nom de `french_sans_accent` et comme `SOMMETS_MIN` — et
+// `tests/pwa/coquille.test.ts` échoue si les deux côtés divergent.
+const VERSION = "v2";
 const COQUILLE = `coquille-${VERSION}`;
 const ACTIFS = `actifs-${VERSION}`;
 
@@ -33,9 +45,9 @@ async function documentReseauDAbord(requete) {
     if (reponse.ok && reponse.type === "basic") cache.put(requete, reponse.clone());
     return reponse;
   } catch {
-    // Pas de repli sur un autre document : servir l'HTML de `/` sous une
-    // autre URL ferait échouer l'hydratation et donnerait un écran blanc,
-    // pire que la page hors ligne du navigateur.
+    // Pas de repli sur un autre document : servir l'HTML de `/proprietes`
+    // sous une autre URL ferait échouer l'hydratation et donnerait un écran
+    // blanc, pire que la page hors ligne du navigateur.
     return (await cache.match(requete)) || Response.error();
   }
 }
