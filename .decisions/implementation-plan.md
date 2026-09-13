@@ -254,7 +254,7 @@ WHERE e.niveau <= :niveau_max
       exec` le 12 ; reste à rejouer sur le VPS, et depuis la destination hors
       machine)
 - [x] README : badge, introduction, « Mise en service », décisions #124–#133,
-      limites connues
+      limites connues ; puis #142 et six amendements au changement de cible
 
 **Côté machine cible (issue #25, à cocher après exécution)**
 - [ ] `docker compose up` sur le VPS, migrations depuis une base vide (l'amd64
@@ -266,7 +266,8 @@ WHERE e.niveau <= :niveau_max
       dans les en-têtes réels (le cookie `Secure`, lui, ne dit rien du proxy)
 - [ ] Restauration sur le VPS, et depuis une destination hors machine
 - [ ] La vraie maison : structure, objets réels, capture chronométrée sur
-      téléphone (cave sans réseau comprise), lien ouvert hors du réseau local
+      téléphone (cave sans réseau comprise), lien de partage ouvert depuis un
+      téléphone en 4G, tri des 33 types du catalogue rejugé (#138)
 - [ ] Revue de fuite relue face à la vraie propriété, résultat dans la PR
 
 ## En attente d'un besoin réel
