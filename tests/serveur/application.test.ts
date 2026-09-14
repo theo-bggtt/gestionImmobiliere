@@ -199,6 +199,79 @@ describe("en-têtes de sécurité", () => {
     expect((await dev.appeler("/p/x")).headers.get("Content-Security-Policy")).toContain("default-src 'none'");
   });
 
+  it("la liste d'attente a SON compteur, plus large et plus long que celui de la connexion", async () => {
+    const t = horloge();
+    const { appeler } = await demarrer({
+      limites: {
+        ...LIMITES,
+        connexion: { fenetreMs: 60_000, maximum: 2 },
+        listeAttente: { fenetreMs: 3_600_000, maximum: 3 },
+      },
+      maintenant: t.maintenant,
+    });
+
+    // Les deux bords du compteur de la liste d'attente.
+    for (let i = 0; i < 3; i++) expect((await appeler("/", { method: "POST" })).status).toBe(200);
+    expect((await appeler("/", { method: "POST" })).status).toBe(429);
+
+    // Sa fenêtre est la sienne : celle de la connexion s'est rouverte depuis
+    // longtemps que celle-ci tient encore.
+    t.avancer(120_000);
+    expect((await appeler("/", { method: "POST" })).status).toBe(429);
+    t.avancer(3_600_000);
+    expect((await appeler("/", { method: "POST" })).status).toBe(200);
+  });
+
+  it("épuiser la liste d'attente ne ferme PAS la connexion, ni l'inverse", async () => {
+    // C'est la raison de ne pas brancher les deux sur le même compteur :
+    // `cleDeFrein` compte par /64 en IPv6, donc un bot qui martèle la page de
+    // vente depuis un opérateur mobile mettrait dehors le propriétaire qui
+    // essaie de se connecter derrière le même préfixe.
+    const { appeler } = await demarrer({
+      limites: { ...LIMITES, connexion: { fenetreMs: 60_000, maximum: 2 }, listeAttente: { fenetreMs: 3_600_000, maximum: 2 } },
+    });
+
+    for (let i = 0; i < 2; i++) await appeler("/", { method: "POST" });
+    expect((await appeler("/", { method: "POST" })).status).toBe(429);
+    // La connexion, elle, répond toujours.
+    expect((await appeler("/connexion", { method: "POST" })).status).toBe(200);
+
+    // Et dans l'autre sens : le compteur de la connexion épuisé ne ferme pas
+    // la liste d'attente.
+    expect((await appeler("/connexion", { method: "POST" })).status).toBe(200);
+    expect((await appeler("/connexion", { method: "POST" })).status).toBe(429);
+    // (le compteur de la liste d'attente est déjà épuisé plus haut, on le
+    //  laisse se rouvrir pour ne mesurer que l'indépendance)
+  });
+
+  it("ne freine que l'ENVOI de la liste d'attente, jamais la lecture de la vitrine", async () => {
+    const { appeler } = await demarrer({
+      limites: { ...LIMITES, listeAttente: { fenetreMs: 3_600_000, maximum: 1 } },
+    });
+    expect((await appeler("/", { method: "POST" })).status).toBe(200);
+    expect((await appeler("/", { method: "POST" })).status).toBe(429);
+    // La page elle-même reste servie : elle ne coûte rien et se met en cache
+    // public, et une vitrine qui répond 429 à un visiteur n'a aucun sens.
+    for (let i = 0; i < 5; i++) expect((await appeler("/")).status).toBe(200);
+    expect((await appeler("/confidentialite")).status).toBe(200);
+  });
+
+  it("le frein suit le chemin, pas la forme de l'URL ni la page", async () => {
+    const { appeler } = await demarrer({
+      limites: { ...LIMITES, listeAttente: { fenetreMs: 3_600_000, maximum: 2 } },
+    });
+    // React Router vise `/?index` (route index sous une mise en page) :
+    // `req.path` vaut `/`, et c'est bien ce chemin-là qui est compté.
+    expect((await appeler("/?index", { method: "POST" })).status).toBe(200);
+    // Et toute autre page de la vitrine partage le compteur, sans qu'il ait
+    // fallu l'y inscrire à la main.
+    expect((await appeler("/confidentialite", { method: "POST" })).status).toBe(200);
+    expect((await appeler("/a-propos", { method: "POST" })).status).toBe(429);
+
+    // Un POST hors vitrine n'est pas concerné par CE compteur.
+    expect((await appeler("/proprietes/1/elements/nouveau", { method: "POST" })).status).toBe(200);
+  });
+
   it("ne confondent pas /p/ avec un chemin qui commence par p", async () => {
     const { appeler } = await demarrer();
     const r = await appeler("/proprietes/3");

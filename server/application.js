@@ -53,6 +53,24 @@ export const METHODES_A_CORPS = new Set(["POST", "PUT", "PATCH"]);
 export const LIMITES = {
   partage: { fenetreMs: 5 * 60_000, maximum: 600 },
   connexion: { fenetreMs: 60_000, maximum: 10 },
+  // La liste d'attente de la vitrine a SON compteur, et pas celui de la
+  // connexion. Deux raisons de ne pas les brancher ensemble :
+  //
+  //  - le coût n'est pas le même. Le compteur de la connexion est serré
+  //    parce que chaque essai coûte un argon2, c'est-à-dire un cœur pendant
+  //    une fraction de seconde ; un `INSERT … ON CONFLICT DO NOTHING` ne
+  //    coûte rien de comparable. Une borne dimensionnée pour l'argon2
+  //    freinerait un formulaire qui n'en a pas besoin ;
+  //  - et le prix d'un faux positif n'est pas le même non plus. `cleDeFrein`
+  //    compte par /64 en IPv6 : un bot qui martèle la liste d'attente depuis
+  //    un opérateur mobile fermerait, avec un compteur partagé, la CONNEXION
+  //    à tous les abonnés derrière le même préfixe. Le propriétaire ne peut
+  //    pas être mis dehors par le trafic d'une page de vente.
+  //
+  // Limite plus large, fenêtre plus longue : une heure, et de quoi couvrir
+  // une famille, un bureau ou un /64 partagé qui s'inscrivent le même jour,
+  // sans laisser remplir la table.
+  listeAttente: { fenetreMs: 60 * 60_000, maximum: 30 },
 };
 
 /**
@@ -207,7 +225,10 @@ function laRouteRemplaceLeDefaut(res) {
  *   voir le README, « Mise en service ». Jamais `true` : ce serait croire
  *   toute la chaîne `X-Forwarded-For`, dont le premier maillon est écrit par
  *   le client lui-même.
- * @param {typeof LIMITES} [options.limites]
+ * @param {Partial<typeof LIMITES>} [options.limites]
+ *   fusionné avec `LIMITES`, jamais substitué : un appelant qui ne veut
+ *   resserrer qu'un compteur n'a pas à réécrire les autres, et l'ajout d'un
+ *   troisième n'a pas à casser les appels existants
  * @param {number} [options.tailleMaxCorps]
  * @param {boolean} [options.developpement]
  *   vrai sous le serveur Vite : la politique de sécurité admet alors le
@@ -218,7 +239,7 @@ export function creerApplication({
   gestionnaire,
   statiques,
   proxysDeConfiance = 0,
-  limites = LIMITES,
+  limites,
   tailleMaxCorps = TAILLE_MAX_CORPS,
   developpement = false,
   maintenant = Date.now,
@@ -234,8 +255,15 @@ export function creerApplication({
   // ce que le client a pu écrire.
   app.set("trust proxy", proxysDeConfiance > 0 ? proxysDeConfiance : false);
 
-  const limiteurPartage = creerLimiteur({ ...limites.partage, maintenant });
-  const limiteurConnexion = creerLimiteur({ ...limites.connexion, maintenant });
+  // Fusion plutôt que substitution : un appelant qui ne resserre qu'un
+  // compteur garde les autres, et ajouter un compteur ne casse pas les appels
+  // qui l'ignorent — c'est exactement ce qui est arrivé en ajoutant celui de
+  // la liste d'attente.
+  const toutesLesLimites = { ...LIMITES, ...limites };
+
+  const limiteurPartage = creerLimiteur({ ...toutesLesLimites.partage, maintenant });
+  const limiteurConnexion = creerLimiteur({ ...toutesLesLimites.connexion, maintenant });
+  const limiteurListeAttente = creerLimiteur({ ...toutesLesLimites.listeAttente, maintenant });
 
   app.use((req, res, next) => {
     laRouteRemplaceLeDefaut(res);
@@ -328,6 +356,24 @@ export function creerApplication({
   // rien, la vérifier coûte un argon2.
   app.use("/p", freiner(limiteurPartage));
   app.post(["/connexion", "/inscription"], freiner(limiteurConnexion));
+  // Tout ENVOI vers une page de la vitrine, et pas le seul `POST /` littéral.
+  // Deux raisons :
+  //
+  //  - React Router rend le formulaire avec `action="/?index"`, parce que la
+  //    page est une route index sous une mise en page. Le chemin reste `/`
+  //    (`req.path` ignore la requête), donc `app.post("/")` suffirait — mais
+  //    il faut le SAVOIR, et ça ne se devine pas à la lecture ;
+  //  - une page de vitrine qui porterait demain un second formulaire serait
+  //    freinée sans que personne ait à y penser. L'ensemble des chemins est
+  //    déjà la définition de l'arbre ; qu'il définisse aussi ce qui est
+  //    freiné évite une seconde liste à tenir.
+  //
+  // La LECTURE, elle, n'est jamais freinée : elle ne coûte rien et se met en
+  // cache public, et une vitrine qui répond 429 à un visiteur n'a aucun sens.
+  const freinListeAttente = freiner(limiteurListeAttente);
+  app.post("*", (req, res, next) =>
+    estCheminVitrine(req.path) ? freinListeAttente(req, res, next) : next(),
+  );
 
   if (statiques) app.use(statiques);
   app.all("*", gestionnaire);

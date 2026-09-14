@@ -7,3 +7,4 @@ export * from "./fichiers";
 export * from "./plans";
 export * from "./historique";
 export * from "./partage";
+export * from "./vitrine";
