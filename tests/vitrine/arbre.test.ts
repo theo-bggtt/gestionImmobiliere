@@ -97,6 +97,9 @@ describe("la politique servie sur un chemin de vitrine", () => {
     // géométrie à positionner, contrairement à la page de partage.
     expect(csp).toContain("style-src 'self'");
     expect(csp).not.toContain("'unsafe-inline'");
+    // La police de titrage vient de ce serveur, et de nulle part ailleurs :
+    // `/confidentialite` affirme qu'aucune police n'est chargée chez un tiers.
+    expect(csp).toContain("font-src 'self'");
   });
 
   it("n'émet AUCUN nonce : il n'y a pas de script à signer", async () => {
