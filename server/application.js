@@ -12,6 +12,7 @@
 import { randomBytes } from "node:crypto";
 import express from "express";
 import { cleDeFrein, creerLimiteur } from "./limiteur.js";
+import { estCheminVitrine } from "./chemins-vitrine.js";
 
 /** Un envoi légitime est une photo de capture (≤ 15 Mo, déjà compressée par
  *  le navigateur) ou l'image d'un plan (≤ 25 Mo). La route vérifie ces bornes
@@ -112,6 +113,34 @@ const CSP_PARTAGE = [
   "frame-ancestors 'none'",
 ].join("; ");
 
+/**
+ * La vitrine publique. Même famille que `CSP_PARTAGE` — `default-src 'none'`,
+ * donc aucun script possible, ce qui double la règle « sans `<Scripts />` » —
+ * mais pour une autre raison : la page de partage ne charge rien pour
+ * protéger un jeton, la vitrine parce qu'elle n'a rien à charger.
+ *
+ * Deux écarts avec `CSP_PARTAGE`, tous deux voulus :
+ *
+ *  - pas de `'unsafe-inline'` sur les styles. Le partage en a besoin pour les
+ *    attributs `style` en pourcentage des points de plan et des étiquettes de
+ *    contour ; la vitrine n'a aucune géométrie, donc la politique peut être
+ *    plus stricte. Le jour où une page y met un attribut `style`, elle casse
+ *    au navigateur — et c'est le comportement voulu.
+ *  - `form-action 'self'` porte quelque chose ici : la liste d'attente est un
+ *    formulaire natif en POST. Sur `/p/` il ne couvrait qu'un formulaire GET.
+ *
+ * Pas de `font-src` : le dépôt n'a aucun `@font-face`, tout est en polices
+ * système. Pas de `connect-src` : sans script, rien ne peut émettre.
+ */
+const CSP_VITRINE = [
+  "default-src 'none'",
+  "style-src 'self'",
+  "img-src 'self'",
+  "form-action 'self'",
+  "base-uri 'none'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 /** Les mêmes valeurs que `ENTETES_PARTAGE`, posées ici pour les réponses que
  *  les routes ne produisent pas : un 429 du limiteur, une URL que rien ne
  *  reconnaît sous `/p/`. */
@@ -119,6 +148,16 @@ const ENTETES_PARTAGE_SERVEUR = {
   "Cache-Control": "private, no-store",
   "Referrer-Policy": "no-referrer",
   "X-Robots-Tag": "noindex, nofollow",
+};
+
+/** Les mêmes valeurs qu'`ENTETES_VITRINE` (`app/lib/vitrine/document.ts`),
+ *  pour les réponses qu'aucune route ne produit. Écrites deux fois parce que
+ *  les deux côtés ne peuvent pas partager le module — voir
+ *  `chemins-vitrine.js` —, et `tests/vitrine/arbre.test.ts` compare les deux.
+ *  Aucun `X-Robots-Tag` : une vitrine qu'on n'indexe pas ne sert à rien. */
+const ENTETES_VITRINE_SERVEUR = {
+  "Cache-Control": "public, max-age=300",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
 };
 
 /**
@@ -216,6 +255,17 @@ export function creerApplication({
     if (chemin === "/p" || chemin.startsWith("/p/")) {
       res.setHeader("Content-Security-Policy", CSP_PARTAGE);
       for (const [nom, valeur] of Object.entries(ENTETES_PARTAGE_SERVEUR)) res.setHeader(nom, valeur);
+    } else if (estCheminVitrine(chemin)) {
+      // La vitrine est le seul arbre SANS préfixe : elle se reconnaît à un
+      // ensemble de chemins exacts, jamais à un `startsWith`, qui attraperait
+      // tout le site. Testé avant l'arbre authentifié, et après `/p/` : un
+      // jeton ne peut pas ressembler à une page de vitrine, mais l'ordre dit
+      // laquelle des deux règles gagnerait s'il le pouvait.
+      //
+      // Aucun nonce n'est posé : sans `script-src`, le navigateur interdit
+      // tout script, et un nonce donnerait l'illusion qu'il en existe.
+      res.setHeader("Content-Security-Policy", CSP_VITRINE);
+      for (const [nom, valeur] of Object.entries(ENTETES_VITRINE_SERVEUR)) res.setHeader(nom, valeur);
     } else {
       // Le nonce voyage par `res.locals` jusqu'au `getLoadContext` de React
       // Router, qui le remet au loader racine ; `<Scripts nonce>` le pose sur
