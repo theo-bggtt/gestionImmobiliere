@@ -10,7 +10,8 @@ import { Capture } from "../../components/capture/Capture";
 import { IndicateurFile } from "../../components/capture/IndicateurFile";
 import { AideInstallationIOS } from "../../components/AideInstallationIOS";
 import { rafraichirInstantane } from "../../lib/capture/instantane";
-import { prechargerCoquille } from "../../lib/capture/coquille";
+import { prechargerCoquille, retirerAnciennesVersions } from "../../lib/capture/coquille";
+import { ACCUEIL } from "../../lib/auth/redirection";
 import { demarrerSynchro, souscrire } from "../../lib/capture/synchro";
 
 // La PWA vit ici, et pas dans `root.tsx` : la page de partage est servie par
@@ -72,10 +73,30 @@ export default function AppLayout() {
     // Enregistré depuis ce layout et non depuis `root.tsx`, pour qu'une page
     // hors de l'arbre protégé ne puisse structurellement pas l'installer.
     if (import.meta.env.PROD && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
-        // Pas de service worker (contexte non sécurisé, réglage navigateur) :
-        // l'app fonctionne, elle ne démarre simplement pas hors ligne.
-      });
+      // La portée : un worker servi depuis `/sw.js` a le droit d'en prendre
+      // une plus étroite que son propre chemin, l'inverse est refusé. Sans
+      // `scope`, elle vaudrait `/` — le service worker contrôlerait la
+      // vitrine publique et les pages de partage, qu'il mettrait en cache au
+      // passage alors qu'elles sont servies en `no-store`.
+      //
+      // SANS barre oblique finale, et ce n'est pas une étourderie : la
+      // correspondance des portées est un préfixe de CHAÎNE, pas de segments
+      // de chemin. `/proprietes/` ne contrôlerait pas `/proprietes`, c'est-à-
+      // dire précisément le `start_url`, et l'app ne démarrerait plus hors
+      // ligne. Le revers — `/proprietes-autre` tomberait dans la portée — est
+      // sans objet : `tests/pwa/coquille.test.ts` vérifie qu'aucune route
+      // hors de l'arbre applicatif ne commence par ce préfixe.
+      navigator.serviceWorker
+        .register("/sw.js", { scope: ACCUEIL })
+        // Le ménage APRÈS coup, pour ne rien retirer si la nouvelle
+        // inscription n'a pas pu être posée. Voir `retirerAnciennesVersions` :
+        // une inscription est identifiée par sa portée, donc celle de la
+        // racine survivrait à ce déplacement sans ce retrait.
+        .then(() => retirerAnciennesVersions())
+        .catch(() => {
+          // Pas de service worker (contexte non sécurisé, réglage navigateur) :
+          // l'app fonctionne, elle ne démarre simplement pas hors ligne.
+        });
     }
   }, []);
 
@@ -95,7 +116,9 @@ export default function AppLayout() {
   return (
     <div className="app">
       <header className="app-tete">
-        <Link to="/" className="app-marque">
+        {/* `/` est la vitrine publique : la marque ramène le propriétaire
+            connecté chez lui, pas sur la page qui explique le produit. */}
+        <Link to={ACCUEIL} className="app-marque">
           gestionImmobiliere
         </Link>
         <IndicateurFile />

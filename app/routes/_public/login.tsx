@@ -8,7 +8,8 @@ import { utilisateur } from "../../db/schema/index";
 import { verifierMotDePasse } from "../../lib/auth/password.server";
 import { creerSession } from "../../lib/auth/session.server";
 import { inscriptionOuverte } from "../../lib/auth/inscription.server";
-import { cheminInterne } from "../../lib/auth/redirection";
+import { ACCUEIL, cheminInterne } from "../../lib/auth/redirection";
+import { COQUILLE } from "../../lib/capture/coquille";
 
 // Le lien « Créer un compte » n'a de sens que tant que la porte est ouverte,
 // c'est-à-dire avant le premier compte (voir `inscription.server.ts`).
@@ -38,14 +39,16 @@ export default function Connexion() {
   const { inscriptionOuverte: ouverte } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [searchParams] = useSearchParams();
-  const depuis = searchParams.get("depuis") ?? "/";
+  // `/` est la vitrine publique : une connexion sans `?depuis=` ramène chez
+  // soi, pas sur la page qui explique le produit à qui ne la connaît pas.
+  const depuis = searchParams.get("depuis") ?? ACCUEIL;
 
   // Passer par cet écran veut dire déconnexion ou session expirée : les pages
   // authentifiées que le service worker garde en coquille n'ont plus rien à
   // faire là. La boîte d'envoi, elle, est épargnée — elle contient des
   // captures que personne n'a encore vues passer.
   useEffect(() => {
-    if ("caches" in window) void caches.delete("coquille-v1");
+    if ("caches" in window) void caches.delete(COQUILLE);
   }, []);
 
   return (

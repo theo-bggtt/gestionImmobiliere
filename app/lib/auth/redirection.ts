@@ -20,8 +20,21 @@
 // Mais le champ caché du formulaire accepte ce qu'on y met : c'est le LECTEUR
 // qui doit se défendre, pas le producteur.
 
-/** La destination de repli. Un chemin, jamais une URL. */
-export const ACCUEIL = "/";
+/**
+ * L'accueil de l'application. Un chemin, jamais une URL.
+ *
+ * Écrit ICI et nulle part ailleurs, parce qu'il est trois choses à la fois et
+ * qu'elles doivent rester la même : la destination de repli après une
+ * connexion sans `?depuis=` (ou avec un `depuis` refusé), le `start_url` du
+ * manifeste, et la portée du service worker. Ce module est neutre — aucun
+ * import de drizzle, du schéma ni de React Router —, donc le navigateur et le
+ * serveur peuvent tous deux le lire.
+ *
+ * Ce n'est plus `/` : la racine appartient à la vitrine publique, et y
+ * déposer un propriétaire qui vient de se connecter l'enverrait sur la page
+ * qui explique le produit à qui ne le connaît pas.
+ */
+export const ACCUEIL = "/proprietes";
 
 /**
  * Rend `valeur` si c'est un chemin interne, `ACCUEIL` sinon. Ne nettoie
