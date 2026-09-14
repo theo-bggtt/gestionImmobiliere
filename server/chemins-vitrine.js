@@ -26,7 +26,13 @@
 // sert la page et doit recevoir la même politique qu'`/a-propos`.
 
 /** @type {ReadonlySet<string>} */
-export const CHEMINS_VITRINE = new Set(["/"]);
+export const CHEMINS_VITRINE = new Set([
+  "/",
+  "/fonctionnalites",
+  "/partage",
+  "/a-propos",
+  "/confidentialite",
+]);
 
 /**
  * Vrai si ce chemin est servi par la vitrine.

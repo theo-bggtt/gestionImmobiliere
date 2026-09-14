@@ -1,0 +1,164 @@
+/* app/styles/vitrine.css
+   La feuille de la vitrine publique, servie par un `links` de route et NON
+   versée dans `app.css`. Celle-ci part à tous les arbres, page de partage
+   comprise : un locataire venu voir où sont les prises n'a pas à télécharger
+   la mise en page d'une page de vente.
+
+   Les variables de `:root` viennent d'`app.css`, qui est servie partout par
+   `root.tsx` : la vitrine doit RESSEMBLER au produit, c'est la moitié de
+   l'intérêt d'une vitrine maison plutôt qu'un site à part.
+
+   Aucun attribut `style` en ligne nulle part dans cet arbre : sa politique de
+   sécurité n'a pas de `'unsafe-inline'`, contrairement à celle de `/p/` qui
+   en a besoin pour la géométrie des plans. */
+
+.v-corps {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 var(--gouttiere) 64px;
+}
+
+/* ── En-tête et pied ──────────────────────────────────────────────── */
+
+.v-tete {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 14px var(--gouttiere);
+}
+.v-marque {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--texte);
+}
+/* C'est la navigation qui pousse « Mon espace » à droite, et non une marge
+   automatique sur la marque : une marge `auto` absorbe TOUT l'espace libre
+   avant que le bouton ne soit placé, ce qui le renvoyait à la ligne alors
+   qu'il restait la place (mesuré : 152 px de marge, bouton en seconde
+   ligne). En `flex: 1 1 auto` avec `min-width: 0`, la navigation prend ce
+   qui reste et se comprime au lieu de provoquer un retour. */
+.v-nav {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 14px;
+  font-size: 0.92rem;
+}
+/* La page courante se marque par un soulignement et non par une graisse :
+   passer en gras ÉLARGIT le lien, donc la navigation, donc l'en-tête — et
+   « Mon espace » passait à la ligne sur les pages du menu et seulement sur
+   elles (mesuré : navigation à 533 px sur `/partage` contre 372 sur `/`).
+   Un marqueur d'état ne doit pas changer la mise en page. */
+.v-nav a[aria-current="page"] {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  color: var(--texte);
+}
+/* Sur un téléphone, l'en-tête passe à trois lignes : aligner à droite une
+   navigation qui a déjà replié laisse « À propos » seul et décalé. Elle
+   revient à gauche, sous la marque. */
+@media (max-width: 620px) {
+  .v-nav { justify-content: flex-start; }
+}
+
+.v-espace {
+  border: 1px solid var(--accent);
+  border-radius: var(--rayon);
+  padding: 7px 16px;
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.v-pied {
+  border-top: 1px solid var(--trait);
+  margin-top: 56px;
+  padding: 24px var(--gouttiere) 40px;
+  color: var(--texte-doux);
+  font-size: 0.9rem;
+}
+.v-pied-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto 10px;
+}
+.v-pied p { max-width: 760px; margin: 0 auto; }
+
+/* ── Titres et texte ──────────────────────────────────────────────── */
+
+.v-titre {
+  font-size: 2rem;
+  line-height: 1.2;
+  margin: 40px 0 16px;
+  letter-spacing: -0.01em;
+}
+.v-chapeau {
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: var(--texte-doux);
+  margin: 0 0 28px;
+  max-width: 58ch;
+}
+.v-corps h2 {
+  font-size: 1.25rem;
+  margin: 40px 0 10px;
+}
+.v-corps h3 {
+  font-size: 1rem;
+  margin: 24px 0 6px;
+}
+.v-corps p,
+.v-corps li { max-width: 68ch; }
+
+/* ── Blocs ────────────────────────────────────────────────────────── */
+
+.v-carte {
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  padding: 20px;
+}
+.v-grille {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin: 20px 0;
+  padding: 0;
+  list-style: none;
+}
+.v-grille h3 { margin-top: 0; }
+.v-grille p { margin: 0; color: var(--texte-doux); }
+
+/* Le trait de couleur d'une audience : quatre lecteurs, quatre vues de la
+   même base. Une bordure, pas une icône — rien à télécharger. */
+.v-audience {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  margin: 22px 0;
+}
+.v-audience h3 { margin: 0 0 4px; }
+.v-audience p { margin: 0; color: var(--texte-doux); }
+
+.v-appel {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: var(--rayon);
+  padding: 14px 28px;
+  margin: 8px 0;
+}
+.v-appel:hover { background: var(--accent-clair); }
+
+.v-note {
+  color: var(--texte-doux);
+  font-size: 0.9rem;
+}
