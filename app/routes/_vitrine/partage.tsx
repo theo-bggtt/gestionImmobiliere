@@ -11,6 +11,12 @@
 // « pas grisé, pas verrouillé : absent » est une phrase qu'on peut écrire
 // n'importe où, et un dessin où l'intérieur est en tiretés est ce qui la
 // prouve.
+//
+// Les `data-libelle` du tableau ne sont pas décoratifs : sous 760 px le
+// tableau s'empile en blocs et ses en-têtes de colonne disparaissent, c'est
+// alors cet attribut que la feuille rend devant chaque cellule. Une cellule
+// ajoutée sans son libellé perdrait sa colonne en silence, sur téléphone
+// seulement.
 import { Link } from "react-router";
 import { Echelle } from "../../components/vitrine/Echelle";
 import { PlanMini } from "../../components/vitrine/PlanMini";
@@ -61,28 +67,34 @@ export default function Partage() {
             <tbody>
               <tr>
                 <th scope="row">la chaudière change</th>
-                <td>Le classeur, le PDF et le message épinglé sont à corriger, un par un.</td>
-                <td>Une fiche à modifier. Chaque lien montre la version du jour.</td>
+                <td data-libelle="Avec un document">
+                  Le classeur, le PDF et le message épinglé sont à corriger, un par un.
+                </td>
+                <td data-libelle="Avec un lien">Une fiche à modifier. Chaque lien montre la version du jour.</td>
               </tr>
               <tr>
                 <th scope="row">le locataire lit</th>
-                <td>Tout ce qui est dans le document, y compris ce qui ne le regarde pas.</td>
-                <td>Ce que son lien autorise. Le reste n'existe pas pour lui.</td>
+                <td data-libelle="Avec un document">
+                  Tout ce qui est dans le document, y compris ce qui ne le regarde pas.
+                </td>
+                <td data-libelle="Avec un lien">Ce que son lien autorise. Le reste n'existe pas pour lui.</td>
               </tr>
               <tr>
                 <th scope="row">il cherche la vanne</th>
-                <td>Une image figée, ou une phrase.</td>
-                <td>Le plan, avec les objets repérés dessus, ceux qu'il a le droit de voir.</td>
+                <td data-libelle="Avec un document">Une image figée, ou une phrase.</td>
+                <td data-libelle="Avec un lien">
+                  Le plan, avec les objets repérés dessus, ceux qu'il a le droit de voir.
+                </td>
               </tr>
               <tr>
                 <th scope="row">il part</th>
-                <td>Le PDF reste dans sa boîte de réception.</td>
-                <td>Vous révoquez le lien. Il ne montre plus rien.</td>
+                <td data-libelle="Avec un document">Le PDF reste dans sa boîte de réception.</td>
+                <td data-libelle="Avec un lien">Vous révoquez le lien. Il ne montre plus rien.</td>
               </tr>
               <tr>
                 <th scope="row">il doit installer quelque chose</th>
-                <td>Rien.</td>
-                <td>Rien non plus. Une adresse à ouvrir, sans compte.</td>
+                <td data-libelle="Avec un document">Rien.</td>
+                <td data-libelle="Avec un lien">Rien non plus. Une adresse à ouvrir, sans compte.</td>
               </tr>
             </tbody>
           </table>

@@ -372,9 +372,15 @@ body {
   display: block;
   width: 100%;
   height: auto;
-  /* Le relevé garde une hauteur de dessin sur un écran très large : sans ce
-     plafond, un 21/9 l'étire en une frise de 600 px de haut. */
-  max-height: 62vh;
+  /* Deux plafonds, pour deux débordements différents. `62vh` protège les
+     écrans BAS (un portable en 1280×600, un téléphone couché) où un dessin à
+     hauteur libre pousserait tout le texte sous la ligne de flottaison.
+     `520px` protège les écrans LARGES : à 2560 px, la hauteur naturelle du
+     relevé est de 896 px, soit une frise qui occupe l'écran entier pour dire
+     ce que 500 px disaient déjà. Sous le plafond, le dessin se centre sur sa
+     bande de papier, ce qui est exactement ce que fait un tirage posé sur une
+     table plus grande que lui. */
+  max-height: min(62vh, 520px);
 }
 
 /* Le dessin lui-même. Trois épaisseurs, et rien d'autre. */
@@ -1225,6 +1231,95 @@ body {
   }
   .v-niveaux li {
     grid-template-columns: 1fr;
+  }
+  /* ── Le tableau de comparaison s'empile ───────────────────────────
+     Mesuré à 320 px : trois colonnes de prose tombent à 87 px, et les faire
+     défiler dans une fenêtre de 269 px ne rend pas une phrase lisible, ça
+     déplace le problème. Chaque ligne devient donc un bloc — le jour, puis
+     les deux réponses, chacune sous son libellé de colonne rendu depuis
+     `data-libelle`. La colonne qui gagne garde son trait de coupe, comme
+     dans `.v-coches`. */
+  .v-tableau,
+  .v-tableau tbody,
+  .v-tableau tr,
+  .v-tableau tbody th,
+  .v-tableau td {
+    display: block;
+    width: auto;
+  }
+  /* Les en-têtes de colonne disparaissent : c'est `data-libelle` qui les
+     rend, devant la cellule qu'ils qualifient. */
+  .v-tableau thead {
+    display: none;
+  }
+  .v-tableau tr {
+    padding: 20px 0 6px;
+    border-top: var(--v-coupe) solid var(--v-encre);
+  }
+  .v-tableau tbody th {
+    padding: 0 0 12px;
+    border-top: 0;
+    font-family: var(--v-titrage);
+    font-size: 1.08rem;
+    line-height: 1.25;
+  }
+  /* Le libellé de la ligne est un fragment (« la chaudière change ») : sans
+     l'en-tête de colonne qui le portait, il lui faut son début de phrase. */
+  .v-tableau tbody th::before {
+    content: "Le jour où ";
+  }
+  .v-tableau td {
+    padding: 0 0 14px 16px;
+    border-top: 0;
+    border-left: var(--v-vu) solid var(--v-pale);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  .v-tableau td::before {
+    content: attr(data-libelle);
+    display: block;
+    margin-bottom: 3px;
+    font-family: var(--v-titrage);
+    font-size: 0.82rem;
+    color: var(--v-graphite);
+  }
+  .v-tableau td:last-child {
+    border-left: var(--v-coupe) solid var(--v-encre);
+    padding-right: 0;
+  }
+
+  /* ── Cibles tactiles ──────────────────────────────────────────────
+     Le doigt, pas le curseur. Le produit se donne un plancher de 56 px
+     (`--cible` dans `app.css`) ; la vitrine se contente de 48, parce qu'elle
+     n'est pas un flux de saisie qu'on parcourt en marchant — mais un lien de
+     navigation de 20 px de haut se rate, et c'est le premier geste que fait
+     un visiteur. */
+  .v-nav a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-bottom: 0;
+  }
+  .v-espace {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .v-appel,
+  .v-appel-second {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+  }
+  .v-formulaire input,
+  .v-formulaire button {
+    min-height: 48px;
+  }
+  .v-pied-liens a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
   }
   .v-gestes > li {
     grid-template-columns: 2.4rem 1fr;
