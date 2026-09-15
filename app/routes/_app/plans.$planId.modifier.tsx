@@ -83,39 +83,57 @@ export default function ModifierPlan() {
         <img className="plan-apercu" src={liens.image(plan.imageFichierId, "vignette")} alt="" />
       )}
 
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <input type="hidden" name="_action" value="renommer" />
         <label>
           Nom (pour vous seul)
           <input type="text" name="nom" defaultValue={plan.nom} required maxLength={NOM_MAX} />
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Renommer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Renommer</button>
+        </div>
       </Form>
 
-      <section>
+      <section className="bloc">
         <h2>Remplacer l'image</h2>
         <p className="resultats-vide">
           {points.length === 0
             ? "Aucun objet n'est posé sur ce plan."
             : `Les ${points.length} objet${points.length > 1 ? "s" : ""} posé${points.length > 1 ? "s" : ""} sur ce plan gardent leur position : elle est enregistrée en pourcentage, pas en pixels.`}
         </p>
-        <form method="post" encType="multipart/form-data" onSubmit={remplacer}>
+        <form method="post" encType="multipart/form-data" onSubmit={remplacer} className="formulaire">
           <EditeurImagePlan onChange={setPreparation} />
-          {fetcher.data?.erreur && <p role="alert">{fetcher.data.erreur}</p>}
-          <button type="submit" disabled={!preparation || fetcher.state !== "idle"}>
-            {fetcher.state === "idle" ? "Remplacer l'image" : "Envoi…"}
-          </button>
+          {fetcher.data?.erreur && (
+          <p role="alert" className="message-erreur">
+            {fetcher.data.erreur}
+          </p>
+        )}
+          <div className="formulaire-actions">
+            <button type="submit" className="bouton-trait" disabled={!preparation || fetcher.state !== "idle"}>
+              {fetcher.state === "idle" ? "Remplacer l'image" : "Envoi…"}
+            </button>
+          </div>
         </form>
       </section>
 
-      <Form method="post">
-        <input type="hidden" name="_action" value="supprimer" />
-        <button type="submit">Supprimer ce plan</button>
-      </Form>
+      <div className="formulaire-danger">
+        <Form method="post">
+          <input type="hidden" name="_action" value="supprimer" />
+          <button type="submit" className="bouton-discret">
+            Supprimer ce plan
+          </button>
+        </Form>
+      </div>
 
-      <p>
-        <Link to={`/proprietes/${propriete.id}/plans?plan=${plan.id}`}>Revenir au plan</Link>
+      <p className="bloc-suite">
+        <Link to={`/proprietes/${propriete.id}/plans?plan=${plan.id}`} viewTransition>
+          Revenir au plan
+        </Link>
       </p>
     </main>
   );

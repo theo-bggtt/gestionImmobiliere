@@ -1123,6 +1123,19 @@ input.partage-lien {
   margin: 0;
   flex: none;
 }
+/* Le chemin d'une zone (bâtiment · niveau) passe sous son nom, en retrait de
+   la case : à côté, il faisait plier « Chambre 1 » sur deux lignes. */
+.portee-case {
+  flex-wrap: wrap;
+  row-gap: 0;
+  padding: 6px 0;
+}
+.portee-case .selecteur-secondaire {
+  flex-basis: 100%;
+  padding-left: 30px;
+  margin-top: -4px;
+  font-size: 0.82rem;
+}
 
 /* ── Listes de structure ──────────────────────────────────────────── */
 
@@ -1162,6 +1175,16 @@ input.partage-lien {
   font-weight: 500;
   color: var(--graphite);
   margin-bottom: 8px;
+}
+
+/* Une rangée de liens d'action en tête de liste : le premier est un bouton
+   de trait, les autres des liens. */
+.rangee-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 20px;
 }
 
 /* ── Le plan ──────────────────────────────────────────────────────── */
@@ -1406,6 +1429,19 @@ input.partage-lien {
 .plan-placement {
   font-size: 0.85rem;
   color: var(--encre);
+}
+/* Dans la barre d'outils et la bannière de proposition, les boutons sont
+   plus bas que dans un formulaire : ils vivent sur une ligne de texte. */
+.plan-outils .bouton-plein,
+.plan-proposition .bouton-trait {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.92rem;
+}
+.plan-suite {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: var(--vu) solid var(--pale);
 }
 .plan-liste {
   margin-top: 10px;
@@ -1685,17 +1721,25 @@ input.partage-lien {
   gap: 6px;
   align-items: center;
 }
+/* Une rangée qui tient sur 343 px : le nom cède d'abord, le type ensuite,
+   la croix jamais. Mesuré à 375 px, la rangée débordait de 69 px. */
 .demarrage-zone input {
-  flex: 1 1 140px;
+  flex: 1 1 100px;
   width: auto;
+  min-width: 0;
   min-height: 44px;
   margin-top: 0;
   padding: 0 10px;
 }
 .demarrage-zone select {
+  flex: 0 1 8.5rem;
   width: auto;
+  min-width: 0;
   min-height: 44px;
   margin-top: 0;
+}
+.demarrage-zone .demarrage-retirer {
+  flex: none;
 }
 
 .demarrage-retirer {

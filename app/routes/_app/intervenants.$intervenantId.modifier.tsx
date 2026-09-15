@@ -45,7 +45,9 @@ export default function ModifierIntervenant() {
   return (
     <main>
       <p className="fiche-fil">
-        <Link to={`/proprietes/${propriete.id}/intervenants`}>Intervenants</Link>
+        <Link to={`/proprietes/${propriete.id}/intervenants`} viewTransition>
+          Intervenants
+        </Link>
       </p>
       <h1>{intervenant.nom}</h1>
 
@@ -55,10 +57,14 @@ export default function ModifierIntervenant() {
         libelleBouton="Enregistrer"
       />
 
-      <Form method="post">
-        <input type="hidden" name="_action" value="supprimer" />
-        <button type="submit" className="bouton-discret">Supprimer l'intervenant</button>
-      </Form>
+      <div className="formulaire-danger">
+        <Form method="post">
+          <input type="hidden" name="_action" value="supprimer" />
+          <button type="submit" className="bouton-discret">
+            Supprimer l'intervenant
+          </button>
+        </Form>
+      </div>
     </main>
   );
 }

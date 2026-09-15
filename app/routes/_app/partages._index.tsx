@@ -10,7 +10,8 @@ import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { chargerZonesVignettes } from "../../lib/recherche/recherche.server";
 import { creerJeton, partageActif } from "../../lib/partage/partage.server";
-import { LIBELLES_NIVEAU, libelleNiveau } from "../../lib/partage/niveaux";
+import { libelleNiveau } from "../../lib/partage/niveaux";
+import { ChoixNiveau } from "../../components/ChoixNiveau";
 import { jourLisible } from "../../lib/dates";
 
 const NOM_MAX = 120;
@@ -131,17 +132,17 @@ export default function EcranPartages() {
         l'adresse.
       </p>
 
-      <section>
-        <h2>Liens existants</h2>
+      <section className="bloc">
+        <p className="cote">Liens existants</p>
         {partages.length === 0 ? (
           <p className="resultats-vide">Aucun lien pour l'instant.</p>
         ) : (
-          <ul className="partages-liste">
+          <ul className="filets partages-liste">
             {partages.map((p) => (
-              <li key={p.id} className={p.actif ? "partage-ligne" : "partage-ligne partage-ligne-inactif"}>
+              <li key={p.id} className={p.actif ? "partage-ligne" : "partage-ligne partage-ligne-inactif filet-tirete"}>
                 <div className="partage-tete">
                   <span className="partage-nom">{p.nom}</span>
-                  <span className="partage-etat">
+                  <span className={p.actif ? "etiquette etiquette-active" : "etiquette etiquette-hors"}>
                     {p.revoque ? "révoqué" : p.actif ? "actif" : "expiré"}
                   </span>
                 </div>
@@ -151,12 +152,16 @@ export default function EcranPartages() {
                 </p>
                 {p.actif && <input className="partage-lien" type="text" readOnly value={p.lien} />}
                 <div className="partage-actions">
-                  <Link to={`${p.id}/apercu`}>Voir ce que verra le destinataire</Link>
+                  <Link to={`${p.id}/apercu`} viewTransition>
+                    Voir ce que verra le destinataire
+                  </Link>
                   {p.actif && (
                     <Form method="post">
                       <input type="hidden" name="_action" value="revoquer" />
                       <input type="hidden" name="partageId" value={p.id} />
-                      <button type="submit" className="bouton-discret">Révoquer</button>
+                      <button type="submit" className="bouton-discret">
+                        Révoquer
+                      </button>
                     </Form>
                   )}
                 </div>
@@ -166,24 +171,20 @@ export default function EcranPartages() {
         )}
       </section>
 
-      <section>
-        <h2>Nouveau lien</h2>
-        <Form method="post">
+      <section className="bloc">
+        <p className="cote">Nouveau lien</p>
+        <Form method="post" className="formulaire">
           <label>
             Nom (pour vous seul)
             <input type="text" name="nom" required maxLength={NOM_MAX} placeholder="Jardinier Marc" />
           </label>
 
-          <label>
-            Plafond de visibilité
-            <select name="niveauMax" defaultValue="1">
-              {LIBELLES_NIVEAU.map((libelle, niveau) => (
-                <option key={niveau} value={niveau}>
-                  {niveau} — {libelle}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ChoixNiveau
+            nom="niveauMax"
+            valeur={1}
+            etiquette="Plafond de visibilité"
+            aide="Le lien montre les fiches jusqu'à ce niveau, jamais au-dessus."
+          />
 
           <label>
             Expiration (optionnelle)
@@ -191,33 +192,43 @@ export default function EcranPartages() {
           </label>
 
           <fieldset className="portee-choix">
-            <legend>Portée — ne rien cocher donne toute la propriété</legend>
+            <legend className="cote">Portée — ne rien cocher donne toute la propriété</legend>
             <div className="portee-groupe">
-              <h3 className="facettes-titre">Zones</h3>
-              {zones.map((z) => (
-                <label key={z.id} className="portee-case">
-                  <input type="checkbox" name="zone" value={z.id} />
-                  {z.nom} <span className="selecteur-secondaire">{z.chemin}</span>
-                </label>
-              ))}
+              <h3 className="cote facettes-titre">Zones</h3>
+              <div className="portee-cases">
+                {zones.map((z) => (
+                  <label key={z.id} className="portee-case">
+                    <input type="checkbox" name="zone" value={z.id} />
+                    {z.nom} <span className="selecteur-secondaire">{z.chemin}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <div className="portee-groupe">
-              <h3 className="facettes-titre">Systèmes</h3>
+              <h3 className="cote facettes-titre">Systèmes</h3>
               {systemes.length === 0 ? (
                 <p className="resultats-vide">Aucun système.</p>
               ) : (
-                systemes.map((s) => (
-                  <label key={s.id} className="portee-case">
-                    <input type="checkbox" name="systeme" value={s.id} />
-                    {s.nom}
-                  </label>
-                ))
+                <div className="portee-cases">
+                  {systemes.map((s) => (
+                    <label key={s.id} className="portee-case">
+                      <input type="checkbox" name="systeme" value={s.id} />
+                      {s.nom}
+                    </label>
+                  ))}
+                </div>
               )}
             </div>
           </fieldset>
 
-          {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-          <button type="submit">Créer le lien</button>
+          {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+          <div className="formulaire-actions">
+            <button type="submit">Créer le lien</button>
+          </div>
         </Form>
       </section>
     </main>

@@ -265,6 +265,7 @@ export function VuePlan({
             </button>
             <button
               type="button"
+              className="bouton-plein"
               onClick={tracage.onTerminer}
               disabled={tracage.envoi || tracage.sommets.length < SOMMETS_MIN}
             >
@@ -449,8 +450,10 @@ export function VuePlan({
           <ul>
             {points.map((p) => (
               <li key={p.id}>
-                <Link to={liens.fiche(p.elementId)}>{p.nom}</Link>
-                <span className="selecteur-secondaire"> {p.zoneNom}</span>
+                <Link to={liens.fiche(p.elementId)} className="nom">
+                  {p.nom}
+                </Link>
+                <span className="lieu">{p.zoneNom}</span>
                 <button type="button" className="bouton-discret" onClick={() => onRetirer(p.id)}>
                   Retirer du plan
                 </button>

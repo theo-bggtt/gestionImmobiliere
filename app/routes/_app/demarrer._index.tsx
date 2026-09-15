@@ -108,7 +108,7 @@ export default function Demarrer() {
         <Questions reponses={reponses} onChanger={setReponses} />
 
         <div className="demarrage-actions">
-          <button type="button" onClick={() => setSquelette(composerSquelette(reponses))}>
+          <button type="button" className="bouton-plein" onClick={() => setSquelette(composerSquelette(reponses))}>
             Proposer une structure
           </button>
           <Link to={`/proprietes/${propriete.id}`} className="demarrage-passer">
@@ -131,9 +131,21 @@ export default function Demarrer() {
 
       <Form method="post" className="demarrage-actions">
         <input type="hidden" name="squelette" value={JSON.stringify(squelette)} />
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        {nomsVides && <p role="alert">Donnez un nom à chaque bâtiment, niveau et zone, ou retirez-les.</p>}
-        {vide && <p role="alert">Il ne reste rien à créer.</p>}
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        {nomsVides && (
+          <p role="alert" className="message-erreur">
+            Donnez un nom à chaque bâtiment, niveau et zone, ou retirez-les.
+          </p>
+        )}
+        {vide && (
+          <p role="alert" className="message-erreur">
+            Il ne reste rien à créer.
+          </p>
+        )}
         <button type="submit" disabled={nomsVides || vide || navigation.state !== "idle"}>
           {navigation.state === "idle" ? "Créer cette structure" : "Création…"}
         </button>
@@ -156,6 +168,7 @@ function Questions({
 
   return (
     <section className="demarrage-questions">
+      <p className="cote">Quelques questions</p>
       <fieldset>
         <legend>De quoi s'agit-il ?</legend>
         <label>
