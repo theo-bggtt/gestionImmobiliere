@@ -2,13 +2,17 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteEr
 import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { documentSansScripts } from "./lib/partage/document";
 import { PageErreur, decrireErreur } from "./components/PageErreur";
+import feuilleReleve from "./styles/releve.css?url";
 import feuilleDeStyle from "./styles/app.css?url";
 
 // Le manifeste et l'enregistrement du service worker ont quitté ce fichier
 // pour `routes/_app/layout.tsx` : ils ne doivent pas atteindre la page de
 // partage (règle non négociable #7 de l'étape 3). Racine commune à tous les
 // arbres, `root.tsx` les aurait servis partout.
+// `releve.css` d'abord : c'est le langage (jetons, polices, primitives) ;
+// `app.css` compose avec. L'ordre du tableau est l'ordre de la cascade.
 export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: feuilleReleve },
   { rel: "stylesheet", href: feuilleDeStyle },
   { rel: "icon", href: "/icones/icone-192.png", type: "image/png" },
 ];

@@ -46,40 +46,22 @@
    d'`--alerte`, et il ne sert qu'à ce qui est refusé ou masqué — jamais à
    attirer l'œil sur autre chose. */
 
-@font-face {
-  font-family: "Fraunces";
-  src: url("/polices/fraunces-latin.woff2") format("woff2");
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
+/* Pont transitoire, retiré à la tâche 2 quand cette feuille est réécrite
+   sur les primitives de `releve.css`. */
 :root {
-  --v-titrage: "Fraunces", Georgia, "Times New Roman", serif;
-
-  /* L'encre du dessin, et non un accent : c'est `--accent` du produit. */
-  --v-encre: #1f4f46;
-  --v-encre-claire: #2c6c60;
-  --v-graphite: #5f6763;
-  --v-pale: #d5d8d2;
-  --v-papier: #faf9f7;
-  --v-creux: #f1f0ea;
-  /* Le crayon rouge de révision d'un tirage : ce qui est refusé, masqué,
-     hors de portée. Jamais décoratif. C'est `--alerte` du produit. */
-  --v-revision: #8c2f1f;
-
-  /* Les trois épaisseurs, et pas une quatrième. Voir l'en-tête. */
-  --v-coupe: 2.5px;
-  --v-vu: 1px;
-
-  /* La grille maîtresse. `--v-colonne` tient sous 75 caractères au corps
-     courant ; `--v-large` est la largeur des blocs qui débordent du texte
-     sans aller jusqu'au bord. */
-  --v-colonne: 34rem;
-  --v-large: 64rem;
-  --v-marge: 20px;
+  --v-titrage: var(--titrage);
+  --v-encre: var(--encre);
+  --v-encre-claire: var(--encre-claire);
+  --v-graphite: var(--graphite);
+  --v-pale: var(--pale);
+  --v-papier: var(--papier);
+  --v-creux: var(--creux);
+  --v-revision: var(--revision);
+  --v-coupe: var(--coupe);
+  --v-vu: var(--vu);
+  --v-colonne: var(--colonne);
+  --v-large: var(--large);
+  --v-marge: var(--marge);
 }
 
 /* ── La grille ────────────────────────────────────────────────────────
@@ -917,25 +899,25 @@ body {
 /* ── L'échelle des quatre niveaux ─────────────────────────────────────
    Les barreaux sont un dessin, pas un texte : un `aria-hidden` les cache aux
    lecteurs d'écran, et la portée écrite à côté dit la même chose en mots. */
-.v-echelle {
+.echelle {
   display: flex;
   gap: 3px;
   width: 100%;
   max-width: 5rem;
   margin-bottom: 12px;
 }
-.v-barreau {
+.echelle > span {
   flex: 1 1 0;
   height: 5px;
   background: var(--v-pale);
 }
-.v-barreau.plein {
+.echelle > span.plein {
   background: var(--v-encre);
 }
-.v-encre .v-barreau {
+.v-encre .echelle > span {
   background: rgba(250, 249, 247, 0.28);
 }
-.v-encre .v-barreau.plein {
+.v-encre .echelle > span.plein {
   background: var(--v-papier);
 }
 
@@ -965,7 +947,7 @@ body {
   font-weight: 500;
   color: var(--v-encre);
 }
-.v-niveaux .v-echelle {
+.v-niveaux .echelle {
   margin-bottom: 6px;
 }
 /* Dans une colonne de duo, le plan garde sa taille de dessin : étiré sur la
@@ -1098,9 +1080,6 @@ body {
    `--v-large` rejoint `--v-colonne` : une seule variable à changer, et tous
    les blocs « larges » s'alignent sur la colonne de texte. */
 @media (max-width: 1000px) {
-  :root {
-    --v-large: 46rem;
-  }
   .v-lecteurs {
     grid-template-columns: 1fr 1fr;
   }
@@ -1119,10 +1098,6 @@ body {
 }
 
 @media (max-width: 760px) {
-  :root {
-    --v-large: var(--v-colonne);
-    --v-marge: 18px;
-  }
   .v-sec {
     padding: 52px 0;
   }

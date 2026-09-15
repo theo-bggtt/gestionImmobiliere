@@ -7,6 +7,7 @@
 // Aucun script, quel que soit l'arbre : une page d'erreur n'a rien à hydrater,
 // et celle de `/p/` doit rester sans JavaScript comme le reste du partage.
 // Le lien de retour est une ancre ordinaire, qui recharge.
+import feuilleReleve from "../styles/releve.css?url";
 import feuilleDeStyle from "../styles/app.css?url";
 
 export type ErreurRendue = { status: number; titre: string; message: string };
@@ -34,6 +35,7 @@ export function PageErreur({ erreur }: { erreur: ErreurRendue }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="robots" content="noindex, nofollow" />
+        <link rel="stylesheet" href={feuilleReleve} />
         <link rel="stylesheet" href={feuilleDeStyle} />
         <title>{erreur.titre}</title>
       </head>

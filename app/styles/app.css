@@ -3,34 +3,18 @@
    de capture : sur un téléphone, des cibles trop petites coûtent des secondes
    et des reprises, c'est-à-dire le budget entier des 30 secondes. */
 
+/* Pont transitoire vers `releve.css`, retiré à la fin de la refonte (tâche 7)
+   quand plus aucune règle ci-dessous ne lit ces noms. */
 :root {
-  --fond: #faf9f7;
-  --surface: #ffffff;
-  --texte: #1b1b19;
-  --texte-doux: #6b6b64;
-  --trait: #e3e0d9;
-  --accent: #1f4f46;
-  --accent-clair: #2c6c60;
-  --alerte: #8c2f1f;
-  --rayon: 12px;
-  --gouttiere: 16px;
-  /* Plancher de 56 px : la taille d'un pouce, pas celle d'un curseur. */
-  --cible: 56px;
+  --fond: var(--papier);
+  --surface: var(--feuille);
+  --texte-doux: var(--graphite);
+  --trait: var(--pale);
+  --accent: var(--encre);
+  --accent-clair: var(--encre-claire);
+  --alerte: var(--revision);
+  --rayon: 0px;
 }
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  background: var(--fond);
-  color: var(--texte);
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-  -webkit-text-size-adjust: 100%;
-}
-
-h1 { font-size: 1.5rem; margin: 0 0 var(--gouttiere); }
-h2 { font-size: 1.1rem; margin: 0 0 0.5rem; }
-a { color: var(--accent); }
 
 /* ── Charpente ────────────────────────────────────────────────────── */
 

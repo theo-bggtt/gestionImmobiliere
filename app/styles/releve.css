@@ -1,0 +1,709 @@
+/* app/styles/releve.css
+   Le langage visuel du produit, déclaré UNE fois et servi à tous les arbres
+   par `root.tsx` : l'application, la page d'un lien, les pages de connexion,
+   la vitrine. `app.css` (les écrans du produit) et `vitrine.css` (les mises
+   en page de vente) composent avec ce qui est ici et ne redéclarent ni un
+   jeton ni une primitive.
+
+   ── L'IDÉE PORTEUSE : L'ÉPAISSEUR DU TRAIT EST UNE INFORMATION ──────────
+
+   Sur un relevé d'architecte, l'épaisseur et le motif d'un trait ne décorent
+   pas, ils disent quelque chose : un trait ÉPAIS est une coupe (le mur qu'on
+   traverse), un trait FIN est une projection (ce qu'on voit sans le couper),
+   un trait INTERROMPU est ce qui existe mais n'est pas visible d'où l'on se
+   tient. C'est le modèle de permission du produit, et c'est désormais le
+   vocabulaire de chaque écran : le début d'un bloc est une coupe, le filet
+   entre deux lignes une projection, un lien révoqué ou un champ masqué un
+   tireté. N'introduis pas une quatrième épaisseur pour des raisons
+   esthétiques — chacune de celles-ci répond à une question.
+
+   ── CE QUE CETTE FEUILLE S'INTERDIT ────────────────────────────────────
+
+   Aucune `url(data:)` : la politique de `/p/` et celle de la vitrine n'ont
+   pas `data:` dans `img-src`, et cette feuille leur est servie. Un chevron
+   de `select` est un `linear-gradient`, pas une icône encodée.
+
+   Aucun sélecteur d'élément nu ailleurs qu'ici : `app.css` et `vitrine.css`
+   ne posent des règles que sur des classes. C'est ce qui a coûté trois
+   télescopages de spécificité à la vitrine (`.v-sec p` battait `.v-jour`).
+
+   Aucun `border-radius` hors des cercles (pastille, sommet, point de plan),
+   aucune ombre hors du voile de la feuille de confirmation et du halo d'un
+   point sur une photo de plan : un tirage n'a ni coins ronds ni relief.
+
+   Deux polices, servies depuis ce serveur (Vite les hache dans `/assets/`,
+   donc la coquille hors ligne les garde), latin seul, licence à côté du
+   fichier. `/confidentialite` affirme qu'aucune police n'est chargée chez un
+   tiers, et `font-src 'self'` le fait tenir par le navigateur sur les trois
+   arbres. Pas d'italique chargé.
+
+   Tout mouvement vit sous `prefers-reduced-motion: no-preference`, et l'état
+   de repos est toujours l'état final : rien n'est parqué invisible. */
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./polices/fraunces-latin.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("./polices/instrument-sans-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  /* Le papier et l'encre. Aucune couleur nouvelle par rapport au produit
+     d'avant : l'encre est l'ancien `--accent`, la révision l'ancien
+     `--alerte`. Ce qui change est le rôle — l'encre dessine tout, le rouge ne
+     sert qu'à ce qui est refusé, masqué ou expiré, jamais à attirer l'œil. */
+  --papier: #faf9f7;
+  --creux: #f1f0ea;
+  --feuille: #ffffff;
+  --pale: #d5d8d2;
+  --graphite: #5f6763;
+  --texte: #1b1b19;
+  --encre: #1f4f46;
+  --encre-claire: #2c6c60;
+  --revision: #8c2f1f;
+  --teinte: color-mix(in srgb, var(--encre) 8%, var(--papier));
+
+  /* Les trois traits, et pas un quatrième. Voir l'en-tête. */
+  --coupe: 2.5px;
+  --vu: 1px;
+
+  /* Plancher d'une cible tactile dans un flux de saisie : un pouce, pas un
+     curseur. Et la gouttière de l'app sur téléphone. */
+  --cible: 56px;
+  --gouttiere: 16px;
+
+  /* La grille de planche. `--colonne` tient sous 75 caractères au corps
+     courant ; `--large` est la largeur des blocs qui débordent du texte sans
+     aller jusqu'au bord ; `--marge` est le bord de l'écran. */
+  --colonne: 34rem;
+  --large: 66rem;
+  --marge: 20px;
+
+  --titrage: "Fraunces", Georgia, "Times New Roman", serif;
+  --corps: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--papier);
+}
+
+body {
+  margin: 0;
+  background: var(--papier);
+  color: var(--texte);
+  font: 16px/1.55 var(--corps);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ── Titres et corps ──────────────────────────────────────────────────
+   L'échelle est franche et le titre de page est LÉGER : Fraunces à 300 en
+   grand corps se lit comme un tracé, la même taille en gras comme une
+   réclame. */
+h1,
+h2,
+h3 {
+  font-family: var(--titrage);
+  font-weight: 400;
+  color: var(--encre);
+  margin: 0;
+  text-wrap: balance;
+}
+h1 {
+  font-size: clamp(2rem, 1.4rem + 1.8vw, 2.6rem);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  margin-bottom: 18px;
+}
+h2 {
+  font-size: 1.6rem;
+  line-height: 1.15;
+  letter-spacing: -0.012em;
+  margin-bottom: 12px;
+}
+h3 {
+  font-size: 1.12rem;
+  font-weight: 500;
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+p {
+  margin: 0 0 14px;
+}
+a {
+  color: var(--encre);
+  text-decoration-color: var(--pale);
+  text-underline-offset: 3px;
+}
+a:hover {
+  text-decoration-color: var(--encre);
+}
+ul,
+ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+dl {
+  margin: 0;
+}
+img,
+svg {
+  max-width: 100%;
+}
+figure {
+  margin: 0;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+legend {
+  padding: 0;
+}
+
+/* ── Le focus clavier ─────────────────────────────────────────────────
+   Un trait de coupe, déclaré une fois pour tout le produit. Les champs de
+   saisie font exception : leur bord devient lui-même une coupe. */
+:focus-visible {
+  outline: var(--coupe) solid var(--encre);
+  outline-offset: 3px;
+}
+
+/* ── Les boutons ──────────────────────────────────────────────────────
+   Un aplat d'encre ou un rectangle de trait, comme un cartouche sur un
+   tirage. `form button[type="submit"]` sans classe est un bouton plein :
+   dix-sept écrans de formulaire n'en écrivent aucune. */
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 0;
+}
+.bouton-plein,
+.bouton-trait,
+.bouton-discret,
+form button[type="submit"]:not(.bouton-trait):not(.bouton-discret) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
+  font-family: var(--titrage);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  border: var(--coupe) solid var(--encre);
+  border-radius: 0;
+  background: transparent;
+  color: var(--encre);
+}
+.bouton-plein,
+form button[type="submit"]:not(.bouton-trait):not(.bouton-discret) {
+  background: var(--encre);
+  color: var(--papier);
+}
+.bouton-plein:hover,
+form button[type="submit"]:not(.bouton-trait):not(.bouton-discret):hover {
+  background: var(--encre-claire);
+  border-color: var(--encre-claire);
+}
+.bouton-plein:disabled,
+form button[type="submit"]:disabled {
+  background: var(--pale);
+  border-color: var(--pale);
+  color: var(--graphite);
+  cursor: default;
+}
+.bouton-trait:hover {
+  background: var(--creux);
+}
+.bouton-discret {
+  min-height: 40px;
+  padding: 0 14px;
+  font-family: var(--corps);
+  font-size: 0.94rem;
+  border-width: var(--vu);
+  border-color: var(--pale);
+  color: var(--graphite);
+}
+.bouton-discret:hover {
+  color: var(--encre);
+  border-color: var(--encre);
+}
+/* `.bouton-plein` posé sur un lien : `a` (0,0,1) ne le bat pas, mais un
+   `.x a` (0,1,1) d'aval le battrait. Les feuilles d'aval ne stylent pas `a`
+   nu, c'est la règle. */
+a.bouton-plein {
+  color: var(--papier);
+}
+
+/* ── Les champs ───────────────────────────────────────────────────────
+   Une feuille blanche bordée d'un trait fin, qui devient une coupe quand on
+   écrit dedans. L'étiquette est en titrage, au-dessus, en graphite : c'est
+   une cote, elle mesure ce qu'on demande. */
+label {
+  display: block;
+  margin-bottom: 14px;
+  font-family: var(--titrage);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--graphite);
+}
+.champ,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  font: 1rem/1.4 var(--corps);
+  color: var(--texte);
+  background: var(--feuille);
+  border: var(--vu) solid var(--pale);
+  border-radius: 0;
+}
+.champ:hover,
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--graphite);
+}
+.champ:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--encre);
+  box-shadow: inset 0 0 0 1.5px var(--encre);
+}
+.champ-erreur,
+input[aria-invalid="true"] {
+  border-color: var(--revision);
+}
+textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+select {
+  appearance: none;
+  padding-right: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--encre) 50%),
+    linear-gradient(135deg, var(--encre) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 55%,
+    calc(100% - 13px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--encre);
+}
+input[type="file"] {
+  font: inherit;
+}
+::placeholder {
+  color: var(--graphite);
+  opacity: 0.7;
+}
+.champ-aide {
+  margin: 6px 0 0;
+  font-family: var(--corps);
+  font-size: 0.86rem;
+  font-weight: 400;
+  color: var(--graphite);
+}
+
+/* ── Le formulaire ────────────────────────────────────────────────────
+   Une grille, deux colonnes pour les champs courts, les actions sous un
+   filet. La suppression n'est jamais dans la même rangée que
+   l'enregistrement : `.formulaire-danger` la sépare d'un tireté. */
+.formulaire {
+  display: grid;
+  gap: 4px;
+  max-width: var(--colonne);
+}
+.formulaire-ligne {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
+.formulaire-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: var(--vu) solid var(--pale);
+}
+.formulaire-danger {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: var(--vu) dashed var(--graphite);
+}
+
+/* ── La cote ──────────────────────────────────────────────────────────
+   Un embout de coupe, une étiquette, puis la ligne qui court jusqu'au bord
+   du bloc. Remplace les surtitres en capitales espacées : une cote se lit,
+   elle ne s'annonce pas. */
+.cote {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  font-family: var(--titrage);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--graphite);
+}
+.cote::before {
+  content: "";
+  align-self: stretch;
+  min-height: 1.2em;
+  border-left: var(--coupe) solid var(--encre);
+}
+.cote::after {
+  content: "";
+  flex: 1 1 auto;
+  border-top: var(--vu) solid var(--pale);
+}
+
+/* Un sous-titre de bloc dans l'app : l'étiquette, et le lien d'action à
+   droite, sur la même ligne de base. */
+.sous-titre {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 8px;
+  font-family: var(--titrage);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--graphite);
+}
+.sous-titre a {
+  font-size: 0.86rem;
+  font-weight: 400;
+}
+
+/* ── Les filets ───────────────────────────────────────────────────────
+   Une liste dont chaque ligne est séparée par une projection, et qui
+   commence par une coupe. Remplace les cartes. */
+.filets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--coupe) solid var(--encre);
+}
+.filets > li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 0;
+  border-bottom: var(--vu) solid var(--pale);
+}
+.filets > li.filet-tirete {
+  border-bottom-style: dashed;
+  border-bottom-color: var(--graphite);
+  color: var(--graphite);
+}
+.filets .nom {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--texte);
+}
+.filets .lieu {
+  font-size: 0.86rem;
+  color: var(--graphite);
+}
+.filets a.nom,
+.filets .nom a {
+  text-decoration: none;
+  color: var(--texte);
+}
+
+/* ── L'étiquette ──────────────────────────────────────────────────────
+   Un rectangle de trait. Active : une coupe. Hors de portée, révoqué,
+   expiré : un tireté. Remplace toutes les capsules. */
+.etiquette {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  font-family: var(--corps);
+  font-size: 0.86rem;
+  line-height: 1.2;
+  color: var(--graphite);
+  background: transparent;
+  border: var(--vu) solid var(--pale);
+  border-radius: 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+.etiquette-active {
+  border: var(--coupe) solid var(--encre);
+  color: var(--encre);
+  font-weight: 500;
+}
+.etiquette-hors {
+  border-style: dashed;
+  border-color: var(--graphite);
+  color: var(--graphite);
+}
+.etiquette-nombre {
+  font-family: var(--titrage);
+  font-size: 0.8rem;
+  color: var(--graphite);
+}
+.etiquette-active .etiquette-nombre {
+  color: var(--encre-claire);
+}
+span.etiquette {
+  cursor: default;
+}
+
+/* ── La pastille ──────────────────────────────────────────────────────
+   Un point numéroté, comme sur un plan. C'est un cercle : le seul rayon
+   du produit. Le halo papier le détache d'une photo. */
+.pastille {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--encre);
+  color: var(--papier);
+  font-family: var(--titrage);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--papier);
+  text-decoration: none;
+}
+
+/* ── L'échelle ────────────────────────────────────────────────────────
+   Quatre barreaux, remplis jusqu'au plafond : public, usage, technique,
+   privé. Un dessin, toujours accompagné du mot. */
+.echelle {
+  display: inline-flex;
+  gap: 3px;
+  width: 64px;
+  vertical-align: middle;
+}
+.echelle > span {
+  flex: 1 1 0;
+  height: 6px;
+  background: var(--pale);
+}
+.echelle > span.plein {
+  background: var(--encre);
+}
+
+/* Le choix du niveau d'une fiche : la même échelle, devenue un sélecteur.
+   Ce que le visiteur a vu sur la page « Partager » est ce que le propriétaire
+   manipule sur la fiche. */
+.niveau-choix {
+  display: flex;
+  margin-top: 6px;
+  border: var(--vu) solid var(--pale);
+  background: var(--feuille);
+}
+.niveau-choix > label {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border-left: var(--vu) solid var(--pale);
+  font-family: var(--corps);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--graphite);
+  cursor: pointer;
+}
+.niveau-choix > label:first-child {
+  border-left: 0;
+}
+.niveau-choix > label:has(input:checked) {
+  background: var(--teinte);
+  color: var(--encre);
+  font-weight: 500;
+  box-shadow: inset 0 calc(-1 * var(--coupe)) 0 var(--encre);
+}
+.niveau-choix > label:has(input:focus-visible) {
+  outline: var(--coupe) solid var(--encre);
+  outline-offset: -3px;
+}
+.niveau-choix input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+/* ── Les messages ─────────────────────────────────────────────────────
+   Une coupe à gauche, dans la couleur de ce qui est dit. L'avis est en
+   tireté : c'est un fait, pas une alarme. */
+.message-ok,
+.message-erreur,
+.message-avis {
+  margin: 12px 0 0;
+  padding: 6px 0 6px 14px;
+  border-left: var(--coupe) solid currentColor;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.message-ok {
+  color: var(--encre);
+}
+.message-erreur {
+  color: var(--revision);
+}
+.message-avis {
+  color: var(--graphite);
+  border-left-style: dashed;
+}
+
+/* ── La porte ─────────────────────────────────────────────────────────
+   Une colonne étroite et centrée : connexion, inscription, lien inactif,
+   page d'erreur. */
+.porte {
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 56px var(--marge) 72px;
+}
+.porte-marque {
+  display: inline-block;
+  margin-bottom: 36px;
+  font-family: var(--titrage);
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--encre);
+  text-decoration: none;
+}
+.porte form button[type="submit"] {
+  width: 100%;
+  min-height: var(--cible);
+  margin-top: 8px;
+}
+.porte-suite {
+  margin-top: 24px;
+  font-size: 0.95rem;
+}
+
+/* ── La grille de planche ─────────────────────────────────────────────
+   Des lignes nommées, du bord de l'écran au bord de l'écran. Un bloc se
+   place sur l'une des trois portées — texte, large, pleine. La colonne de
+   texte commence où commence la piste large : tout le mou est à DROITE,
+   c'est la mise en page d'une planche. Portée par chaque section plutôt que
+   par `<main>` : `subgrid` n'est pas lu par tous les navigateurs servis. */
+.planche {
+  display: grid;
+  grid-template-columns:
+    [bord-g] minmax(var(--marge), 1fr)
+    [large-g texte-g] minmax(0, var(--colonne))
+    [texte-d] minmax(0, calc(var(--large) - var(--colonne)))
+    [large-d] minmax(var(--marge), 1fr)
+    [bord-d];
+  align-content: start;
+}
+.planche > * {
+  grid-column: texte-g / texte-d;
+  min-width: 0;
+}
+.planche > .large {
+  grid-column: large-g / large-d;
+}
+.planche > .pleine {
+  grid-column: bord-g / bord-d;
+}
+.planche > .cote {
+  grid-column: large-g / large-d;
+}
+
+/* ── Le mouvement de base ─────────────────────────────────────────────
+   Le trait s'épaissit, l'aplat s'éclaircit : 150 ms, le seul effet de
+   survol du produit. Déclaré ici, sous le media qui l'autorise, pour que
+   chaque primitive l'ait sans le redire. */
+@media (prefers-reduced-motion: no-preference) {
+  .bouton-plein,
+  .bouton-trait,
+  .bouton-discret,
+  form button[type="submit"],
+  .etiquette,
+  .champ,
+  input,
+  select,
+  textarea,
+  .filets > li,
+  .niveau-choix > label {
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+  }
+}
+
+/* ── Étroit ───────────────────────────────────────────────────────────*/
+@media (max-width: 1000px) {
+  :root {
+    --large: 46rem;
+  }
+}
+@media (max-width: 760px) {
+  :root {
+    --large: var(--colonne);
+    --marge: 18px;
+  }
+  .formulaire-ligne {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .niveau-choix > label {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+}

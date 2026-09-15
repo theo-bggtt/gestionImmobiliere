@@ -18,7 +18,7 @@
 // ajoutée sans son libellé perdrait sa colonne en silence, sur téléphone
 // seulement.
 import { Link } from "react-router";
-import { Echelle } from "../../components/vitrine/Echelle";
+import { Echelle } from "../../components/Echelle";
 import { PlanMini } from "../../components/vitrine/PlanMini";
 import { ACCUEIL } from "../../lib/auth/redirection";
 

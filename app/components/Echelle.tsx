@@ -1,4 +1,4 @@
-// app/components/vitrine/Echelle.tsx
+// app/components/Echelle.tsx
 // Les quatre barreaux d'un plafond de lecture : public, usage, technique,
 // privé. Remplis jusqu'au plafond, de un à quatre.
 //
@@ -6,10 +6,11 @@
 // lettres à côté. Un lecteur d'écran qui annoncerait « quatre barreaux dont
 // deux pleins » n'apprendrait rien de plus que « jusqu'à l'usage ».
 //
-// Partagé par l'accueil et la page de partage plutôt que recopié : les deux
-// montrent la même échelle, et deux copies divergeraient le jour où un
-// cinquième niveau existerait — ce qu'il ne doit pas, `element.niveau` étant
-// une liste fermée de quatre valeurs.
+// Partagé par la vitrine ET l'application (le choix du niveau d'une fiche,
+// `ChoixNiveau`) plutôt que recopié : tous montrent la même échelle, et
+// deux copies divergeraient le jour où un cinquième niveau existerait — ce
+// qu'il ne doit pas, `element.niveau` étant une liste fermée de quatre
+// valeurs. Module NEUTRE, sans import : la vitrine l'atteint.
 //
 // Rendue en `<span>` et non en `<div>` : sur la page de partage, l'échelle
 // vit DANS le `<span>` qui nomme le niveau, et un `<div>` y serait du HTML
@@ -20,9 +21,9 @@ export type Plafond = 1 | 2 | 3 | 4;
 
 export function Echelle({ plafond }: { plafond: Plafond }) {
   return (
-    <span className="v-echelle" aria-hidden="true">
+    <span className="echelle" aria-hidden="true">
       {[1, 2, 3, 4].map((n) => (
-        <span key={n} className={n <= plafond ? "v-barreau plein" : "v-barreau"} />
+        <span key={n} className={n <= plafond ? "plein" : undefined} />
       ))}
     </span>
   );

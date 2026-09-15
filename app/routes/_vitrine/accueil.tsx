@@ -25,7 +25,7 @@
 // celui du propriétaire.
 import { Form, Link, data, useActionData } from "react-router";
 import type { ActionFunctionArgs, HeadersArgs } from "react-router";
-import { Echelle } from "../../components/vitrine/Echelle";
+import { Echelle } from "../../components/Echelle";
 import { PlanMini } from "../../components/vitrine/PlanMini";
 import { ACCUEIL } from "../../lib/auth/redirection";
 import { ENTETES_VITRINE } from "../../lib/vitrine/document";
