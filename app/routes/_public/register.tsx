@@ -36,30 +36,46 @@ export default function Inscription() {
 
   if (!ouverte) {
     return (
-      <main>
+      <main className="porte">
+        <a href="/" className="porte-marque">
+          gestionImmobiliere
+        </a>
         <h1>Créer un compte</h1>
-        <p role="status">{MESSAGE_INSCRIPTION_FERMEE}</p>
-        <p><a href="/connexion">Se connecter</a></p>
+        <p role="status" className="message-avis">
+          {MESSAGE_INSCRIPTION_FERMEE}
+        </p>
+        <p className="porte-suite">
+          <a href="/connexion">Se connecter</a>
+        </p>
       </main>
     );
   }
 
   return (
-    <main>
+    <main className="porte">
+      <a href="/" className="porte-marque">
+        gestionImmobiliere
+      </a>
       <h1>Créer un compte</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Email
-          <input type="email" name="email" required />
+          <input type="email" name="email" required autoComplete="email" />
         </label>
         <label>
           Mot de passe
-          <input type="password" name="motDePasse" required minLength={8} />
+          <input type="password" name="motDePasse" required minLength={8} autoComplete="new-password" />
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
         <button type="submit">Créer le compte</button>
       </Form>
-      <p><a href="/connexion">J'ai déjà un compte</a></p>
+      <p className="porte-suite">
+        <a href="/connexion">J'ai déjà un compte</a>
+      </p>
     </main>
   );
 }

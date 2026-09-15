@@ -41,7 +41,7 @@ export function PagePartage({ donnees, jeton }: { donnees: DonneesPartage; jeton
         {facettes.zones.map((id) => <input key={`z${id}`} type="hidden" name="zone" value={id} />)}
         {facettes.systemes.map((id) => <input key={`s${id}`} type="hidden" name="systeme" value={id} />)}
         {facettes.types.map((id) => <input key={`t${id}`} type="hidden" name="type" value={id} />)}
-        <button type="submit" className="bouton-discret partage-chercher">Chercher</button>
+        <button type="submit" className="bouton-plein partage-chercher">Chercher</button>
       </form>
 
       <FacettesLiens base={base} q={donnees.q} disponibles={donnees.facettesDisponibles} actives={facettes} />
@@ -49,7 +49,7 @@ export function PagePartage({ donnees, jeton }: { donnees: DonneesPartage; jeton
       {donnees.liste ? (
         <>
           <ListeResultats liens={liens} donnees={donnees.recherche} enCours={false} />
-          <p className="accueil-lien-filtres">
+          <p className="bloc-suite">
             <a href={base}>Revenir aux zones</a>
           </p>
         </>
@@ -66,7 +66,7 @@ export function PagePartage({ donnees, jeton }: { donnees: DonneesPartage; jeton
               existe un historique, comme une tuile « 0 objet » apprend qu'il
               existe une zone. */}
           {donnees.nbEvenements > 0 && (
-            <p className="accueil-lien-filtres">
+            <p className="bloc-suite">
               <a href={liens.historique}>
                 Historique ({donnees.nbEvenements})
               </a>
@@ -81,11 +81,9 @@ export function PagePartage({ donnees, jeton }: { donnees: DonneesPartage; jeton
 /** Jeton connu, mais expiré ou révoqué : une page neutre, sans rien du bien. */
 export function PartageInactif() {
   return (
-    <div className="page-partage">
+    <main className="porte">
       <h1>Ce lien n'est plus actif</h1>
-      <p className="resultats-vide">
-        Demandez-en un nouveau à la personne qui vous l'a envoyé.
-      </p>
-    </div>
+      <p>Demandez-en un nouveau à la personne qui vous l'a envoyé.</p>
+    </main>
   );
 }

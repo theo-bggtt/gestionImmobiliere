@@ -60,7 +60,9 @@ export default function EcranApercu() {
       <div className="apercu-bandeau">
         <strong>Prévisualisation</strong> — « {partageNom} », jusqu'au niveau {plafond}.
         {!actif && " Ce lien n'est plus actif : le destinataire voit la page ci-dessous."}
-        <Link to={retour}>Retour aux partages</Link>
+        <Link to={retour} viewTransition>
+          Retour aux partages
+        </Link>
         {auDessus.total > 0 && (
           <p className="apercu-au-dessus">
             {auDessus.total} objet(s) de cette propriété sont au-dessus du plafond de ce lien

@@ -24,7 +24,7 @@ export default function NouveauSysteme() {
   return (
     <main>
       <h1>Ajouter un système</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" required placeholder="Électricité, sanitaire, chauffage, arrosage..." />
@@ -33,8 +33,14 @@ export default function NouveauSysteme() {
           Icône (optionnel)
           <input type="text" name="icone" />
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Créer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Créer</button>
+        </div>
       </Form>
     </main>
   );

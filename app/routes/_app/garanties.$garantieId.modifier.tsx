@@ -86,39 +86,48 @@ export default function ModifierGarantie() {
   return (
     <main>
       <p className="fiche-fil">
-        <Link to={`/proprietes/${propriete.id}/elements/${garantie.elementId}/modifier`}>
+        <Link to={`/proprietes/${propriete.id}/elements/${garantie.elementId}/modifier`} viewTransition>
           {garantie.elementNom}
         </Link>
       </p>
       <h1>Garantie</h1>
-      <p className="resultat-lieu">
-        {[garantie.elementNom, garantie.zoneNom].filter(Boolean).join(" · ")}
-        {garantie.expiree && <span className="garantie-expiree"> · expirée</span>}
+      <p className="fiche-type">
+        <span>
+          {[garantie.elementNom, garantie.zoneNom].filter(Boolean).join(" · ")}
+          {garantie.expiree && <span className="garantie-expiree"> · expirée</span>}
+        </span>
       </p>
 
-      <Form method="post">
-        <label>
-          Début
-          <input type="date" name="debut" defaultValue={garantie.debut} required />
-        </label>
-        <label>
-          Fin (optionnelle)
-          <input type="date" name="fin" defaultValue={garantie.fin ?? ""} />
-        </label>
+      <Form method="post" className="formulaire">
+        <div className="formulaire-ligne">
+          <label>
+            Début
+            <input type="date" name="debut" defaultValue={garantie.debut} required />
+          </label>
+          <label>
+            Fin (optionnelle)
+            <input type="date" name="fin" defaultValue={garantie.fin ?? ""} />
+          </label>
+        </div>
         <label>
           Référence (optionnelle)
           <input type="text" name="reference" defaultValue={garantie.reference ?? ""} />
+          <span className="champ-aide">Un lien de partage voit la date de fin, jamais la référence.</span>
         </label>
-        <p className="selecteur-secondaire">
-          Un lien de partage voit la date de fin, jamais la référence.
-        </p>
-
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Enregistrer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Enregistrer</button>
+        </div>
       </Form>
 
-      <section className="fiche-photos">
-        <h2>Document</h2>
+      <section className="fiche-photos bloc">
+        <p className="sous-titre">
+          <span>Document</span>
+        </p>
         {/* Le document ne sort d'AUCUN partage : un contrat ou une facture de
             garantie est du coût sous un autre nom. Il est rattaché par
             `garantie.fichier_id` et non par `fichier_lien`, donc il n'ajoute
@@ -140,28 +149,38 @@ export default function ModifierGarantie() {
             </ul>
             <Form method="post">
               <input type="hidden" name="_action" value="document-retirer" />
-              <button type="submit" className="bouton-discret">Retirer le document</button>
+              <button type="submit" className="bouton-discret">
+                Retirer le document
+              </button>
             </Form>
           </>
         )}
 
-        <Form method="post" encType="multipart/form-data">
+        <Form method="post" encType="multipart/form-data" className="formulaire">
           <input type="hidden" name="_action" value="document" />
           <label>
             {garantie.fichierId === null ? "Joindre une photo du contrat" : "Remplacer le document"}
             <input type="file" name="image" accept="image/*" required />
+            <span className="champ-aide">
+              Visible de vous seul : un document de garantie ne part sur aucun lien de partage.
+            </span>
           </label>
-          <p className="selecteur-secondaire">
-            Visible de vous seul : un document de garantie ne part sur aucun lien de partage.
-          </p>
-          <button type="submit">Enregistrer le document</button>
+          <div className="formulaire-actions">
+            <button type="submit" className="bouton-trait">
+              Enregistrer le document
+            </button>
+          </div>
         </Form>
       </section>
 
-      <Form method="post">
-        <input type="hidden" name="_action" value="supprimer" />
-        <button type="submit" className="bouton-discret">Retirer la garantie</button>
-      </Form>
+      <div className="formulaire-danger">
+        <Form method="post">
+          <input type="hidden" name="_action" value="supprimer" />
+          <button type="submit" className="bouton-discret">
+            Retirer la garantie
+          </button>
+        </Form>
+      </div>
     </main>
   );
 }

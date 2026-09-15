@@ -109,7 +109,7 @@ export default function NouveauPlan() {
     <main>
       <h1>Ajouter un plan</h1>
 
-      <form method="post" encType="multipart/form-data" onSubmit={envoyer}>
+      <form method="post" encType="multipart/form-data" onSubmit={envoyer} className="formulaire">
         <label>
           Nom (pour vous seul)
           <input type="text" name="nom" required maxLength={NOM_MAX} placeholder="Rez — plan de l'architecte" />
@@ -152,15 +152,20 @@ export default function NouveauPlan() {
           telle quelle aux destinataires de vos liens : recadrez le bandeau si vous ne voulez pas le partager.
         </p>
 
-        {fetcher.data?.erreur && <p role="alert">{fetcher.data.erreur}</p>}
-        <button type="submit" disabled={!preparation || fetcher.state !== "idle"}>
-          {fetcher.state === "idle" ? "Enregistrer le plan" : "Envoi…"}
-        </button>
+        {fetcher.data?.erreur && (
+          <p role="alert" className="message-erreur">
+            {fetcher.data.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit" disabled={!preparation || fetcher.state !== "idle"}>
+            {fetcher.state === "idle" ? "Enregistrer le plan" : "Envoi…"}
+          </button>
+          <Link to={`/proprietes/${propriete.id}/plans`} className="bouton-discret" viewTransition>
+            Revenir aux plans
+          </Link>
+        </div>
       </form>
-
-      <p>
-        <Link to={`/proprietes/${propriete.id}/plans`}>Revenir aux plans</Link>
-      </p>
     </main>
   );
 }

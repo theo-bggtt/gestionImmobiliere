@@ -1,5 +1,5 @@
 // app/components/partage/FacettesLiens.tsx
-// Les mêmes pastilles que dans l'application, en liens plutôt qu'en boutons :
+// Les mêmes étiquettes que dans l'application, en liens plutôt qu'en boutons :
 // la page de partage ne charge aucun JavaScript, un `onClick` n'y ferait rien.
 // Même feuille de style, mêmes classes — on retire, on ne redessine pas.
 import { ecrireParamsRecherche } from "../../lib/recherche/params";
@@ -48,8 +48,8 @@ export function FacettesLiens({
     const active = actives[d].includes(o.id);
     return (
       <li key={o.id}>
-        <a className={active ? "pastille pastille-active" : "pastille"} href={bascule(d, o.id)}>
-          {o.nom} <span className="pastille-nombre">{o.nombre}</span>
+        <a className={active ? "etiquette etiquette-active" : "etiquette"} href={bascule(d, o.id)}>
+          {o.nom} <span className="etiquette-nombre">{o.nombre}</span>
         </a>
       </li>
     );
@@ -74,13 +74,13 @@ export function FacettesLiens({
 
         return (
           <div className="facettes-groupe" key={d}>
-            <h3 className="facettes-titre">{TITRES[d]}</h3>
+            <h3 className="cote facettes-titre">{TITRES[d]}</h3>
             <ul className="facettes-liste">
               {visibles.map((o) => pastille(d, o))}
               {caches.length > 0 && (
                 <li>
                   <details className="facettes-repli">
-                    <summary className="pastille pastille-plus">+ {caches.length} autres</summary>
+                    <summary className="etiquette etiquette-plus">+ {caches.length} autres</summary>
                     <ul className="facettes-liste">{caches.map((o) => pastille(d, o))}</ul>
                   </details>
                 </li>

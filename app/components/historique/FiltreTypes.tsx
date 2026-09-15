@@ -47,8 +47,8 @@ export function FiltreTypes({
           const actif = actifs.includes(f.type);
           return (
             <li key={f.type}>
-              <a className={actif ? "pastille pastille-active" : "pastille"} href={bascule(f.type)}>
-                {LIBELLES_TYPE_EVENEMENT[f.type]} <span className="pastille-nombre">{f.compte}</span>
+              <a className={actif ? "etiquette etiquette-active" : "etiquette"} href={bascule(f.type)}>
+                {LIBELLES_TYPE_EVENEMENT[f.type]} <span className="etiquette-nombre">{f.compte}</span>
               </a>
             </li>
           );

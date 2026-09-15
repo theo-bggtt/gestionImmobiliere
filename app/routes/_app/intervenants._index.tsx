@@ -21,10 +21,13 @@ export default function ListeIntervenants() {
   return (
     <main>
       <h1>Intervenants — {propriete.nom}</h1>
-      <p className="accueil-lien-filtres">
-        <Link to={`${base}/intervenants/nouveau`}>Ajouter un intervenant</Link>
-        {" · "}
-        <Link to={`${base}/evenements`}>Historique</Link>
+      <p className="rangee-actions">
+        <Link to={`${base}/intervenants/nouveau`} className="bouton-trait" viewTransition>
+          Ajouter un intervenant
+        </Link>
+        <Link to={`${base}/evenements`} viewTransition>
+          Historique
+        </Link>
       </p>
 
       {intervenants.length === 0 ? (
@@ -36,7 +39,9 @@ export default function ListeIntervenants() {
           {intervenants.map((i) => (
             <li key={i.id}>
               <p className="chrono-titre">
-                <Link to={`${base}/intervenants/${i.id}/modifier`}>{i.nom}</Link>
+                <Link to={`${base}/intervenants/${i.id}/modifier`} viewTransition>
+                  {i.nom}
+                </Link>
               </p>
               <p className="resultat-lieu">
                 {[i.metier, i.tel, i.email].filter(Boolean).join(" · ")}
