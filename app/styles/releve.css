@@ -334,6 +334,7 @@ input[type="radio"] {
 }
 input[type="file"] {
   font: inherit;
+  max-width: 100%;
 }
 ::placeholder {
   color: var(--graphite);
@@ -353,12 +354,19 @@ input[type="file"] {
    l'enregistrement : `.formulaire-danger` la sépare d'un tireté. */
 .formulaire {
   display: grid;
+  /* Une piste explicite, bornée à zéro : la piste implicite vaut `auto` et
+     prend la largeur minimale intrinsèque d'un champ de fichier (le bouton et
+     « Aucun fichier choisi »), qui déborde de l'écran sous 340 px. Mesuré :
+     13 px à 320 px sur le téléversement d'un plan. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
   max-width: var(--colonne);
 }
 .formulaire-ligne {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, …) et non 1fr seul : un champ de fichier a une largeur
+     minimale intrinsèque qui, sinon, élargit la piste au-delà de l'écran. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0 14px;
 }
 .formulaire-actions {
@@ -699,11 +707,29 @@ span.etiquette {
     --marge: 18px;
   }
   .formulaire-ligne {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
   .niveau-choix > label {
     padding: 10px 8px;
     font-size: 0.8rem;
+  }
+}
+/* Sous 360 px, quatre cases côte à côte ne tiennent plus (l'échelle fait
+   64 px, « Technique » autant) : deux rangées de deux, toujours les quatre
+   valeurs d'un coup. Mesuré : 21 px de débordement à 320 px sans ceci. */
+@media (max-width: 360px) {
+  .niveau-choix {
+    flex-wrap: wrap;
+  }
+  .niveau-choix > label {
+    flex: 1 1 50%;
+    min-width: 0;
+  }
+  .niveau-choix > label:nth-child(3) {
+    border-left: 0;
+  }
+  .niveau-choix > label:nth-child(n + 3) {
+    border-top: var(--vu) solid var(--pale);
   }
 }
