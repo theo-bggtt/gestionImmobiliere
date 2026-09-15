@@ -77,35 +77,46 @@ export default function NouveauTypePerso() {
   return (
     <main>
       <h1>Créer un type personnalisé</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" required placeholder="Adoucisseur d'eau..." />
         </label>
-        <label>
-          Icône (optionnel)
-          <input type="text" name="icone" />
-        </label>
-        <label>
-          Alias (séparés par des virgules)
-          <input type="text" name="alias" placeholder="adoucisseur, filtre à eau" />
-        </label>
+        <div className="formulaire-ligne">
+          <label>
+            Icône (optionnel)
+            <input type="text" name="icone" />
+          </label>
+          <label>
+            Alias (séparés par des virgules)
+            <input type="text" name="alias" placeholder="adoucisseur, filtre à eau" />
+          </label>
+        </div>
         <label>
           Visibilité suggérée
           <select name="niveauSuggere" defaultValue="2">
-            {LIBELLES_NIVEAU.map((libelle, valeur) => (
-              valeur === 0 ? null : <option key={valeur} value={valeur}>{valeur} · {libelle}</option>
-            ))}
+            {LIBELLES_NIVEAU.map((libelle, valeur) =>
+              valeur === 0 ? null : (
+                <option key={valeur} value={valeur}>
+                  {valeur} · {libelle}
+                </option>
+              ),
+            )}
           </select>
-          <span className="formulaire-aide">
-            Pré-remplit le niveau des objets de ce type, qui reste corrigible fiche par fiche.
-            Ce qu'un locataire doit connaître pour habiter est « usage » ; ce qu'on ne touche
-            que pour intervenir est « technique ».
+          <span className="champ-aide">
+            Pré-remplit le niveau des objets de ce type, qui reste corrigible fiche par fiche. Ce qu'un locataire
+            doit connaître pour habiter est « usage » ; ce qu'on ne touche que pour intervenir est « technique ».
           </span>
         </label>
         <ChampEditor />
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Créer le type</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Créer le type</button>
+        </div>
       </Form>
     </main>
   );

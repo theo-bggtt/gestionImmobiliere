@@ -1098,6 +1098,7 @@ input.partage-lien {
 /* Un `label` qui contient une case ou un bouton radio est une ligne de
    choix, pas une cote : corps, taille normale, couleur du texte. */
 .portee-case,
+.champ-case,
 .formulaire-cases label,
 .demarrage-case,
 .demarrage-questions fieldset label {
@@ -1112,6 +1113,7 @@ input.partage-lien {
   color: var(--texte);
 }
 .portee-case input,
+.champ-case input,
 .formulaire-cases input[type="checkbox"],
 .demarrage-case input[type="checkbox"],
 .demarrage-questions input[type="radio"] {
@@ -1120,6 +1122,46 @@ input.partage-lien {
   min-height: 0;
   margin: 0;
   flex: none;
+}
+
+/* ── Listes de structure ──────────────────────────────────────────── */
+
+/* Un bloc d'écran (un bâtiment et ses niveaux, l'historique d'une fiche) :
+   de l'air au-dessus, rien d'autre. */
+.bloc {
+  margin-top: 28px;
+}
+.bloc-niveau {
+  margin-top: 16px;
+}
+.bloc-suite {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+}
+/* L'arbre des zones : une sous-zone est en retrait sous son parent, dans
+   ses propres filets, sans coupe de tête. */
+.filets > li.filet-arbre {
+  display: block;
+}
+.filet-ligne {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+}
+.filets .filets {
+  margin-left: 22px;
+  border-top: 0;
+}
+.filets .filets > li:last-child {
+  border-bottom: 0;
+}
+.champ-definition-rang {
+  font-family: var(--titrage);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--graphite);
+  margin-bottom: 8px;
 }
 
 /* ── Le plan ──────────────────────────────────────────────────────── */

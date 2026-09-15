@@ -18,22 +18,41 @@ export default function ListeBatiments() {
   return (
     <main>
       <h1>Bâtiments et niveaux — {propriete.nom}</h1>
-      <Link to={`/proprietes/${propriete.id}/batiments/nouveau`}>Ajouter un bâtiment</Link>
+      <p>
+        <Link to={`/proprietes/${propriete.id}/batiments/nouveau`} className="bouton-trait" viewTransition>
+          Ajouter un bâtiment
+        </Link>
+      </p>
       {arbre.map(({ batiment, niveaux }) => (
-        <section key={batiment.id}>
-          <h2>
-            {batiment.nom} ({batiment.type})
-            <Link to={`/proprietes/${propriete.id}/batiments/${batiment.id}/modifier`}> Modifier</Link>
-          </h2>
-          <ul>
+        <section key={batiment.id} className="bloc">
+          <p className="sous-titre">
+            <span>
+              {batiment.nom} · {batiment.type}
+            </span>
+            <Link to={`/proprietes/${propriete.id}/batiments/${batiment.id}/modifier`} viewTransition>
+              Modifier
+            </Link>
+          </p>
+          <ul className="filets">
             {niveaux.map(({ niveau }) => (
               <li key={niveau.id}>
-                {niveau.nom} (ordinal {niveau.ordinal})
-                <Link to={`/proprietes/${propriete.id}/niveaux/${niveau.id}/modifier`}> Modifier</Link>
+                <span className="nom">{niveau.nom}</span>
+                <span className="lieu">ordinal {niveau.ordinal}</span>
+                <Link
+                  to={`/proprietes/${propriete.id}/niveaux/${niveau.id}/modifier`}
+                  className="bouton-discret"
+                  viewTransition
+                >
+                  Modifier
+                </Link>
               </li>
             ))}
           </ul>
-          <Link to={`/proprietes/${propriete.id}/batiments/${batiment.id}/niveaux/nouveau`}>Ajouter un niveau</Link>
+          <p className="bloc-suite">
+            <Link to={`/proprietes/${propriete.id}/batiments/${batiment.id}/niveaux/nouveau`} viewTransition>
+              Ajouter un niveau
+            </Link>
+          </p>
         </section>
       ))}
     </main>
