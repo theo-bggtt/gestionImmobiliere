@@ -34,12 +34,12 @@
 
 **Files:** aucun.
 
-- [ ] **Step 1 : Vérifier qu'elle n'existe pas**
+- [x] **Step 1 : Vérifier qu'elle n'existe pas**
 
 Run : `gh issue list --state open --search "relevé"`
 Expected : seule #58 (vitrine, fermée par PR #59) apparaît.
 
-- [ ] **Step 2 : Créer l'issue**
+- [x] **Step 2 : Créer l'issue**
 
 ```bash
 gh issue create --label feature --title "Refonte visuelle commune : le relevé, de la vitrine à la fiche" --body-file - <<'EOF'
@@ -51,14 +51,14 @@ Spec : `docs/superpowers/specs/2026-09-15-releve-commun-design.md`. Maquette : h
 
 ## Critères d'acceptation
 
-- [ ] `app/styles/releve.css` déclare une fois les jetons, les deux polices auto-hébergées (Fraunces, Instrument Sans) et les primitives ; `app.css` et `vitrine.css` n'en redéclarent aucune.
-- [ ] L'application, la page d'un lien, les pages de connexion et la vitrine partagent ces primitives : angles droits, aucune ombre, trois traits.
-- [ ] À partir de 1000 px, l'application a une marge de navigation à gauche ; sous 1000 px, rien ne change dans les parcours.
-- [ ] La vitrine est réécrite du côté du client (plus un mot du dépôt, des tests, du code) et « Ce que ça fait » porte neuf pictogrammes en SVG inline.
-- [ ] Sept mouvements, tous sous `prefers-reduced-motion`, la vitrine toujours sans script.
-- [ ] `font-src 'self'` sur `/p/`, épinglé par `tests/serveur/application.test.ts`.
-- [ ] Aucune violation de politique au navigateur sur les trois arbres ; aucun débordement à 320 px.
-- [ ] README, CLAUDE.md et le plan d'implémentation consignent les deux renversements (décision #143, clause « police système » de #8).
+- [x] `app/styles/releve.css` déclare une fois les jetons, les deux polices auto-hébergées (Fraunces, Instrument Sans) et les primitives ; `app.css` et `vitrine.css` n'en redéclarent aucune.
+- [x] L'application, la page d'un lien, les pages de connexion et la vitrine partagent ces primitives : angles droits, aucune ombre, trois traits.
+- [x] À partir de 1000 px, l'application a une marge de navigation à gauche ; sous 1000 px, rien ne change dans les parcours.
+- [x] La vitrine est réécrite du côté du client (plus un mot du dépôt, des tests, du code) et « Ce que ça fait » porte neuf pictogrammes en SVG inline.
+- [x] Sept mouvements, tous sous `prefers-reduced-motion`, la vitrine toujours sans script.
+- [x] `font-src 'self'` sur `/p/`, épinglé par `tests/serveur/application.test.ts`.
+- [x] Aucune violation de politique au navigateur sur les trois arbres ; aucun débordement à 320 px.
+- [x] README, CLAUDE.md et le plan d'implémentation consignent les deux renversements (décision #143, clause « police système » de #8).
 EOF
 ```
 
@@ -79,7 +79,7 @@ Expected : un numéro d'issue, noté pour le `Closes #N` de la PR.
 **Interfaces:**
 - Produces : les jetons `--papier --creux --feuille --pale --teinte --graphite --texte --encre --encre-claire --revision --coupe --vu --cible --gouttiere --colonne --large --marge --titrage --corps` ; les classes `.bouton-plein .bouton-trait .bouton-discret .champ .champ-aide .cote .filets .filet-tirete .etiquette .etiquette-active .etiquette-hors .etiquette-nombre .pastille .echelle .plein .niveau-choix .message-ok .message-erreur .message-avis .sous-titre .formulaire .formulaire-ligne .formulaire-actions .porte .large .pleine` ; le composant `Echelle({ plafond: 1|2|3|4 })` depuis `app/components/Echelle.tsx`.
 
-- [ ] **Step 1 : Écrire le test de la politique de `/p/`**
+- [x] **Step 1 : Écrire le test de la politique de `/p/`**
 
 Dans `tests/serveur/application.test.ts`, dans le test « sur /p/, interdisent tout script… » (ligne ~147), après `expect(csp, chemin).toContain("frame-ancestors 'none'");` ajouter :
 
@@ -96,12 +96,12 @@ Et dans le test « sur /P/ aussi… » (ligne ~128), après `expect(csp, chemin)
       expect(csp, chemin).toContain("font-src 'self'");
 ```
 
-- [ ] **Step 2 : Le voir échouer**
+- [x] **Step 2 : Le voir échouer**
 
 Run : `npx vitest run tests/serveur/application.test.ts`
 Expected : les deux tests échouent sur `font-src 'self'`.
 
-- [ ] **Step 3 : Ajouter la directive**
+- [x] **Step 3 : Ajouter la directive**
 
 `server/application.js`, `CSP_PARTAGE` :
 
@@ -122,7 +122,7 @@ const CSP_PARTAGE = [
 
 Run : `npx vitest run tests/serveur/application.test.ts` → tout passe.
 
-- [ ] **Step 4 : Les polices sous `app/styles/polices/`**
+- [x] **Step 4 : Les polices sous `app/styles/polices/`**
 
 ```bash
 mkdir -p app/styles/polices
@@ -134,7 +134,7 @@ curl -sS -L -o app/styles/polices/LICENCE-InstrumentSans.txt "https://raw.github
 
 Vérifier : `ls -la app/styles/polices` → quatre fichiers, le woff2 d'Instrument Sans fait 30 092 octets, la licence commence par « Copyright » et contient « SIL Open Font License ». Si le dépôt GitHub ne répond pas, la licence OFL 1.1 avec le copyright « Copyright 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans) » est écrite à la main : le texte de l'OFL 1.1 est public et identique à `LICENCE-Fraunces.txt` après la ligne de copyright.
 
-- [ ] **Step 5 : Écrire `app/styles/releve.css`**
+- [x] **Step 5 : Écrire `app/styles/releve.css`**
 
 ```css
 /* app/styles/releve.css
@@ -844,7 +844,7 @@ span.etiquette {
 }
 ```
 
-- [ ] **Step 6 : `root.tsx` sert les deux feuilles**
+- [x] **Step 6 : `root.tsx` sert les deux feuilles**
 
 ```tsx
 import feuilleReleve from "./styles/releve.css?url";
@@ -861,7 +861,7 @@ export const links: LinksFunction = () => [
 
 Faire de même dans `app/components/PageErreur.tsx` : là où il rend `<link rel="stylesheet" href=…>`, rendre les deux feuilles dans cet ordre (lire le fichier pour trouver comment l'URL de `app.css` y arrive et suivre le même mécanisme pour `releve.css`).
 
-- [ ] **Step 7 : Ponter les anciens jetons**
+- [x] **Step 7 : Ponter les anciens jetons**
 
 `app/styles/app.css`, remplacer le bloc `:root { … }` (lignes 6-19) par :
 
@@ -906,13 +906,13 @@ et retirer de `app.css` les règles `* { box-sizing }`, `body { … }`, `h1 { �
 
 Puis, dans les deux media queries de `vitrine.css` qui redéfinissent `--v-large` et `--v-marge` (`@media (max-width: 1000px)` et `(max-width: 760px)`), supprimer ces redéfinitions : `releve.css` fait déjà tomber `--large` et `--marge` aux mêmes seuils.
 
-- [ ] **Step 8 : `VERSION` v3**
+- [x] **Step 8 : `VERSION` v3**
 
 `public/sw.js:18` → `const VERSION = "v3";` et, dans le commentaire au-dessus, ajouter une ligne : « `v3` : les polices et la feuille `releve.css` entrent dans les actifs ; un cache `v2` servirait l'ancienne feuille sans les polices. » `app/lib/capture/coquille.ts:16-17` → `"coquille-v3"` et `"actifs-v3"`.
 
 Run : `npx vitest run tests/pwa/coquille.test.ts` → passe.
 
-- [ ] **Step 9 : Déplacer `Echelle`**
+- [x] **Step 9 : Déplacer `Echelle`**
 
 ```bash
 git mv app/components/vitrine/Echelle.tsx app/components/Echelle.tsx
@@ -934,14 +934,14 @@ export function Echelle({ plafond }: { plafond: Plafond }) {
 
 Dans `accueil.tsx` et `partage.tsx` de `_vitrine/` : `import { Echelle } from "../../components/Echelle";`. Dans `vitrine.css`, remplacer `.v-echelle` par `.echelle` et `.v-barreau` par `.echelle > span`, `.v-barreau.plein` par `.echelle > span.plein` (les règles d'inversion dans `.v-encre` restent, sur ces nouveaux sélecteurs).
 
-- [ ] **Step 10 : Vérifier**
+- [x] **Step 10 : Vérifier**
 
 Run : `npm run typecheck && npx vitest run && npm run build && npm run verifier:bundle`
 Expected : vert (sauf les quatre `lire-env`), et `ls build/client/assets | grep -i "fraunces\|instrument"` montre les deux woff2 hachés.
 
 Lancer `npm run dev`, ouvrir `/`, `/connexion`, `/proprietes` (compte démo) et `/p/<jeton>` (un jeton de `partages` de la démo) : les polices sont chargées (onglet réseau : deux woff2 depuis `/assets/`), aucune violation dans la console. Le rendu de l'app est intermédiaire (polices et boutons nouveaux, reste inchangé) : c'est attendu.
 
-- [ ] **Step 11 : Commit**
+- [x] **Step 11 : Commit**
 
 ```bash
 git add -A
@@ -961,7 +961,7 @@ git commit -m "feat(style): le socle du relevé — releve.css, deux polices aut
 - Consumes : les primitives de la tâche 1 (`.cote`, `.bouton-plein`, `.bouton-trait`, `.filets`, `.filet-tirete`, `.pastille`, `.echelle`, `.champ`, `.message-ok`, `.message-erreur`, `.planche`, `.large`, `.pleine`).
 - Produces : `Picto({ nom: NomPicto })` avec `NomPicto = "photographier" | "retrouver" | "types" | "plan" | "contour" | "historique" | "garantie" | "intervenants" | "demarrage" | "partager"` (dix tracés, voir l'étape 4).
 
-- [ ] **Step 1 : `Picto.tsx`**
+- [x] **Step 1 : `Picto.tsx`**
 
 ```tsx
 // app/components/vitrine/Picto.tsx
@@ -1072,7 +1072,7 @@ export function Picto({ nom }: { nom: NomPicto }) {
 
 Ajouter `import type React from "react";` en tête si `React.ReactNode` n'est pas résolu par le JSX automatique (vérifier avec `npm run typecheck`).
 
-- [ ] **Step 2 : Réécrire `vitrine.css`**
+- [x] **Step 2 : Réécrire `vitrine.css`**
 
 Écrire la feuille de zéro. Son en-tête de commentaire dit ce qui est propre à la vente : la grille calée à gauche (le pourquoi est déjà écrit dans la feuille actuelle, le reprendre), le relevé en bande, deux aplats d'encre et pas trois. La convention des trois traits n'est plus expliquée ici (elle est dans `releve.css`).
 
@@ -1149,11 +1149,11 @@ Contenu, dans cet ordre, en reprenant les valeurs de la feuille actuelle sauf me
 
 Vérifier après écriture : `grep -c -- "--v-" app/styles/vitrine.css` → 0 ; `grep -n "^\.v-sec p\|^\.v-sec h\|^\.v-sec a" app/styles/vitrine.css` → rien.
 
-- [ ] **Step 3 : Le layout**
+- [x] **Step 3 : Le layout**
 
 `layout.tsx` : `<header className="planche v-sec v-tete">`, `<footer className="planche v-sec v-pied">`. Rien d'autre.
 
-- [ ] **Step 4 : Les cinq pages — classes**
+- [x] **Step 4 : Les cinq pages — classes**
 
 Dans chaque page : `className="v-sec"` → `"planche v-sec"` ; `v-cote` → `cote` ; `v-appel` → `bouton-plein` ; `v-appel-second` → `bouton-trait` ; `v-pastille` → `pastille` ; `v-confirmation` → `message-ok` ; `v-erreur` → `message-erreur` ; `v-coches` → `filets` ; `v-coches v-croix` → `filets v-croix` ; `<h2>` de section → `<h2 className="v-section-titre">` ; `<h3>` → `<h3 className="v-sous-titre">` ; `<p>` de prose sans classe → `<p className="v-prose-texte">` (dans `.v-prose`, `.v-releves`, `.v-gestes`, `.v-lecteurs`, `.v-duo`, `.v-fonctions`, `.v-encre` : poser la classe ; le chapeau garde `v-chapeau`). Ajouter `v-parait` sur : `.v-releves`, `.v-gestes`, `.v-lecteurs`, `.v-duo`, `.v-tableau-cadre`, `.v-fonctions`, `.v-niveaux`. Dans `fonctionnalites.tsx`, chaque `<li>` de `.v-fonctions` commence par `<Picto nom="…" />`. La page a neuf entrées et le composant neuf tracés, mais ils ne se recouvrent pas un pour un : « Des types d'objets, et les vôtres » n'a pas de tracé, et `partager` n'illustre aucune entrée de la liste (le partage a sa propre section en bas de page). Donc : `partager` va dans la section « Et le partage », à gauche de son titre, dans un `<div className="v-suite-picto">` ; et l'entrée des types reçoit un dixième tracé, `types` :
 
@@ -1170,7 +1170,7 @@ Dans chaque page : `className="v-sec"` → `"planche v-sec"` ; `v-cote` → `cot
 
 Ajouter `"types"` à `NomPicto`. Ordre des pictos sur la page : photographier, retrouver, types, plan, contour, historique, garantie, intervenants, demarrage.
 
-- [ ] **Step 5 : Les cinq pages — la copie**
+- [x] **Step 5 : Les cinq pages — la copie**
 
 Réécrire les passages suivants (les autres restent) :
 
@@ -1192,14 +1192,14 @@ Réécrire les passages suivants (les autres restent) :
 
 Relire les cinq pages une fois à voix haute : aucun « test », « code », « dépôt », « compile », « mesuré », « issue ».
 
-- [ ] **Step 6 : Vérifier**
+- [x] **Step 6 : Vérifier**
 
 Run : `npm run typecheck && npx vitest run tests/vitrine tests/exports-routes.test.ts tests/vocabulaire.test.ts && npm run build && npm run verifier:bundle`
 Expected : vert.
 
 Playwright : `npm run dev`, ouvrir `/`, `/fonctionnalites`, `/partage`, `/a-propos`, `/confidentialite` à 1440, 768 et 375 px ; capture pleine page de chacune (scratchpad) ; `browser_evaluate` : `document.documentElement.scrollWidth <= innerWidth` ; console : aucune violation. Regarder les captures et corriger ce qui déborde ou se chevauche.
 
-- [ ] **Step 7 : Commit**
+- [x] **Step 7 : Commit**
 
 ```bash
 git add -A
@@ -1217,7 +1217,7 @@ git commit -m "feat(vitrine): sur les primitives du relevé — pictogrammes, co
 - Consumes : tâche 1.
 - Produces : `.app` (grille), `.app-marge`, `.app-marge-nav`, `.app-marge-capture`, `.app-marge-compte` ; les classes de facette `etiquette`, `etiquette-active`, `etiquette-nombre`, `etiquette-plus` (renommage de `pastille*` dans les trois composants de facettes).
 
-- [ ] **Step 1 : Le layout**
+- [x] **Step 1 : Le layout**
 
 Remplacer le JSX rendu de `AppLayout` (à partir de `return (`) par :
 
@@ -1303,7 +1303,7 @@ Remplacer le JSX rendu de `AppLayout` (à partir de `return (`) par :
 
 Importer `NavLink` depuis `react-router`. **Attention** : deux instances de `Capture` par mode (marge et barre) veulent dire deux `<input type="file">` avec deux états ; c'est acceptable parce qu'une seule est visible à la fois (`display: none` sur l'autre), et `Capture` n'a pas d'id global — vérifier dans `Capture.tsx` qu'aucun `id` fixe n'est rendu (sinon suffixer par `mode` et un préfixe passé en prop). Si `Capture` porte un état de feuille ouverte, l'ouverture depuis la marge ouvre la feuille du composant de la marge : c'est bien.
 
-- [ ] **Step 2 : La charpente en CSS**
+- [x] **Step 2 : La charpente en CSS**
 
 Dans `app.css`, section « Charpente », remplacer par :
 
@@ -1432,7 +1432,7 @@ nav {
 
 Puis dans la section « Boutons et formulaires » d'`app.css` : supprimer `button, .bouton-primaire, .bouton-discret {…}`, `.bouton-primaire`, `.bouton-discret`, `label {…}`, `input[type=…] {…}`, `form button[type="submit"] {…}` (tout vit dans `releve.css`). `.bouton-primaire` n'a qu'un usage, dans `Capture.tsx` : le remplacer par `bouton-plein` dès cette tâche et supprimer la règle. Dans « Barre de capture » : `.capture-declencheur { border-radius: 0 }`, `.capture-principal { background: var(--encre); color: var(--papier); border: var(--coupe) solid var(--encre) }`, `.capture-secondaire { background: transparent; border: var(--coupe) solid var(--encre); color: var(--encre) }`, `.capture-barre { background: color-mix(in srgb, var(--papier) 92%, transparent); border-top: var(--vu) solid var(--pale) }` ; dans la marge : `.app-marge .capture-declencheur { min-height: 48px }`.
 
-- [ ] **Step 3 : Accueil, recherche, résultats, grille, facettes**
+- [x] **Step 3 : Accueil, recherche, résultats, grille, facettes**
 
 `app.css`, sections « Recherche », « Résultats », « Facettes », « Grille de zones » — réécrire :
 
@@ -1752,7 +1752,7 @@ JSX :
 - `proprietes._index.tsx` : `<ul>` des propriétés → `<ul className="filets">`, chaque `<li>` : `<Link className="nom" viewTransition>` ; le formulaire d'ajout → `<Form className="formulaire">` avec `<div className="formulaire-actions">` autour du bouton.
 - `recherche.tsx` : rien d'autre que ce qui précède.
 
-- [ ] **Step 4 : La porte**
+- [x] **Step 4 : La porte**
 
 `login.tsx`, JSX rendu :
 
@@ -1783,18 +1783,18 @@ JSX :
 
 `register.tsx` : même enveloppe (`main.porte`, `a.porte-marque`, `Form.formulaire`, `message-erreur`, `p.porte-suite`) ; la branche fermée garde `<p role="status">` en `className="message-avis"` et **aucun `<form`**. CSS (`app.css`, nouvelle section « La porte ») : `.porte-suite { margin-top: 24px; font-size: 0.95rem }`.
 
-- [ ] **Step 5 : `PageErreur`**
+- [x] **Step 5 : `PageErreur`**
 
 Lire `app/components/PageErreur.tsx`. Garder le document complet et les contraintes (`<h1>Introuvable</h1>` littéral, `robots`, `href="/"`, aucun `style`, aucun script). Envelopper le corps dans `<main className="porte">`, le lien de retour en `<p className="porte-suite"><a href="/">Retour à l'accueil</a></p>`. Les deux feuilles dans `<head>` (tâche 1, étape 6).
 
 Run : `npx vitest run tests/erreurs tests/auth` → vert.
 
-- [ ] **Step 6 : Vérifier**
+- [x] **Step 6 : Vérifier**
 
 Run : `npm run typecheck && npx vitest run && npm run build && npm run verifier:bundle`.
 Playwright, connecté en démo : `/proprietes`, `/proprietes/:id`, `/proprietes/:id/recherche?q=vanne`, `/connexion`, `/inscription`, `/p/jeton-inconnu` (page d'erreur), à 1440 et 375 px ; captures ; aucune violation ; à 1440 la marge est là, la barre de capture absente ; à 375 l'inverse.
 
-- [ ] **Step 7 : Commit**
+- [x] **Step 7 : Commit**
 
 ```bash
 git add -A
@@ -1812,7 +1812,7 @@ git commit -m "feat(app): la charpente du relevé — marge sur ordinateur, accu
 - Consumes : `.formulaire`, `.formulaire-ligne`, `.formulaire-actions`, `.formulaire-danger`, `.filets`, `.nom`, `.lieu`, `.niveau-choix`, `.echelle`, `.message-*`, `.sous-titre`, `.cote`.
 - Produces : `.fiche-tete`, `.fiche-type`, `.fiche-champs` (dl en filets), `.galerie` (carrés bordés), `.galerie-ajout`.
 
-- [ ] **Step 1 : Le motif d'un formulaire**
+- [x] **Step 1 : Le motif d'un formulaire**
 
 Pour chacune des routes `*.nouveau.tsx` et `*.modifier.tsx` de la liste (lire chaque fichier ; ils se ressemblent) :
 - `<Form method="post">` d'enregistrement → `<Form method="post" className="formulaire">` ;
@@ -1823,7 +1823,7 @@ Pour chacune des routes `*.nouveau.tsx` et `*.modifier.tsx` de la liste (lire ch
 
 Les listes (`batiments._index`, `zones._index`, `systemes._index`, `elements._index`) : `<ul>` → `<ul className="filets">`, le lien de chaque ligne en `className="nom"`, l'information secondaire (type, niveau, zone) dans `<span className="lieu">`. `zones._index` est récursif : la sous-liste garde `filets` mais en `margin-left: 22px` (`.filets .filets { margin-left: 22px; border-top: 0 }` dans `app.css`).
 
-- [ ] **Step 2 : Le niveau**
+- [x] **Step 2 : Le niveau**
 
 Six écrans choisissent un niveau par un `<select name="niveau">` : `elements.nouveau.tsx:124` (contrôlé, `setNiveau` pour l'aide), `elements.$elementId.modifier.tsx:239`, `zones.$zoneId.modifier.tsx:109`, `FormulaireEvenement.tsx:101`, `FormulaireIntervenant.tsx:86`. Un seul composant les remplace, `app/components/ChoixNiveau.tsx`, neutre (il n'importe qu'`Echelle` et `LIBELLES_NIVEAU` de `app/lib/partage/niveaux.ts`, neutre lui aussi) :
 
@@ -1885,7 +1885,7 @@ Dans chaque écran, le `<select>` et son `<label>` sont remplacés par `<ChoixNi
 
 Run : `grep -rl lireNiveauSaisi tests | xargs npx vitest run` → vert.
 
-- [ ] **Step 3 : La fiche d'un objet**
+- [x] **Step 3 : La fiche d'un objet**
 
 `elements.$elementId.modifier.tsx` : au-dessus du titre, `<p className="fiche-fil">` existe ; sous le `<h1>`, ajouter `<p className="fiche-type"><Echelle plafond={niveau + 1} /> {nomNiveau} · {type} · {systeme}</p>` (avec `nomNiveau` depuis `NIVEAUX`). Photos : `.fiche-photos-tete` reste, `.galerie` reste, le déclencheur de capture de la fiche reçoit `className="capture-declencheur galerie-ajout"`. Les plans, garanties et historique : chaque bloc commence par `<p className="sous-titre"><span>Sur les plans</span><Link …>Placer</Link></p>` (respectivement « Garanties » / « Ajouter », « Historique » / « Nouvel événement »), et ses listes deviennent `.filets`. Le formulaire d'édition suit l'étape 1.
 
@@ -1985,18 +1985,18 @@ CSS (`app.css`, section « Fiche ») :
 
 Supprimer les anciennes règles `.fiche-*`, `.galerie`, `.photo-etape` (déplacer `.photo-etape` inchangée à côté), `.fiche-garanties-liste li`, `.accueil-echeances ul/li` (réécrites à la tâche 3).
 
-- [ ] **Step 4 : Types et champs dynamiques**
+- [x] **Step 4 : Types et champs dynamiques**
 
 `ChampEditor.tsx` : chaque définition de champ est un `<fieldset className="champ-definition">` avec `<legend className="cote">Champ {n}</legend>` ; ses entrées en `.formulaire-ligne` ; le bouton de retrait en `bouton-discret`. `DynamicElementFields.tsx` : rien à changer (des `<label>` et des champs nus, stylés par `releve.css`) ; vérifier que le `select` d'un genre « liste » et l'`input type="file"` rendent correctement. `ZoneSelector.tsx` : rien.
 
 CSS : `.champ-definition { padding-top: 14px; margin-bottom: 18px; border-top: var(--vu) solid var(--pale) }`.
 
-- [ ] **Step 5 : Vérifier**
+- [x] **Step 5 : Vérifier**
 
 Run : `npm run typecheck && npx vitest run && npm run build && npm run verifier:bundle`.
 Playwright : `/proprietes/:id/elements/nouveau`, une fiche `/elements/:id/modifier`, `/zones/:id/modifier`, `/types/nouveau`, `/batiments`, à 1440 et 375 px ; enregistrer réellement une fiche avec le nouveau sélecteur de niveau et vérifier en base (`SELECT niveau FROM element ORDER BY id DESC LIMIT 1`) que la valeur choisie est écrite.
 
-- [ ] **Step 6 : Commit**
+- [x] **Step 6 : Commit**
 
 ```bash
 git add -A
@@ -2014,7 +2014,7 @@ git commit -m "feat(app): formulaires, fiches et structure sur le relevé — le
 - Consumes : tout ce qui précède.
 - Produces : `@view-transition` et `::view-transition-*` dans `app.css` (mouvement 5), `.feuille` centrée à 1000 px (mouvement 6).
 
-- [ ] **Step 1 : Le plan**
+- [x] **Step 1 : Le plan**
 
 `app.css`, section « Le plan » : remplacer chaque `border-radius: var(--rayon)` par rien (supprimer la ligne), `border-radius: 999px`/`4px` par rien sauf sur `.plan-point-pastille`, `.plan-point-grappe`, `.plan-numero`, `.plan-sommet` (cercles : `border-radius: 50%`) ; remplacer `box-shadow: 0 1px 3px rgb(0 0 0 / 0.35)` par `box-shadow: 0 0 0 2px var(--papier)` (le halo) sur ces trois pastilles et supprimer leur `border: 2px solid #fff` ; `.plan-grappe-liste` : `background: var(--feuille); border: var(--vu) solid var(--pale)`, sans ombre ; `.plan-niveau` → supprimer la règle et poser `etiquette` dans le JSX (`plan-niveau-actif` → `etiquette-active`, `plan-niveau-deja` → `etiquette-hors`) ; `.plan-cadre { border: var(--vu) solid var(--pale); background: var(--feuille) }` ; `.plan-proposition` → dans le JSX `className="message-ok plan-proposition"` et en CSS ne garder que `display: flex; flex-wrap: wrap; align-items: center; gap: 8px` ; `.plan-geom polygon { fill: color-mix(in srgb, var(--encre) 14%, transparent); stroke: var(--encre) }` (déjà équivalent via le pont) ; `.plan-geom-nom` et `.plan-point-nom` : `background: color-mix(in srgb, var(--papier) 85%, transparent); font-family: var(--titrage)` ; `.editeur-canevas` sans rayon ; `.editeur-cadre { border: var(--coupe) dashed var(--encre) }` ; `.editeur-poignee` sans rayon, `border: 2px solid var(--papier)`.
 
@@ -2022,7 +2022,7 @@ JSX : `plans._index.tsx`, `PlanStatique.tsx` : `plan-niveau` → `etiquette`, et
 
 Les attributs `style` de `VuePlan`, `PlanStatique`, `EditeurImagePlan` : **ne pas toucher**.
 
-- [ ] **Step 2 : L'historique**
+- [x] **Step 2 : L'historique**
 
 `app.css`, section « Historique » :
 
@@ -2126,7 +2126,7 @@ Section « Formulaires de l'historique » : `.formulaire-evenement` devient un a
 
 `evenements.$evenementId.modifier.tsx` : `.photo-etape` reste (`figcaption` en graphite 0.85rem). Les `<Link>` de liste reçoivent `viewTransition`.
 
-- [ ] **Step 3 : Les partages**
+- [x] **Step 3 : Les partages**
 
 `partages._index.tsx` : `.partages-liste` → `filets` (garder `partages-liste` en plus pour la marge) ; chaque `.partage-ligne` : `display: block` (une ligne de filets à plusieurs lignes) ; `.partage-ligne-inactif` → ajouter aussi `filet-tirete` ; `.partage-etat` → `etiquette` (+ `etiquette-active` si actif, `etiquette-hors` sinon) ; `input.partage-lien` reste un champ en lecture ; `.portee-choix` : `<fieldset className="portee-choix">` avec `<legend className="cote">` ; `.apercu-bandeau { background: var(--creux); border-left: var(--coupe) solid var(--encre); padding: 10px 14px }` sans rayon.
 
@@ -2239,11 +2239,11 @@ Les étiquettes de case à cocher et de bouton radio ne sont pas des cotes : `re
 }
 ```
 
-- [ ] **Step 4 : Le démarrage**
+- [x] **Step 4 : Le démarrage**
 
 `demarrer._index.tsx`, `RechercheAdresse.tsx`, `EditeurSquelette.tsx` : les encarts `demarrage-regbl`, `demarrage-questions`, `demarrage-batiment` deviennent des blocs ouverts : en CSS, `{ padding-top: 14px; margin-bottom: 22px; border-top: var(--coupe) solid var(--encre) }` sans fond, sans bord, sans rayon ; chacun commence dans le JSX par `<p className="cote">` (« L'adresse », « Quelques questions », et pour un bâtiment le champ de nom lui-même reste). `.demarrage-candidats` → `filets` en plus ; `.demarrage-candidat` : `border: 0; border-left: var(--coupe) solid transparent; background: transparent; width: 100%; text-align: left` et `.demarrage-candidat.choisi { background: var(--teinte); border-left-color: var(--encre); box-shadow: none }` ; `.demarrage-avis` → `message-avis` dans le JSX ; `.demarrage-ordinal { font-family: var(--titrage); font-variant-numeric: tabular-nums; border: var(--vu) solid var(--pale); background: transparent }` sans rayon ; `.demarrage-retirer` → `bouton-discret` dans le JSX ; `.demarrage-ajouter { border: var(--vu) dashed var(--graphite); color: var(--encre); background: transparent; min-height: 44px; width: 100% }` sans rayon ; `.demarrage-niveau { border-left: var(--vu) solid var(--pale) }`.
 
-- [ ] **Step 5 : La capture**
+- [x] **Step 5 : La capture**
 
 `Capture.tsx` : `bouton-primaire` → `bouton-plein`. CSS sections « Feuille », « Sélecteur », « Confirmation » :
 
@@ -2370,7 +2370,7 @@ Les étiquettes de case à cocher et de bouton radio ne sont pas des cotes : `re
 
 Sélecteur : `.selecteur-option { border-bottom: var(--vu) solid var(--pale); font: inherit }`, `.selecteur-option-active { background: var(--teinte); box-shadow: inset var(--coupe) 0 0 var(--encre) }`, `.selecteur-liste { border-top: var(--coupe) solid var(--encre) }`, `.selecteur-principal { font-weight: 500 }`. Confirmation : `.confirmation { background: var(--texte); color: var(--papier) }` sans rayon (garder le reste) ; `.file-indicateur` → dans `IndicateurFile.tsx`, `className="etiquette file-indicateur"` et `file-indicateur-erreur` → `etiquette-hors file-indicateur-erreur` avec `.file-indicateur-erreur { color: var(--revision); border-color: var(--revision) }` ; `.aide-installation { background: var(--papier); border: var(--vu) solid var(--pale); border-top: var(--coupe) solid var(--encre) }` sans ombre ni rayon.
 
-- [ ] **Step 6 : Le fondu entre écrans**
+- [x] **Step 6 : Le fondu entre écrans**
 
 En tête de la section « Charpente » d'`app.css` :
 
@@ -2393,12 +2393,12 @@ En tête de la section « Charpente » d'`app.css` :
 
 `@view-transition` est global au document et `app.css` est servie sur la vitrine aussi : la vitrine en hériterait. Poser d'office dans `vitrine.css`, chargée après, `@view-transition { navigation: none; }` avec ce commentaire : « Pas de fondu entre deux pages de vente : l'en-tête est identique et les pages courtes, un fondu ferait clignoter la navigation. `app.css`, servie ici aussi, l'active pour l'app et la page d'un lien. »
 
-- [ ] **Step 7 : Vérifier**
+- [x] **Step 7 : Vérifier**
 
 Run : `npm run typecheck && npx vitest run && npm run build && npm run verifier:bundle`.
 Playwright : `/plans`, `/plans/nouveau`, `/evenements`, `/evenements/nouveau`, `/intervenants`, `/partages`, `/partages/:id/apercu`, `/demarrer` (sur une propriété vide créée pour l'occasion), à 1440 et 375 px ; ouvrir la feuille de capture (choisir un fichier image avec `browser_file_upload`) à 375 et 1440 ; captures ; aucune violation ; naviguer accueil → zones → accueil et constater le fondu (pas de flash blanc).
 
-- [ ] **Step 8 : Commit**
+- [x] **Step 8 : Commit**
 
 ```bash
 git add -A
@@ -2415,7 +2415,7 @@ git commit -m "feat(app): plans, historique, partages, démarrage et capture sur
 **Interfaces:**
 - Consumes : tout ce qui précède.
 
-- [ ] **Step 1 : Les composants**
+- [x] **Step 1 : Les composants**
 
 `PagePartage.tsx` : lire ; l'en-tête garde le `<h1>` du nom de propriété **et rien d'autre** ; la recherche (`form[method=get]`) : `input.recherche-champ` + `button.partage-chercher` en `bouton-plein` ; `.facettes-repli > summary` → `className="etiquette"` (un `<summary>` stylé en étiquette ; garder `list-style: none`). `PartageInactif` : `<main className="porte">`. `FicheObjet`, `FicheEvenement`, `PageHistorique` : les listes en `filets` ; `fiche-champs` comme la fiche du propriétaire (tâche 4). `PlanStatique` : la légende `<ol className="plan-legende">` → chaque `<li>` commence par `<span className="pastille">{n}</span>` si ce n'est pas déjà le cas ; le lien pleine résolution en `.plan-pleine` inchangé.
 
@@ -2470,12 +2470,12 @@ CSS section « Partage » :
 }
 ```
 
-- [ ] **Step 2 : Vérifier**
+- [x] **Step 2 : Vérifier**
 
 Run : `npx vitest run tests/partage tests/historique && npm run build && npm run verifier:bundle`.
 Playwright, **sans session** (contexte neuf) : `/p/<jeton actif>`, une fiche, `/historique`, un événement, un plan, `/p/<jeton révoqué>`, à 720 et 375 px ; `document.scripts.length === 0` ; console : aucune violation (la police doit charger : vérifier dans l'onglet réseau qu'un woff2 est bien reçu, et non bloqué) ; captures.
 
-- [ ] **Step 3 : Commit**
+- [x] **Step 3 : Commit**
 
 ```bash
 git add -A
@@ -2490,7 +2490,7 @@ git commit -m "feat(partage): la page d'un lien sur le relevé, toujours sans sc
 - Modify: `README.md`, `CLAUDE.md`, `.decisions/implementation-plan.md`, `app/styles/app.css` (retrait du pont), `docs/superpowers/plans/2026-09-15-releve-commun.md` (cases cochées)
 - Delete: `tab360b.png`
 
-- [ ] **Step 1 : Retirer le pont et les orphelins**
+- [x] **Step 1 : Retirer le pont et les orphelins**
 
 Dans `app.css`, supprimer le bloc `:root` de pont ; puis :
 
@@ -2509,7 +2509,7 @@ Expected : la première commande ne rend rien (ou seulement des occurrences à r
 git rm tab360b.png
 ```
 
-- [ ] **Step 2 : La revue au navigateur**
+- [x] **Step 2 : La revue au navigateur**
 
 Playwright, à 1440, 768, 375 et 320 px. Sur chaque page, après chargement :
 
@@ -2529,7 +2529,7 @@ Puis, avec `browser_run_code_unsafe` ou l'émulation `prefers-reduced-motion: re
 
 Corriger ce que la revue trouve ; commit séparé « fix(style): … » par constat.
 
-- [ ] **Step 3 : README**
+- [x] **Step 3 : README**
 
 - Section qui décrit `app/styles/app.css` (« feuille unique, sobre… ») : décrire les trois feuilles, qui les sert, et `app/styles/polices/`.
 - Décision #23 : ajouter « Amendée le 2026-09-15 : trois feuilles, voir la décision sur le relevé. »
@@ -2539,13 +2539,13 @@ Corriger ce que la revue trouve ; commit séparé « fix(style): … » par cons
 - « Revue de fuite » : inchangée ; relire la ligne « Arbre de la vitrine » et la garder vraie.
 - Le passage sur `.page-partage` à 688 px : inchangé, vérifier qu'il l'est.
 
-- [ ] **Step 4 : CLAUDE.md et le plan**
+- [x] **Step 4 : CLAUDE.md et le plan**
 
 `CLAUDE.md`, dans « Architecture », après le paragraphe « Partage », ajouter un paragraphe **Le relevé** : trois feuilles et qui les sert ; les jetons ne se déclarent que dans `releve.css` ; les trois traits, jamais un quatrième ; angles droits, pas d'ombre ; les polices sous `app/styles/polices/` hachées dans `/assets/` (donc dans la coquille hors ligne) ; ce qui est interdit par arbre (pas de `url(data:)`, pas de `style` inline sur la vitrine, `font-src 'self'` partout) ; la marge à 1000 px rendue par le layout sans requête ; les mouvements sous `prefers-reduced-motion` ; `Echelle.tsx` est neutre et partagé. Corriger la mention `app/components/vitrine/Echelle.tsx` si elle existe dans le fichier.
 
 `.decisions/implementation-plan.md`, ligne de la décision #8 : ajouter « — la clause « police système » a été remplacée le 2026-09-15 par le relevé (deux polices auto-hébergées), voir README. »
 
-- [ ] **Step 5 : Vérifier et commit**
+- [x] **Step 5 : Vérifier et commit**
 
 Run : `npm run typecheck && npx vitest run && npm run build && npm run verifier:bundle`.
 

@@ -15,9 +15,9 @@ fichier dit où on en est et ce qui a changé en route).
 | 3 — charpente, accueil, recherche, porte, page d'erreur ; **`app.css` réécrite en entier** | faite, vérifiée | `c1a6485` |
 | 4 — formulaires, fiches, structure, `ChoixNiveau` | faite, vérifiée (un objet créé en « technique » est écrit à 2 en base) | `62fab38` |
 | 5 — plans, historique, partages, démarrage, capture, mouvements 5-6-7 | faite, vérifiée (feuille de capture à 1440 et 375, événement écrit avec son niveau, démarrage) ; **commitée avec ce fichier** | voir `git log` |
-| 6 — la page d'un lien | **à faire** (script prêt, voir ci-dessous) | — |
-| 7 — documentation, ménage, revue globale | **à faire** | — |
-| PR | **à faire** | — |
+| 6 — la page d'un lien | faite, vérifiée sans session à 720 et 375 (zéro script, deux polices, zéro violation, zéro débordement) | `6ac53d3` |
+| 7 — documentation, ménage, revue globale | faite : greps du ménage vides, `tab360b.png` retiré, revue à 1440/768/375/320 sous les trois politiques, README/CLAUDE.md/plan | voir `git log` |
+| PR | ouverte depuis le poste local le 2026-09-15 (`gh pr create`) | — |
 
 Chaque tâche a laissé `npm run typecheck`, les tests concernés et
 `npm run build && npm run verifier:bundle` verts. `npm test` complet n'a été lancé qu'après la
