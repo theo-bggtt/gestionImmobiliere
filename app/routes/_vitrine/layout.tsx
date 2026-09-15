@@ -34,7 +34,7 @@ export const headers = () => ENTETES_VITRINE;
 export default function VitrineLayout() {
   return (
     <>
-      <header className="v-sec v-tete">
+      <header className="planche v-sec v-tete">
         <div className="v-tete-int">
           <Link to="/" className="v-marque">
             gestionImmobiliere
@@ -58,7 +58,7 @@ export default function VitrineLayout() {
         <Outlet />
       </main>
 
-      <footer className="v-sec v-pied">
+      <footer className="planche v-sec v-pied">
         <div className="v-pied-int">
           <div className="v-pied-liens">
             <Link to="/fonctionnalites">Ce que ça fait</Link>
@@ -66,7 +66,7 @@ export default function VitrineLayout() {
             <Link to="/confidentialite">Vos données</Link>
             <Link to="/a-propos">À propos</Link>
           </div>
-          <p>Né dans une vraie maison. Construit pour la vôtre.</p>
+          <p className="v-pied-texte">Né dans une vraie maison. Construit pour la vôtre.</p>
         </div>
       </footer>
     </>
