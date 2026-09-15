@@ -40,10 +40,10 @@ export function PageErreur({ erreur }: { erreur: ErreurRendue }) {
         <title>{erreur.titre}</title>
       </head>
       <body>
-        <main>
+        <main className="porte">
           <h1>{erreur.titre}</h1>
           <p>{erreur.message}</p>
-          <p>
+          <p className="porte-suite">
             <a href="/">Retour à l'accueil</a>
           </p>
         </main>
