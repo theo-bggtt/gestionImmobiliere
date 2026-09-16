@@ -20,6 +20,7 @@ npm run build && npm run verifier:bundle   # constate qu'aucun code serveur n'es
 
 npm run db:generate       # drizzle-kit generate, after editing app/db/schema/
 npm run db:migrate        # apply pending migrations (scripts/migrate.mjs; also runs on container start)
+npm run compte -- <email> <motdepasse>   # crée le compte, ou remet son mot de passe — LE SEUL chemin pour un mot de passe oublié (pas d'écran, pas de mailer, argon2 irréversible). Normalise l'adresse comme l'inscription. NE refuse PAS sous NODE_ENV=production, à la différence de seed:exemple : il demande DATABASE_URL + un shell, et qui tient les deux écrit le hash à la main de toute façon — la garde n'enfermerait dehors que le propriétaire, sur le VPS. Un invité n'a aucun recours de son côté (issue #65).
 npm run seed:catalogue    # 33 system types with alias — idempotent
 npm run seed:exemple      # full example property — idempotent, demo@gestion-immobiliere.local / demo1234 — REFUSED under NODE_ENV=production, as soon as a non-demo account exists, and on a migrated base with no account at all unless SEED_EXEMPLE=1 (a fresh dev base needs that flag once)
 ./scripts/sauvegarde.sh          # pg_dump + tar of the photo volume, horodatés ; SANS_DOCKER=1 pour pg_dump local

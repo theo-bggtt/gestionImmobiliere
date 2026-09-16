@@ -124,6 +124,18 @@ npm run seed:catalogue   # 33 types système avec alias — idempotent, rafraîc
 npm run seed:exemple     # propriété "Maison d'exemple" complète — idempotent
 ```
 
+### Un mot de passe perdu, un compte à créer
+
+```bash
+npm run compte -- <email> <motdepasse>   # crée le compte, ou remet son mot de passe
+```
+
+**C'est le seul chemin pour un mot de passe oublié**, et c'est voulu tel quel : il n'y a pas d'écran de changement de mot de passe, pas de mailer donc pas de « mot de passe oublié » par email (décision #105), et argon2 est irréversible par construction. L'adresse est normalisée comme à l'inscription (minuscules, espaces retirés), sans quoi `Theo@X.local` créerait un compte **à côté** de `theo@x.local` au lieu de lui remettre son mot de passe — la commande dirait « créé » et vous resteriez dehors.
+
+Sur le VPS, il se lance par le même tunnel SSH que `seed:catalogue` ci-dessous. Il **ne refuse pas** sous `NODE_ENV=production`, à la différence de `seed:exemple`, et c'est réfléchi : il demande `DATABASE_URL` *et* un shell sur la machine, or qui tient ces deux-là peut déjà écrire le hash à la main en SQL. La garde ne protégerait personne, et elle vous enfermerait dehors sur la seule machine où c'est irrécupérable. Le mot de passe, lui, vient de vous et de nulle part ailleurs : aucune valeur par défaut, rien d'écrit dans le dépôt.
+
+C'est aussi ce qui permet de **retrouver les mêmes identifiants sur deux machines de développement** : les bases sont deux volumes Docker distincts, chacune avec son propre premier compte, donc rien ne les relie — mais la même commande lancée des deux côtés donne le même couple email / mot de passe. Un invité, lui, n'a aucun recours de son côté : c'est l'issue #65.
+
 Identifiants de démonstration créés par `seed:exemple` : `demo@gestion-immobiliere.local` / `demo1234`. Ils sont publics, donc le script **refuse** de les créer dans trois cas : sous `NODE_ENV=production` (ce que pose le conteneur), dès que la base contient un compte qui n'est pas celui de la démonstration, et sur une base **migrée mais sans aucun compte** — l'état d'une instance neuve dont le propriétaire ne s'est pas encore inscrit, où charger la démonstration lui prendrait le premier compte. Ce dernier cas se lève par `SEED_EXEMPLE=1`, sur une base de développement. Pas un avertissement, un code de sortie 1 (décision #132, tests dans `tests/scripts/`).
 
 ## Tests
