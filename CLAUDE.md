@@ -13,6 +13,7 @@ La mémoire technique d'une maison : le propriétaire consigne où passe la gain
 ```bash
 npm run dev              # dev server (server/app.js + Vite middleware), :3000
 npm run build             # react-router build
+NODE_ENV=production npm start   # sert le build — le service worker n'est enregistré qu'en production
 npm run typecheck         # tsc --noEmit
 npm test                  # vitest run (needs a live Postgres — see below)
 npx vitest run tests/schema/zone-obligatoire.test.ts   # single test file

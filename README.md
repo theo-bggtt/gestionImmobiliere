@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 133 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;133+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
+[![Recherche plein texte classée en moins de 5 ms, Capture photo hors ligne — jamais perdue en silence, Liens de partage filtrés en base, 4 Ko de HTML sans script, 145 décisions documentées — zéro tacite](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=20&pause=1600&color=2563EB&center=true&vCenter=true&width=760&lines=Recherche+plein+texte+class%C3%A9e+en+moins+de+5+ms;Capture+photo+hors+ligne+%E2%80%94+jamais+perdue+en+silence;Partage+filtr%C3%A9+en+base+%E2%80%94+4+Ko+de+HTML+sans+script;145+d%C3%A9cisions+document%C3%A9es+%E2%80%94+z%C3%A9ro+tacite)](https://github.com/theo-bggtt/gestionImmobiliere)
 
 <br/>
 
@@ -40,6 +40,7 @@
 <td valign="top" width="50%">
 
 **Démarrer**
+- [Commandes](#commandes)
 - [Prérequis](#prérequis)
 - [Démarrage (Docker)](#démarrage-docker)
 - [Démarrage (développement local)](#démarrage-développement-local-hors-docker-pour-lapp)
@@ -66,6 +67,59 @@
 </td>
 </tr>
 </table>
+
+---
+
+## Commandes
+
+Toutes les commandes utiles du dépôt, au même endroit. Chacune renvoie à la section qui dit *pourquoi* elle est écrite comme ça. Le shell de référence est **Git Bash** ou WSL, jamais PowerShell ([Prérequis](#prérequis)).
+
+### Développement
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `npm install` | Dépendances. Node 22+. |
+| `docker compose up -d postgres` | La base seule, pour développer l'app hors conteneur. |
+| `npm run dev` | Serveur de développement (`server/app.js` + Vite en middleware), sur `:3000`. |
+| `npm run build` | Build React Router (`build/client` + `build/server`). |
+| `NODE_ENV=production npm start` | Sert le build. C'est le seul moyen d'éprouver le hors ligne : le service worker n'est enregistré qu'en production ([PWA et hors ligne](#pwa-et-hors-ligne)). |
+| `npm run typecheck` | `tsc --noEmit`. |
+
+### Base de données
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `npm run db:generate` | Génère une migration depuis `app/db/schema/`, après l'avoir modifié. |
+| `npm run db:migrate` | Applique les migrations en attente. Tourne aussi au démarrage du conteneur. |
+| `npm run seed:catalogue` | Les 33 types système avec leurs alias. Idempotent, rafraîchit `alias` et `niveau_suggere`, **jamais** `champs`. |
+| `npm run seed:exemple` | La « Maison d'exemple » complète. Idempotent, et **refusé** en production ([Charger les données](#charger-les-données)). |
+| `npm run compte -- <email> <motdepasse>` | Crée le compte ou remet son mot de passe. **Le seul chemin** pour un mot de passe oublié ([Un mot de passe perdu](#un-mot-de-passe-perdu-un-compte-à-créer)). |
+
+### Tests et vérifications
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `docker compose exec postgres createdb -U gestion gestion_immobiliere_test` | Une fois, avant le premier `npm test`. |
+| `cp .env.test.example .env.test` | Une fois. |
+| `set -a && source .env.test && set +a && npx tsx scripts/seed-catalogue.ts` | Une fois : les tests d'alias et de recherche en dépendent. |
+| `npm test` | `vitest run`. Demande une base Postgres vivante ([Tests](#tests)). |
+| `npx vitest run tests/schema/zone-obligatoire.test.ts` | Un seul fichier. |
+| `npm run build && npm run verifier:bundle` | Constate qu'aucun code serveur n'est parti dans `build/client`. **Hors de `npm test`** parce qu'il demande un build complet — et c'est lui qui a trouvé la fuite de `ChampEditor`. |
+
+### Exploitation (Docker)
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `docker compose up -d --build` | Topologie de production : `caddy` (80/443, **seul** service publié) → `app` → `postgres` (sur `127.0.0.1:5432` uniquement). |
+| `docker compose ps` / `docker compose logs -f app` | État des trois services, journal de l'application. Un crash en boucle se voit là. |
+| `git pull && docker compose up -d --build` | [Mise à jour](#mise-à-jour). Sauvegarder avant si elle porte une migration. |
+| `./scripts/sauvegarde.sh` | `pg_dump` + `tar` du volume des photos, horodatés. `SANS_DOCKER=1` pour un `pg_dump` local. La base **seule** ne restaure rien d'utile ([Sauvegarde](#sauvegarde)). |
+| `./scripts/restauration.sh <horodatage>` | Restaure dans une base **vide** — refuse une base qui porte déjà des tables ([Restauration](#restauration)). |
+| `docker compose down && docker volume rm gestionimmobiliere_postgres_data` | Repartir d'une base vide. Ne **jamais** toucher à `caddy_data` : le compte ACME et les certificats y vivent. |
+
+Deux choses ne sont pas des commandes et se font à l'écran : **inviter quelqu'un** (`/proprietes/invitations` — l'inscription se ferme sur le premier compte et ne se rouvre que par un lien à jeton, décision #145) et **créer un lien de partage** (`/proprietes/:proprieteId/partages`).
+
+<p align="right"><a href="#top">↑ haut de page</a></p>
 
 ---
 
