@@ -67,6 +67,15 @@ export default function MesProprietes() {
           <button type="submit">Créer</button>
         </div>
       </Form>
+
+      {/* La seule entrée vers les invitations : elles ne parlent d'aucune
+          propriété, donc elles n'ont pas leur place dans la marge de
+          navigation, qui est celle d'UNE propriété. */}
+      <p className="porte-suite">
+        <Link to="/proprietes/invitations" viewTransition>
+          Inviter quelqu'un
+        </Link>
+      </p>
     </div>
   );
 }

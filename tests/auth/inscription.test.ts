@@ -1,12 +1,14 @@
 // tests/auth/inscription.test.ts
 // La porte de l'inscription (issue #26) : ouverte pour le premier compte,
-// fermée ensuite, rouverte par une décision explicite — et un refus qui ne
-// dit pas si l'adresse existe.
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+// fermée ensuite, et un refus qui ne dit pas si l'adresse existe.
+//
+// Ce qui la ROUVRE est une invitation, et vit dans `invitation.test.ts` :
+// ici, la porte ne se referme jamais autrement que par elle-même.
+import { describe, it, expect, beforeEach } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRoutesStub } from "react-router";
-import type { ActionFunctionArgs } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { sql } from "drizzle-orm";
 import { db } from "../setup/test-db";
 import { utilisateur } from "../../app/db/schema/index";
@@ -17,11 +19,11 @@ import * as routeConnexion from "../../app/routes/_public/login";
 
 beforeEach(async () => {
   await db.execute(sql`DELETE FROM utilisateur`);
-  delete process.env.AUTORISER_INSCRIPTION;
 });
-afterEach(() => {
-  delete process.env.AUTORISER_INSCRIPTION;
-});
+
+/** Le loader lit la chaîne de requête (le jeton d'invitation) : il lui faut une requête. */
+const visite = (url = "http://test/inscription") =>
+  ({ request: new Request(url), params: {}, context: {} }) as unknown as LoaderFunctionArgs;
 
 function envoi(email: string, motDePasse = "motdepasse-long") {
   const corps = new URLSearchParams({ email, motDePasse });
@@ -58,7 +60,7 @@ describe("inscription", () => {
     expect(prise).toEqual(nouvelle);
     expect(await comptes()).toEqual(["moi@x.local"]);
 
-    expect(await routeInscription.loader()).toEqual({ ouverte: false });
+    expect(await routeInscription.loader(visite())).toEqual({ ouverte: false, jeton: "" });
     expect(await routeConnexion.loader()).toEqual({ inscriptionOuverte: false });
   });
 
@@ -68,15 +70,20 @@ describe("inscription", () => {
     expect(await comptes()).toHaveLength(1);
   });
 
-  it("rouvre sur AUTORISER_INSCRIPTION=1, et là seulement dit qu'une adresse est prise", async () => {
+  it("ne rouvre sur aucune variable d'environnement", async () => {
+    // `AUTORISER_INSCRIPTION` a été retirée (issue #62) : elle bornait un
+    // mécanisme sans état, d'où son plafond dur en code. Ce test épingle
+    // qu'aucun reste de `.env` ne rouvre la porte — seule une invitation le
+    // fait, et une invitation ne se pose pas dans un fichier.
     await routeInscription.action(envoi("moi@x.local"));
     process.env.AUTORISER_INSCRIPTION = "1";
-
-    expect(await routeInscription.loader()).toEqual({ ouverte: true });
-    expect(await routeInscription.action(envoi("moi@x.local"))).toEqual({ erreur: "Un compte existe déjà avec cet email." });
-    const r = await routeInscription.action(envoi("second@x.local"));
-    expect((r as Response).status).toBe(302);
-    expect(await comptes()).toEqual(["moi@x.local", "second@x.local"]);
+    try {
+      expect(await routeInscription.loader(visite())).toEqual({ ouverte: false, jeton: "" });
+      expect(await routeInscription.action(envoi("second@x.local"))).toEqual({ erreur: MESSAGE_INSCRIPTION_FERMEE });
+      expect(await comptes()).toEqual(["moi@x.local"]);
+    } finally {
+      delete process.env.AUTORISER_INSCRIPTION;
+    }
   });
 
   it("valide toujours le mot de passe, porte ouverte", async () => {
@@ -86,10 +93,10 @@ describe("inscription", () => {
 
   it("rend une page sans formulaire quand c'est fermé, et la connexion sans lien vers l'inscription", () => {
     const Inscription = createRoutesStub([
-      { path: "/inscription", Component: routeInscription.default, loader: () => ({ ouverte: false }) },
+      { path: "/inscription", Component: routeInscription.default, loader: () => ({ ouverte: false, jeton: "" }) },
     ]);
     const html = renderToStaticMarkup(
-      createElement(Inscription, { initialEntries: ["/inscription"], hydrationData: { loaderData: { "0": { ouverte: false } } } }),
+      createElement(Inscription, { initialEntries: ["/inscription"], hydrationData: { loaderData: { "0": { ouverte: false, jeton: "" } } } }),
     );
     expect(html).toContain(MESSAGE_INSCRIPTION_FERMEE);
     expect(html).not.toContain("<form");
