@@ -6,9 +6,17 @@
 // Elle vend sans chiffrer : ni durée de saisie, ni promesse de fonctionnement
 // sans réseau, ni compte d'utilisateurs, ni prix. `tests/vitrine/discours.test.ts`
 // tient ces quatre-là ; le reste consiste à n'écrire que ce que le code fait
-// déjà. Le schéma est un SVG dessiné dans la page, sans balise image ni
-// attribut `style` : la politique de cet arbre n'a ni `img-src` externe ni
-// `'unsafe-inline'`, et ce n'est la maison de personne.
+// déjà.
+//
+// Deux relevés, et c'est délibéré. Celui du héros est le TIRAGE : pleine
+// largeur, une maison ordinaire, trois objets repérés. Ceux des quatre
+// lecteurs sont le MÊME plan projeté quatre fois, avec en tiretés ce que
+// chacun ne voit pas — l'argument du produit rendu par une convention de
+// dessin au lieu d'un tableau de cartes. Voir `PlanMini`.
+//
+// Aucune balise image et aucun attribut `style` : la politique de cet arbre
+// n'a ni `img-src` externe ni `'unsafe-inline'`, et ce n'est la maison de
+// personne.
 //
 // La liste d'attente est le seul envoi de tout l'arbre : un formulaire natif
 // en POST, sans une ligne de script — l'arbre porte `handle.sansScripts` et sa
@@ -17,6 +25,8 @@
 // celui du propriétaire.
 import { Form, Link, data, useActionData } from "react-router";
 import type { ActionFunctionArgs, HeadersArgs } from "react-router";
+import { Echelle } from "../../components/vitrine/Echelle";
+import { PlanMini } from "../../components/vitrine/PlanMini";
 import { ACCUEIL } from "../../lib/auth/redirection";
 import { ENTETES_VITRINE } from "../../lib/vitrine/document";
 import {
@@ -67,25 +77,13 @@ export function headers({ actionHeaders }: HeadersArgs) {
   return cache ? { ...ENTETES_VITRINE, "Cache-Control": cache } : ENTETES_VITRINE;
 }
 
-/** Les quatre barreaux de l'échelle d'un lecteur : public, usage, technique,
- *  privé. Remplis jusqu'au plafond, de un à quatre. */
-function Echelle({ plafond }: { plafond: 1 | 2 | 3 | 4 }) {
-  return (
-    <div className="v-echelle" aria-hidden="true">
-      {[1, 2, 3, 4].map((n) => (
-        <span key={n} className={n <= plafond ? "v-barreau plein" : "v-barreau"} />
-      ))}
-    </div>
-  );
-}
-
 export default function Accueil() {
   const resultat = useActionData<typeof action>();
   return (
     <>
-      <section className="v-heros">
+      <section className="v-sec v-heros">
         <div className="v-heros-texte">
-          <p className="v-surtitre">La mémoire technique de votre maison</p>
+          <p className="v-cote">La mémoire technique de votre maison</p>
           <h1 className="v-titre">
             Votre maison sait des choses que personne n'a écrites. <em>Jusqu'ici.</em>
           </h1>
@@ -104,108 +102,127 @@ export default function Accueil() {
           </div>
         </div>
 
-        <div className="v-schema">
-          <svg viewBox="0 0 400 280" role="img" aria-labelledby="schema-titre">
-            <title id="schema-titre">
-              Un plan schématique : trois zones, trois objets repérés par un point numéroté.
+        {/* Le tirage. Trois épaisseurs de trait, et chacune dit quelque chose :
+            la parcelle en trait mixte, les murs en trait de coupe, les
+            cloisons en trait fin. Voir l'en-tête de `vitrine.css`. */}
+        <div className="v-heros-dessin pleine">
+          <svg viewBox="0 0 1200 420" role="img" aria-labelledby="releve-titre">
+            <title id="releve-titre">
+              Un relevé schématique : une parcelle, une maison de cinq zones, et trois objets
+              repérés par un point numéroté.
             </title>
-            {/* La parcelle, en pointillé : l'extérieur est une zone comme une autre. */}
-            <rect className="s-terrain" x="8" y="8" width="384" height="264" rx="6" />
-            <text className="s-etiquette" x="318" y="34">
-              Jardin
-            </text>
 
-            {/* Le bâtiment et ses zones. */}
-            <rect className="s-mur" x="40" y="48" width="260" height="190" />
-            <rect className="s-zone" x="40" y="143" width="100" height="95" />
-            <rect className="s-zone" x="140" y="143" width="80" height="95" />
-            <line className="s-cloison" x1="160" y1="48" x2="160" y2="143" />
-            <line className="s-cloison" x1="40" y1="143" x2="300" y2="143" />
-            <line className="s-cloison" x1="140" y1="143" x2="140" y2="238" />
-            <line className="s-cloison" x1="220" y1="143" x2="220" y2="238" />
-            <text className="s-etiquette" x="52" y="68">
+            <rect className="d-parcelle" x="16" y="16" width="1168" height="388" />
+
+            {/* Les deux zones que citent les points 1 et 2, teintées : c'est
+                la seule couleur de remplissage du dessin. */}
+            <rect className="d-sol" x="540" y="246" width="200" height="142" />
+            <rect className="d-sol" x="740" y="246" width="210" height="142" />
+
+            <rect className="d-mur" x="540" y="56" width="620" height="332" />
+            <line className="d-cloison" x1="540" y1="246" x2="1160" y2="246" />
+            <line className="d-cloison" x1="850" y1="56" x2="850" y2="246" />
+            <line className="d-cloison" x1="740" y1="246" x2="740" y2="388" />
+            <line className="d-cloison" x1="950" y1="246" x2="950" y2="388" />
+
+            <text className="d-nom" x="558" y="84">
               Cuisine
             </text>
-            <text className="s-etiquette" x="172" y="68">
+            <text className="d-nom" x="868" y="84">
               Séjour
             </text>
-            <text className="s-etiquette" x="52" y="163">
-              Technique
+            <text className="d-nom" x="558" y="274">
+              Local technique
             </text>
-            <text className="s-etiquette" x="150" y="163">
+            <text className="d-nom" x="758" y="274">
               Entrée
             </text>
-            <text className="s-etiquette" x="232" y="163">
+            <text className="d-nom" x="968" y="274">
               Chambre
             </text>
 
-            {/* Trois objets repérés. */}
-            <circle className="s-halo" cx="84" cy="204" r="17" />
-            <circle className="s-point" cx="84" cy="204" r="11" />
-            <text className="s-num" x="84" y="204">
+            {/* Une ligne de cote sur le bâtiment, avec ses deux embouts :
+                c'est ce qui fait d'un schéma un relevé. */}
+            <line className="d-cotation" x1="540" y1="34" x2="770" y2="34" />
+            <line className="d-cotation" x1="930" y1="34" x2="1160" y2="34" />
+            <line className="d-cotation" x1="540" y1="26" x2="540" y2="42" />
+            <line className="d-cotation" x1="1160" y1="26" x2="1160" y2="42" />
+            <text className="d-mesure" x="850" y="39">
+              Rez-de-chaussée
+            </text>
+
+            <circle className="d-point" cx="630" cy="330" r="20" />
+            <text className="d-num" x="630" y="330">
               1
             </text>
-            <circle className="s-halo" cx="180" cy="196" r="17" />
-            <circle className="s-point" cx="180" cy="196" r="11" />
-            <text className="s-num" x="180" y="196">
+            <circle className="d-point" cx="845" cy="330" r="20" />
+            <text className="d-num" x="845" y="330">
               2
             </text>
-            <circle className="s-halo" cx="350" cy="224" r="17" />
-            <circle className="s-point" cx="350" cy="224" r="11" />
-            <text className="s-num" x="350" y="224">
+            {/* Le troisième objet est dehors, et le nom de la zone se pose à
+                côté de lui : une étiquette reléguée dans le coin de la
+                parcelle ne désignerait plus rien. */}
+            <circle className="d-point" cx="250" cy="300" r="20" />
+            <text className="d-num" x="250" y="300">
               3
             </text>
+            <text className="d-nom d-jardin" x="312" y="308">
+              Jardin
+            </text>
           </svg>
-          <ul className="v-schema-legende">
-            <li>
-              <span className="v-pastille">1</span>
-              <span>
-                <strong>Vanne d'arrêt</strong> · local technique
-              </span>
-            </li>
-            <li>
-              <span className="v-pastille">2</span>
-              <span>
-                <strong>Tableau électrique</strong> · entrée
-              </span>
-            </li>
-            <li>
-              <span className="v-pastille">3</span>
-              <span>
-                <strong>Vanne d'arrosage</strong> · jardin
-              </span>
-            </li>
-          </ul>
         </div>
+
+        <ul className="v-legende large">
+          <li>
+            <span className="v-pastille">1</span>
+            <span>
+              <b>Vanne d'arrêt</b>
+              <span>Local technique</span>
+            </span>
+          </li>
+          <li>
+            <span className="v-pastille">2</span>
+            <span>
+              <b>Tableau électrique</b>
+              <span>Entrée</span>
+            </span>
+          </li>
+          <li>
+            <span className="v-pastille">3</span>
+            <span>
+              <b>Vanne d'arrosage</b>
+              <span>Jardin</span>
+            </span>
+          </li>
+        </ul>
       </section>
 
-      <section className="v-section">
-        <div className="v-section-tete">
-          <h2>Le carton de factures ne répond pas</h2>
-          <p className="v-intro">
-            Ces réponses existent. Dans une tête, dans un classeur, ou chez l'artisan passé il y a six
-            ans. Elles manquent toujours le même jour.
-          </p>
-        </div>
-        <ul className="v-cartes">
-          <li className="v-carte">
-            <p className="v-carte-jour">Le jour où ça fuit</p>
+      <section className="v-sec">
+        <p className="v-cote">Le problème</p>
+        <h2>Le carton de factures ne répond pas</h2>
+        <p>
+          Ces réponses existent. Dans une tête, dans un classeur, ou chez l'artisan passé il y a six
+          ans. Elles manquent toujours le même jour.
+        </p>
+        <ul className="v-releves large">
+          <li>
+            <p className="v-jour">Le jour où ça fuit</p>
             <h3>« Elle est où, la vanne ? »</h3>
             <p>
               L'eau coule pendant que vous cherchez. Elle est derrière le troisième carton du
               sous-sol, et seul l'ancien propriétaire le savait.
             </p>
           </li>
-          <li className="v-carte">
-            <p className="v-carte-jour">Le jour où l'artisan appelle</p>
+          <li>
+            <p className="v-jour">Le jour où l'artisan appelle</p>
             <h3>« C'est quel modèle, votre chaudière ? »</h3>
             <p>
               La réponse est sur une plaque au fond du local, ou dans un courriel d'il y a cinq ans.
               Le dépanneur attend. Le devis aussi.
             </p>
           </li>
-          <li className="v-carte">
-            <p className="v-carte-jour">Le jour où vous louez</p>
+          <li>
+            <p className="v-jour">Le jour où vous louez</p>
             <h3>« Comment on coupe l'eau ? »</h3>
             <p>
               Le guide d'accueil l'explique. Trois lignes plus bas, il donne aussi le code du portail
@@ -215,34 +232,33 @@ export default function Accueil() {
         </ul>
       </section>
 
-      <section className="v-section">
-        <div className="v-section-tete">
-          <h2>Trois gestes, et c'est écrit</h2>
-          <p className="v-intro">
-            Pas de formulaire à trente champs. On photographie, on nomme, on range. Le reste vient
-            plus tard, ou jamais.
-          </p>
-        </div>
-        <ol className="v-etapes">
-          <li className="v-etape">
-            <p className="v-etape-num">1</p>
+      <section className="v-sec">
+        <p className="v-cote">La saisie</p>
+        <h2>Trois gestes, et c'est écrit</h2>
+        <p>
+          Pas de formulaire à trente champs. On photographie, on nomme, on range. Le reste vient plus
+          tard, ou jamais.
+        </p>
+        <ol className="v-gestes large">
+          <li>
+            <p className="v-rang">1</p>
             <h3>Photographiez</h3>
             <p>
               Devant l'objet, téléphone en main : une photo, un nom déjà proposé, une zone déjà
-              présélectionnée. Vous confirmez, c'est enregistré. Les caractéristiques se complètent
-              à tête reposée.
+              présélectionnée. Vous confirmez, c'est enregistré. Les caractéristiques se complètent à
+              tête reposée.
             </p>
           </li>
-          <li className="v-etape">
-            <p className="v-etape-num">2</p>
+          <li>
+            <p className="v-rang">2</p>
             <h3>Retrouvez</h3>
             <p>
               Tapez un mot, avec ou sans accent : la fiche, sa zone, son système, ses photos, ce qui
               lui est arrivé. Ou promenez-vous de zone en zone, comme dans la maison.
             </p>
           </li>
-          <li className="v-etape">
-            <p className="v-etape-num">3</p>
+          <li>
+            <p className="v-rang">3</p>
             <h3>Partagez, à la carte</h3>
             <p>
               Un lien par personne, avec un plafond de détail et des zones autorisées. Rien à
@@ -252,40 +268,55 @@ export default function Accueil() {
         </ol>
       </section>
 
-      <section className="v-section">
-        <div className="v-section-tete">
-          <h2>Une seule base. Quatre façons de la regarder.</h2>
-          <p className="v-intro">
-            Vous ne montrez pas la même maison au locataire de passage, à l'artisan qui vient pour la
-            chaudière et au jardinier. Vous ne tenez pourtant pas trois documents à jour : c'est la
-            même base, vue à travers un filtre.
-          </p>
-        </div>
-        <ul className="v-lecteurs">
-          <li className="v-lecteur v-lecteur-vous">
+      <section className="v-sec">
+        <p className="v-cote">Le partage</p>
+        <h2>Une seule base. Quatre façons de la regarder.</h2>
+        <p>
+          Vous ne montrez pas la même maison au locataire de passage, à l'artisan qui vient pour la
+          chaudière et au jardinier. Vous ne tenez pourtant pas trois documents à jour : c'est la même
+          base, vue à travers un filtre. Ce que chacun ne voit pas est dessiné en tiretés.
+        </p>
+        <ul className="v-lecteurs large">
+          <li>
+            <PlanMini
+              titre="Le plan complet : toutes les zones sont visibles."
+              visibles={["cuisine", "sejour", "technique", "entree", "chambre", "jardin"]}
+            />
             <Echelle plafond={4} />
-            <p className="v-plafond">Tout, partout</p>
+            <p className="v-portee">Tout, partout</p>
             <h3>Vous</h3>
             <p>C'est votre maison, et c'est vous qui l'avez écrite.</p>
           </li>
-          <li className="v-lecteur">
+          <li>
+            <PlanMini
+              titre="Le plan vu par l'artisan : seul le local technique est visible."
+              visibles={["technique"]}
+            />
             <Echelle plafond={3} />
-            <p className="v-plafond">Jusqu'au technique · son système</p>
+            <p className="v-portee">Jusqu'au technique, dans son système</p>
             <h3>L'artisan</h3>
             <p>
               La fiche de ce qu'il vient réparer, ses références, son historique. Pas les fiches du
               jardin.
             </p>
           </li>
-          <li className="v-lecteur">
+          <li>
+            <PlanMini
+              titre="Le plan vu par le locataire : l'intérieur est visible, le local technique et le jardin non."
+              visibles={["cuisine", "sejour", "entree", "chambre"]}
+            />
             <Echelle plafond={2} />
-            <p className="v-plafond">Jusqu'à l'usage · ses zones</p>
+            <p className="v-portee">Jusqu'à l'usage, dans ses zones</p>
             <h3>Le locataire</h3>
             <p>Où est le compteur, comment on coupe l'eau, comment marche l'induction.</p>
           </li>
-          <li className="v-lecteur">
+          <li>
+            <PlanMini
+              titre="Le plan vu par le jardinier : seul le jardin est visible."
+              visibles={["jardin"]}
+            />
             <Echelle plafond={2} />
-            <p className="v-plafond">Jusqu'à l'usage · l'extérieur</p>
+            <p className="v-portee">Jusqu'à l'usage, à l'extérieur</p>
             <h3>Le jardinier</h3>
             <p>La vanne d'arrosage et le portail du fond. L'intérieur n'existe pas pour lui.</p>
           </li>
@@ -295,8 +326,8 @@ export default function Accueil() {
         </p>
       </section>
 
-      <section className="v-section">
-        <div className="v-duo">
+      <section className="v-sec">
+        <div className="v-duo large">
           <article>
             <h2>Un plan, et des points dessus</h2>
             <p>
@@ -316,8 +347,8 @@ export default function Accueil() {
         </div>
       </section>
 
-      <section className="v-bande">
-        <h2>Et quand vous n'y serez plus.</h2>
+      <section className="v-sec v-encre">
+        <h2 className="v-encre-titre">Et quand vous n'y serez plus.</h2>
         <p>
           Une maison change de mains, et tout ce que vous savez d'elle part avec vous. Un classeur que
           personne ne tient à jour ne se transmet pas. Une base remplie au fil des jours, en
@@ -325,56 +356,56 @@ export default function Accueil() {
         </p>
       </section>
 
-      <section className="v-final v-final-liste">
-        <div>
-          <h2>Commencez par la vanne d'arrêt.</h2>
-          <p>
-            Le premier objet prend le temps d'une photo. Les suivants viennent en marchant dans la
-            maison. <Link to="/confidentialite">Ce que l'application stocke, et ce qu'elle refuse</Link>.
+      <section className="v-sec">
+        <p className="v-cote">Commencer</p>
+        <h2>Commencez par la vanne d'arrêt.</h2>
+        <p>
+          Le premier objet prend le temps d'une photo. Les suivants viennent en marchant dans la
+          maison. <Link to="/confidentialite">Ce que l'application stocke, et ce qu'elle refuse</Link>.
+        </p>
+
+        <p className="v-note">
+          L'inscription n'est pas encore ouverte. Laissez une adresse et vous serez prévenu quand elle
+          le sera. Pour être franc sur ce qui va se passer : rien, tout de suite. Il n'y a pas d'envoi
+          automatique de courrier dans ce projet, donc vous ne recevrez aucun message de confirmation.
+          Votre adresse est écrite dans une table, avec la date, et rien d'autre — pas votre adresse
+          IP, pas votre navigateur, pas d'où vous venez.
+        </p>
+
+        <Form method="post" className="v-formulaire">
+          <label htmlFor="email">Votre adresse e-mail</label>
+          <div className="v-formulaire-ligne">
+            <input
+              id="email"
+              type="email"
+              name="email"
+              required
+              autoComplete="email"
+              placeholder="vous@exemple.net"
+            />
+            <button type="submit">M'ajouter</button>
+          </div>
+        </Form>
+
+        {resultat?.issue === "enregistre" && (
+          <p className="v-confirmation" role="status">
+            C'est noté. Vous serez prévenu à cette adresse le jour où l'inscription ouvre.
           </p>
-
-          <p className="v-note">
-            L'inscription n'est pas encore ouverte. Laissez une adresse et vous serez prévenu quand
-            elle le sera. Pour être franc sur ce qui va se passer : rien, tout de suite. Il n'y a pas
-            d'envoi automatique de courrier dans ce projet, donc vous ne recevrez aucun message de
-            confirmation. Votre adresse est écrite dans une table, avec la date, et rien d'autre —
-            pas votre adresse IP, pas votre navigateur, pas d'où vous venez.
+        )}
+        {resultat?.issue === "adresse-invalide" && (
+          <p className="v-erreur" role="alert">
+            Cette adresse ne ressemble pas à une adresse e-mail. Rien n'a été enregistré.
           </p>
+        )}
 
-          <Form method="post" className="v-formulaire">
-            <label htmlFor="email">Votre adresse e-mail</label>
-            <div className="v-formulaire-ligne">
-              <input
-                id="email"
-                type="email"
-                name="email"
-                required
-                autoComplete="email"
-                placeholder="vous@exemple.net"
-              />
-              <button type="submit" className="v-appel">
-                M'ajouter
-              </button>
-            </div>
-          </Form>
-
-          {resultat?.issue === "enregistre" && (
-            <p className="v-confirmation" role="status">
-              C'est noté. Vous serez prévenu à cette adresse le jour où l'inscription ouvre.
-            </p>
-          )}
-          {resultat?.issue === "adresse-invalide" && (
-            <p className="v-erreur" role="alert">
-              Cette adresse ne ressemble pas à une adresse e-mail. Rien n'a été enregistré.
-            </p>
-          )}
+        {/* Second, et pas par modestie : dans cette section, l'appel premier
+            est la liste d'attente. « Mon espace » est celui du propriétaire,
+            qui l'a déjà en haut de chaque page. */}
+        <div className="v-actions">
+          <Link to={ACCUEIL} className="v-appel-second">
+            Mon espace
+          </Link>
         </div>
-        {/* Second, et pas par modestie : dans cette carte, l'appel premier est
-            la liste d'attente. « Mon espace » est celui du propriétaire, qui
-            l'a déjà en haut de chaque page. */}
-        <Link to={ACCUEIL} className="v-appel-second">
-          Mon espace
-        </Link>
       </section>
     </>
   );

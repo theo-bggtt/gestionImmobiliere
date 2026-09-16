@@ -13,6 +13,10 @@
 // qui redirige elle-même vers la connexion s'il n'y en a pas : le même lien
 // marche pour le visiteur et pour le propriétaire. Une branche « si connecté »
 // rendrait la page différente selon le lecteur, donc non cachable.
+//
+// L'en-tête et le pied portent `v-sec` comme les sections des pages : c'est
+// la grille de la vitrine, et elle est déclarée une fois. C'est ce qui aligne
+// la marque sur le titre de la page qu'elle surplombe.
 import { Link, NavLink, Outlet } from "react-router";
 import type { LinksFunction } from "react-router";
 import { ACCUEIL } from "../../lib/auth/redirection";
@@ -30,29 +34,31 @@ export const headers = () => ENTETES_VITRINE;
 export default function VitrineLayout() {
   return (
     <>
-      <header className="v-tete">
-        <Link to="/" className="v-marque">
-          gestionImmobiliere
-        </Link>
-        <nav className="v-nav">
-          <NavLink to="/fonctionnalites">Ce que ça fait</NavLink>
-          <NavLink to="/partage">Partager</NavLink>
-          <NavLink to="/confidentialite">Vos données</NavLink>
-          <NavLink to="/a-propos">À propos</NavLink>
-        </nav>
-        {/* Vers la route protégée, jamais vers `/connexion` : elle redirige
-            déjà avec un `?depuis=`, donc ce lien mène le visiteur à la
-            connexion et le propriétaire connecté chez lui. */}
-        <Link to={ACCUEIL} className="v-espace">
-          Mon espace
-        </Link>
+      <header className="v-sec v-tete">
+        <div className="v-tete-int">
+          <Link to="/" className="v-marque">
+            gestionImmobiliere
+          </Link>
+          <nav className="v-nav">
+            <NavLink to="/fonctionnalites">Ce que ça fait</NavLink>
+            <NavLink to="/partage">Partager</NavLink>
+            <NavLink to="/confidentialite">Vos données</NavLink>
+            <NavLink to="/a-propos">À propos</NavLink>
+          </nav>
+          {/* Vers la route protégée, jamais vers `/connexion` : elle redirige
+              déjà avec un `?depuis=`, donc ce lien mène le visiteur à la
+              connexion et le propriétaire connecté chez lui. */}
+          <Link to={ACCUEIL} className="v-espace">
+            Mon espace
+          </Link>
+        </div>
       </header>
 
       <main className="v-corps">
         <Outlet />
       </main>
 
-      <footer className="v-pied">
+      <footer className="v-sec v-pied">
         <div className="v-pied-int">
           <div className="v-pied-liens">
             <Link to="/fonctionnalites">Ce que ça fait</Link>
