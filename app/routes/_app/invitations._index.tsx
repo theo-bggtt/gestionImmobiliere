@@ -97,17 +97,20 @@ export default function EcranInvitations() {
         accès aux vôtres — pour montrer une maison, c'est un lien de partage qu'il faut.
       </p>
 
-      <section>
-        <h2>Invitations émises</h2>
+      <section className="bloc">
+        <p className="cote">Invitations émises</p>
         {invitations.length === 0 ? (
           <p className="resultats-vide">Aucune invitation pour l'instant.</p>
         ) : (
-          <ul className="partages-liste">
+          <ul className="filets partages-liste">
             {invitations.map((i) => (
-              <li key={i.id} className={i.actif ? "partage-ligne" : "partage-ligne partage-ligne-inactif"}>
+              <li key={i.id} className={i.actif ? "partage-ligne" : "partage-ligne partage-ligne-inactif filet-tirete"}>
                 <div className="partage-tete">
                   <span className="partage-nom">{i.note ?? "Sans note"}</span>
-                  <span className="partage-etat">{i.etat}</span>
+                  {/* Le tireté et l'étiquette « hors » disent la même chose que
+                      pour un lien de partage révoqué : ça existe, mais plus
+                      d'ici. L'épaisseur du trait porte l'information. */}
+                  <span className={i.actif ? "etiquette etiquette-active" : "etiquette etiquette-hors"}>{i.etat}</span>
                 </div>
                 <p className="partage-detail">
                   {i.emailUtilise
@@ -120,7 +123,9 @@ export default function EcranInvitations() {
                     <Form method="post">
                       <input type="hidden" name="_action" value="revoquer" />
                       <input type="hidden" name="invitationId" value={i.id} />
-                      <button type="submit" className="bouton-discret">Révoquer</button>
+                      <button type="submit" className="bouton-discret">
+                        Révoquer
+                      </button>
                     </Form>
                   </div>
                 )}
@@ -130,9 +135,9 @@ export default function EcranInvitations() {
         )}
       </section>
 
-      <section>
-        <h2>Nouvelle invitation</h2>
-        <Form method="post">
+      <section className="bloc">
+        <p className="cote">Nouvelle invitation</p>
+        <Form method="post" className="formulaire">
           <label>
             Note (pour vous seul)
             <input type="text" name="note" maxLength={NOTE_MAX} placeholder="Mon frère" />
@@ -142,8 +147,14 @@ export default function EcranInvitations() {
             Expiration
             <input type="date" name="expireLe" required min={aujourdhui} defaultValue={defautExpiration} />
           </label>
-          {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-          <button type="submit">Créer l'invitation</button>
+          {actionData?.erreur && (
+            <p role="alert" className="message-erreur">
+              {actionData.erreur}
+            </p>
+          )}
+          <div className="formulaire-actions">
+            <button type="submit">Créer l'invitation</button>
+          </div>
         </Form>
       </section>
     </main>

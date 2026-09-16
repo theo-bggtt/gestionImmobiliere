@@ -30,7 +30,7 @@ export function AideInstallationIOS() {
         Pour capturer en un geste, installe l'app : bouton <strong>Partager</strong> puis{" "}
         <strong>Sur l'écran d'accueil</strong>.
       </p>
-      <button type="button" onClick={() => setVisible(false)}>
+      <button type="button" className="bouton-trait" onClick={() => setVisible(false)}>
         Compris
       </button>
     </div>

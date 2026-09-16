@@ -125,6 +125,10 @@ function cspApplication(nonce, developpement) {
 const CSP_PARTAGE = [
   "default-src 'none'",
   "style-src 'self' 'unsafe-inline'",
+  // Les deux polices de `releve.css`, servies depuis ce serveur et depuis lui
+  // seul. Ajoutée avec la refonte visuelle commune : sans elle la page d'un
+  // lien était la seule du produit en police système.
+  "font-src 'self'",
   "img-src 'self'",
   "form-action 'self'",
   "base-uri 'none'",

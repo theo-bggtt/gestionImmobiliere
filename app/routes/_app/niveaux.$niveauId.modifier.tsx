@@ -48,8 +48,10 @@ export default function ModifierNiveau() {
   const actionData = useActionData<typeof action>();
   return (
     <main>
-      <h1>Modifier {niveau.nom} ({batiment.nom})</h1>
-      <Form method="post">
+      <h1>
+        Modifier {niveau.nom} ({batiment.nom})
+      </h1>
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" defaultValue={niveau.nom} required />
@@ -58,13 +60,23 @@ export default function ModifierNiveau() {
           Ordinal
           <input type="number" name="ordinal" defaultValue={niveau.ordinal} required step={1} />
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Enregistrer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Enregistrer</button>
+        </div>
       </Form>
-      <Form method="post">
-        <input type="hidden" name="_action" value="supprimer" />
-        <button type="submit">Supprimer le niveau</button>
-      </Form>
+      <div className="formulaire-danger">
+        <Form method="post">
+          <input type="hidden" name="_action" value="supprimer" />
+          <button type="submit" className="bouton-discret">
+            Supprimer le niveau
+          </button>
+        </Form>
+      </div>
     </main>
   );
 }

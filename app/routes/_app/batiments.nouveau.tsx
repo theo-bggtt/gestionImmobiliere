@@ -27,7 +27,7 @@ export default function NouveauBatiment() {
   return (
     <main>
       <h1>Ajouter un bâtiment</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" required />
@@ -36,12 +36,20 @@ export default function NouveauBatiment() {
           Type
           <select name="type" defaultValue="principal">
             {TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
           </select>
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Créer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Créer</button>
+        </div>
       </Form>
     </main>
   );

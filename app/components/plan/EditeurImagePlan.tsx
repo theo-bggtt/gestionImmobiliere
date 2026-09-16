@@ -180,7 +180,11 @@ export function EditeurImagePlan({ onChange }: { onChange: (p: Preparation | nul
         />
       </label>
 
-      {etat && <p role="alert">{etat}</p>}
+      {etat && (
+        <p role="alert" className="message-erreur">
+          {etat}
+        </p>
+      )}
 
       {source && (
         <>

@@ -16,8 +16,10 @@ export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: strin
         <a href={`/p/${jeton}`}>{fiche.proprieteNom}</a>
       </p>
       <h1>{fiche.nom}</h1>
-      <p className="resultat-lieu">
-        {[fiche.typeNom, fiche.zoneNom, fiche.zoneChemin, fiche.systemeNom].filter(Boolean).join(" · ")}
+      <p className="fiche-type">
+        <span>
+          {[fiche.typeNom, fiche.zoneNom, fiche.zoneChemin, fiche.systemeNom].filter(Boolean).join(" · ")}
+        </span>
       </p>
 
       {fiche.champs.length > 0 && (
@@ -31,8 +33,10 @@ export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: strin
         </dl>
       )}
 
-      <section className="fiche-photos">
-        <h2>Photos</h2>
+      <section className="fiche-photos bloc">
+        <p className="sous-titre">
+          <span>Photos</span>
+        </p>
         {fiche.photos.length === 0 ? (
           <p className="fiche-photos-vide">Aucune photo.</p>
         ) : (
@@ -57,13 +61,17 @@ export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: strin
 
           Absente quand elle serait vide, comme l'historique juste en dessous. */}
       {fiche.garanties.length > 0 && (
-        <section className="fiche-garanties">
-          <h2>Garanties</h2>
-          <ul className="fiche-garanties-liste">
+        <section className="fiche-garanties bloc">
+          <p className="sous-titre">
+            <span>Garanties</span>
+          </p>
+          <ul className="filets fiche-garanties-liste">
             {fiche.garanties.map((g) => (
-              <li key={g.id}>
-                {g.fin ? `Jusqu'au ${jourLisible(g.fin)}` : "Sans terme connu"}
-                {g.expiree && <span className="garantie-expiree"> · expirée</span>}
+              <li key={g.id} className={g.expiree ? "garantie-expiree" : undefined}>
+                <span className="nom">
+                  {g.fin ? `Jusqu'au ${jourLisible(g.fin)}` : "Sans terme connu"}
+                  {g.expiree ? " · expirée" : ""}
+                </span>
               </li>
             ))}
           </ul>
@@ -74,8 +82,10 @@ export function FicheObjet({ fiche, jeton }: { fiche: FichePartage; jeton: strin
           « aucun événement » dirait qu'il y en a ailleurs. Les événements
           servis ici ont passé leur propre clause, pas celle de la fiche. */}
       {fiche.evenements.length > 0 && (
-        <section>
-          <h2>Historique</h2>
+        <section className="bloc">
+          <p className="sous-titre">
+            <span>Historique</span>
+          </p>
           <Chronologie evenements={fiche.evenements} liens={liens} />
         </section>
       )}

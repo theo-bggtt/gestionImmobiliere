@@ -52,22 +52,33 @@ export default function Connexion() {
   }, []);
 
   return (
-    <main>
+    <main className="porte">
+      <a href="/" className="porte-marque">
+        gestionImmobiliere
+      </a>
       <h1>Connexion</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <input type="hidden" name="depuis" value={depuis} />
         <label>
           Email
-          <input type="email" name="email" required />
+          <input type="email" name="email" required autoComplete="email" />
         </label>
         <label>
           Mot de passe
-          <input type="password" name="motDePasse" required />
+          <input type="password" name="motDePasse" required autoComplete="current-password" />
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
         <button type="submit">Se connecter</button>
       </Form>
-      {ouverte && <p><a href="/inscription">Créer un compte</a></p>}
+      {ouverte && (
+        <p className="porte-suite">
+          <a href="/inscription">Créer un compte</a>
+        </p>
+      )}
     </main>
   );
 }

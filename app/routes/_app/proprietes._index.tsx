@@ -33,19 +33,24 @@ export default function MesProprietes() {
   const actionData = useActionData<typeof action>();
 
   return (
-    <main>
+    <div>
       <h1>Mes propriétés</h1>
-      <ul>
-        {proprietes.map((p) => (
-          <li key={p.id}>
-            <Link to={`/proprietes/${p.id}`}>{p.nom}</Link>
-          </li>
-        ))}
-      </ul>
-      {proprietes.length === 0 && <p>Aucune propriété pour l'instant.</p>}
+      {proprietes.length === 0 ? (
+        <p className="resultats-vide">Aucune propriété pour l'instant.</p>
+      ) : (
+        <ul className="filets">
+          {proprietes.map((p) => (
+            <li key={p.id}>
+              <Link to={`/proprietes/${p.id}`} className="nom" viewTransition>
+                {p.nom}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
-      <h2>Ajouter une propriété</h2>
-      <Form method="post">
+      <p className="cote">Ajouter une propriété</p>
+      <Form method="post" className="formulaire">
         <label>
           Nom
           {/* Un surnom, pas une adresse : ce nom est le titre de toute page de
@@ -53,14 +58,24 @@ export default function MesProprietes() {
           <input type="text" name="nom" required placeholder="Chez moi, le chalet, la maison de famille..." />
         </label>
         <p className="champ-aide">Un surnom suffit. Ce nom apparaît en titre des liens que vous partagerez.</p>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Créer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Créer</button>
+        </div>
       </Form>
 
       {/* La seule entrée vers les invitations : elles ne parlent d'aucune
-          propriété, donc elles n'ont pas leur place dans la navigation d'une
-          propriété. */}
-      <p><Link to="/proprietes/invitations">Inviter quelqu'un</Link></p>
-    </main>
+          propriété, donc elles n'ont pas leur place dans la marge de
+          navigation, qui est celle d'UNE propriété. */}
+      <p className="porte-suite">
+        <Link to="/proprietes/invitations" viewTransition>
+          Inviter quelqu'un
+        </Link>
+      </p>
+    </div>
   );
 }

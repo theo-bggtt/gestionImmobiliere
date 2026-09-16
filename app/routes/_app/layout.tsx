@@ -1,6 +1,6 @@
 // app/routes/_app/layout.tsx
 import { useEffect, useRef, useState } from "react";
-import { Outlet, Link, useLoaderData, useLocation, useRevalidator } from "react-router";
+import { Outlet, Link, NavLink, useLoaderData, useLocation, useRevalidator } from "react-router";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { eq } from "drizzle-orm";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
@@ -118,17 +118,53 @@ export default function AppLayout() {
       <header className="app-tete">
         {/* `/` est la vitrine publique : la marque ramène le propriétaire
             connecté chez lui, pas sur la page qui explique le produit. */}
-        <Link to={ACCUEIL} className="app-marque">
+        <Link to={ACCUEIL} className="app-marque" viewTransition>
           gestionImmobiliere
         </Link>
         <IndicateurFile />
         <span className="app-compte">{email}</span>
-        <form method="post" action="/deconnexion">
+        <form method="post" action="/deconnexion" className="app-deconnexion">
           <button type="submit" className="bouton-discret">
             Déconnexion
           </button>
         </form>
       </header>
+
+      {/* La marge, visible à partir de 1000 px seulement (voir `app.css`) :
+          la propriété courante, la navigation et les deux gestes de capture,
+          comme les annotations dans la marge d'un relevé. Sur téléphone elle
+          n'est pas affichée et l'accueil garde sa navigation : rien ne change
+          dans les parcours. Sans compte d'objets : ce layout ne fait pas de
+          requête de plus. Deux instances de `Capture` par mode (ici et dans
+          la barre) : une seule est visible à la fois, et le composant tire
+          ses identifiants de `useId`. */}
+      {proprieteId !== null && (
+        <aside className="app-marge" aria-label="Navigation de la propriété">
+          <p className="app-marge-propriete">
+            <span className="cote">Propriété</span>
+            <b>{proprietes.find((p) => p.id === proprieteId)?.nom}</b>
+          </p>
+          <nav>
+            <ul className="app-marge-nav">
+              {ENTREES_MARGE.map(([suffixe, libelle]) => (
+                <li key={suffixe}>
+                  <NavLink to={`${ACCUEIL}/${proprieteId}${suffixe}`} end={suffixe === ""} viewTransition>
+                    {libelle}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="app-marge-capture">
+            <Capture proprieteId={proprieteId} mode="nouveau" className="capture-declencheur capture-principal">
+              Nouvel objet
+            </Capture>
+            <Capture proprieteId={proprieteId} mode="existant" className="capture-declencheur capture-secondaire">
+              Objet existant
+            </Capture>
+          </div>
+        </aside>
+      )}
 
       <main className="app-corps">
         <Outlet />
@@ -149,3 +185,16 @@ export default function AppLayout() {
     </div>
   );
 }
+
+// Les entrées de la marge, dans l'ordre de l'accueil : `/proprietes/:id` puis
+// chaque section. Module-privé : un export de plus depuis une route partirait
+// dans le bundle client (`tests/exports-routes.test.ts`).
+const ENTREES_MARGE: ReadonlyArray<[string, string]> = [
+  ["", "Accueil"],
+  ["/zones", "Zones"],
+  ["/systemes", "Systèmes"],
+  ["/plans", "Plans"],
+  ["/evenements", "Historique"],
+  ["/intervenants", "Intervenants"],
+  ["/partages", "Liens de partage"],
+];

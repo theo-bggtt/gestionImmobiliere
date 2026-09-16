@@ -13,7 +13,8 @@ import { validerDetails } from "../../lib/forms/champSchema";
 import { extraireDetails } from "../../lib/forms/extraireDetails";
 import { ZoneSelector } from "../../components/ZoneSelector";
 import { DynamicElementFields } from "../../components/DynamicElementFields";
-import { LIBELLES_NIVEAU, lireNiveauSaisi } from "../../lib/partage/niveaux";
+import { lireNiveauSaisi } from "../../lib/partage/niveaux";
+import { ChoixNiveau } from "../../components/ChoixNiveau";
 
 // Types disponibles pour un élément : le catalogue système (proprieteId NULL)
 // + les types perso de cette propriété.
@@ -100,51 +101,67 @@ export default function NouvelElement() {
   return (
     <main>
       <h1>Ajouter un élément</h1>
-      <p><a href={`/proprietes/${propriete.id}/types/nouveau`}>Créer un type personnalisé</a> s'il n'est pas dans la liste.</p>
-      <Form method="post">
+      <p className="champ-aide">
+        <a href={`/proprietes/${propriete.id}/types/nouveau`}>Créer un type personnalisé</a> s'il n'est pas dans la
+        liste.
+      </p>
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" required />
         </label>
-        <label>
-          Type
-          <select name="typeId" required value={typeId ?? ""} onChange={(e) => choisirType(Number(e.target.value) || null)}>
-            <option value="">— choisir un type —</option>
-            {types.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.nom}
-                {t.origine === "perso" ? " (perso)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <ZoneSelector arbre={arbre} name="zoneId" />
-        <label>
-          Visibilité
-          <select name="niveau" value={String(niveau)} onChange={(e) => setNiveau(Number(e.target.value))}>
-            {LIBELLES_NIVEAU.map((libelle, valeur) => (
-              <option key={valeur} value={valeur}>{valeur} · {libelle}</option>
-            ))}
-          </select>
-          <span className="formulaire-aide">
-            Comparé au plafond d'un lien de partage : un lien « usage » montre les objets de
-            niveau 0 et 1, jamais ceux au-dessus. Le type en propose un, à corriger ici.
-          </span>
-        </label>
+        <div className="formulaire-ligne">
+          <label>
+            Type
+            <select
+              name="typeId"
+              required
+              value={typeId ?? ""}
+              onChange={(e) => choisirType(Number(e.target.value) || null)}
+            >
+              <option value="">— choisir un type —</option>
+              {types.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nom}
+                  {t.origine === "perso" ? " (perso)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <ZoneSelector arbre={arbre} name="zoneId" />
+        </div>
+        <ChoixNiveau
+          valeur={niveau}
+          onChange={setNiveau}
+          aide="Comparé au plafond d'un lien de partage : un lien « usage » montre les objets de niveau public et usage, jamais ceux au-dessus. Le type en propose un, à corriger ici."
+        />
         <label>
           Système (optionnel)
           <select name="systemeId" defaultValue="">
             <option value="">—</option>
             {systemes.map((s) => (
-              <option key={s.id} value={s.id}>{s.nom}</option>
+              <option key={s.id} value={s.id}>
+                {s.nom}
+              </option>
             ))}
           </select>
         </label>
 
-        {typeChoisi && <DynamicElementFields champs={typeChoisi.champs} />}
+        {typeChoisi && (
+          <>
+            <p className="cote">Champs du type</p>
+            <DynamicElementFields champs={typeChoisi.champs} />
+          </>
+        )}
 
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Créer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Créer</button>
+        </div>
       </Form>
     </main>
   );
