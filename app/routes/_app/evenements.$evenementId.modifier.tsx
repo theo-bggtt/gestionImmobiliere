@@ -90,7 +90,9 @@ export default function ModifierEvenement() {
   return (
     <main>
       <p className="fiche-fil">
-        <Link to={`/proprietes/${propriete.id}/evenements`}>Historique</Link>
+        <Link to={`/proprietes/${propriete.id}/evenements`} viewTransition>
+          Historique
+        </Link>
       </p>
       <h1>{evenement.titre}</h1>
 
@@ -102,8 +104,10 @@ export default function ModifierEvenement() {
         libelleBouton="Enregistrer"
       />
 
-      <section className="fiche-photos">
-        <h2>Photos</h2>
+      <section className="fiche-photos bloc">
+        <p className="sous-titre">
+          <span>Photos</span>
+        </p>
         {photos.length === 0 ? (
           <p className="fiche-photos-vide">Aucune photo sur cet événement.</p>
         ) : (
@@ -133,28 +137,40 @@ export default function ModifierEvenement() {
         {/* Envoi direct, hors de la boîte d'envoi hors ligne : photographier
             l'avant d'un chantier n'est pas de la capture opportuniste, c'est
             un geste posé, souvent depuis un dossier déjà constitué. */}
-        <Form method="post" encType="multipart/form-data">
+        <Form method="post" encType="multipart/form-data" className="formulaire">
           <input type="hidden" name="_action" value="photo" />
-          <label>
-            Ajouter une photo
-            <input type="file" name="image" accept="image/*" required />
-          </label>
-          <label>
-            Étape
-            <select name="role" defaultValue="general">
-              {ROLES_PHOTO_EVENEMENT.map((r) => (
-                <option key={r} value={r}>{LIBELLES_ROLE_PHOTO[r]}</option>
-              ))}
-            </select>
-          </label>
-          <button type="submit">Joindre</button>
+          <div className="formulaire-ligne">
+            <label>
+              Ajouter une photo
+              <input type="file" name="image" accept="image/*" required />
+            </label>
+            <label>
+              Étape
+              <select name="role" defaultValue="general">
+                {ROLES_PHOTO_EVENEMENT.map((r) => (
+                  <option key={r} value={r}>
+                    {LIBELLES_ROLE_PHOTO[r]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="formulaire-actions">
+            <button type="submit" className="bouton-trait">
+              Joindre
+            </button>
+          </div>
         </Form>
       </section>
 
-      <Form method="post">
-        <input type="hidden" name="_action" value="supprimer" />
-        <button type="submit" className="bouton-discret">Supprimer l'événement</button>
-      </Form>
+      <div className="formulaire-danger">
+        <Form method="post">
+          <input type="hidden" name="_action" value="supprimer" />
+          <button type="submit" className="bouton-discret">
+            Supprimer l'événement
+          </button>
+        </Form>
+      </div>
     </main>
   );
 }

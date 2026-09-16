@@ -26,17 +26,21 @@ export function FicheEvenement({ evenement, jeton }: { evenement: EvenementParta
         <a href={liens.historique}>Historique</a>
       </p>
       <h1>{evenement.titre}</h1>
-      <p className="resultat-lieu">
-        <time dateTime={evenement.dateDebut}>{periode(evenement)}</time>
-        {" · "}
-        {LIBELLES_TYPE_EVENEMENT[evenement.type]}
+      <p className="fiche-type">
+        <span>
+          <time dateTime={evenement.dateDebut}>{periode(evenement)}</time>
+          {" · "}
+          {LIBELLES_TYPE_EVENEMENT[evenement.type]}
+        </span>
       </p>
 
       {evenement.description && <p className="evenement-description">{evenement.description}</p>}
 
       {evenement.objets.length > 0 && (
-        <section>
-          <h2>Objets concernés</h2>
+        <section className="bloc">
+          <p className="sous-titre">
+            <span>Objets concernés</span>
+          </p>
           <ul className="chrono-objets">
             {evenement.objets.map((o) => (
               <li key={o.id}>
@@ -49,8 +53,10 @@ export function FicheEvenement({ evenement, jeton }: { evenement: EvenementParta
       )}
 
       {evenement.intervenants.length > 0 && (
-        <section>
-          <h2>Intervenants</h2>
+        <section className="bloc">
+          <p className="sous-titre">
+            <span>Intervenants</span>
+          </p>
           <ul className="chrono-objets">
             {evenement.intervenants.map((i) => (
               <li key={i.id}>
@@ -63,8 +69,10 @@ export function FicheEvenement({ evenement, jeton }: { evenement: EvenementParta
       )}
 
       {evenement.photos.length > 0 && (
-        <section className="fiche-photos">
-          <h2>Photos</h2>
+        <section className="fiche-photos bloc">
+          <p className="sous-titre">
+            <span>Photos</span>
+          </p>
           <ul className="galerie">
             {/* L'étiquette est une légende, pas un filtre : le droit de lire
                 l'octet vient de la visibilité de l'événement, jamais du rôle.

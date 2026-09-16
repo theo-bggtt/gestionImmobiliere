@@ -25,7 +25,7 @@
 // celui du propriétaire.
 import { Form, Link, data, useActionData } from "react-router";
 import type { ActionFunctionArgs, HeadersArgs } from "react-router";
-import { Echelle } from "../../components/vitrine/Echelle";
+import { Echelle } from "../../components/Echelle";
 import { PlanMini } from "../../components/vitrine/PlanMini";
 import { ACCUEIL } from "../../lib/auth/redirection";
 import { ENTETES_VITRINE } from "../../lib/vitrine/document";
@@ -81,9 +81,9 @@ export default function Accueil() {
   const resultat = useActionData<typeof action>();
   return (
     <>
-      <section className="v-sec v-heros">
+      <section className="planche v-sec v-heros">
         <div className="v-heros-texte">
-          <p className="v-cote">La mémoire technique de votre maison</p>
+          <p className="cote">La mémoire technique de votre maison</p>
           <h1 className="v-titre">
             Votre maison sait des choses que personne n'a écrites. <em>Jusqu'ici.</em>
           </h1>
@@ -93,10 +93,10 @@ export default function Accueil() {
             sous les yeux, les retrouve d'un mot, et n'en montre à chacun que ce qui le concerne.
           </p>
           <div className="v-actions">
-            <Link to={ACCUEIL} className="v-appel">
+            <Link to={ACCUEIL} className="bouton-plein">
               Ouvrir mon espace
             </Link>
-            <Link to="/fonctionnalites" className="v-appel-second">
+            <Link to="/fonctionnalites" className="bouton-trait">
               Voir comment ça marche
             </Link>
           </div>
@@ -174,21 +174,21 @@ export default function Accueil() {
 
         <ul className="v-legende large">
           <li>
-            <span className="v-pastille">1</span>
+            <span className="pastille">1</span>
             <span>
               <b>Vanne d'arrêt</b>
               <span>Local technique</span>
             </span>
           </li>
           <li>
-            <span className="v-pastille">2</span>
+            <span className="pastille">2</span>
             <span>
               <b>Tableau électrique</b>
               <span>Entrée</span>
             </span>
           </li>
           <li>
-            <span className="v-pastille">3</span>
+            <span className="pastille">3</span>
             <span>
               <b>Vanne d'arrosage</b>
               <span>Jardin</span>
@@ -197,34 +197,34 @@ export default function Accueil() {
         </ul>
       </section>
 
-      <section className="v-sec">
-        <p className="v-cote">Le problème</p>
-        <h2>Le carton de factures ne répond pas</h2>
-        <p>
+      <section className="planche v-sec">
+        <p className="cote">Le problème</p>
+        <h2 className="v-section-titre">Le carton de factures ne répond pas</h2>
+        <p className="v-prose-texte">
           Ces réponses existent. Dans une tête, dans un classeur, ou chez l'artisan passé il y a six
           ans. Elles manquent toujours le même jour.
         </p>
-        <ul className="v-releves large">
+        <ul className="v-releves large v-parait">
           <li>
             <p className="v-jour">Le jour où ça fuit</p>
-            <h3>« Elle est où, la vanne ? »</h3>
-            <p>
+            <h3 className="v-sous-titre">« Elle est où, la vanne ? »</h3>
+            <p className="v-prose-texte">
               L'eau coule pendant que vous cherchez. Elle est derrière le troisième carton du
               sous-sol, et seul l'ancien propriétaire le savait.
             </p>
           </li>
           <li>
             <p className="v-jour">Le jour où l'artisan appelle</p>
-            <h3>« C'est quel modèle, votre chaudière ? »</h3>
-            <p>
+            <h3 className="v-sous-titre">« C'est quel modèle, votre chaudière ? »</h3>
+            <p className="v-prose-texte">
               La réponse est sur une plaque au fond du local, ou dans un courriel d'il y a cinq ans.
               Le dépanneur attend. Le devis aussi.
             </p>
           </li>
           <li>
             <p className="v-jour">Le jour où vous louez</p>
-            <h3>« Comment on coupe l'eau ? »</h3>
-            <p>
+            <h3 className="v-sous-titre">« Comment on coupe l'eau ? »</h3>
+            <p className="v-prose-texte">
               Le guide d'accueil l'explique. Trois lignes plus bas, il donne aussi le code du portail
               et le nom de votre assureur.
             </p>
@@ -232,18 +232,18 @@ export default function Accueil() {
         </ul>
       </section>
 
-      <section className="v-sec">
-        <p className="v-cote">La saisie</p>
-        <h2>Trois gestes, et c'est écrit</h2>
-        <p>
+      <section className="planche v-sec">
+        <p className="cote">La saisie</p>
+        <h2 className="v-section-titre">Trois gestes, et c'est écrit</h2>
+        <p className="v-prose-texte">
           Pas de formulaire à trente champs. On photographie, on nomme, on range. Le reste vient plus
           tard, ou jamais.
         </p>
-        <ol className="v-gestes large">
+        <ol className="v-gestes large v-parait">
           <li>
             <p className="v-rang">1</p>
-            <h3>Photographiez</h3>
-            <p>
+            <h3 className="v-sous-titre">Photographiez</h3>
+            <p className="v-prose-texte">
               Devant l'objet, téléphone en main : une photo, un nom déjà proposé, une zone déjà
               présélectionnée. Vous confirmez, c'est enregistré. Les caractéristiques se complètent à
               tête reposée.
@@ -251,16 +251,16 @@ export default function Accueil() {
           </li>
           <li>
             <p className="v-rang">2</p>
-            <h3>Retrouvez</h3>
-            <p>
+            <h3 className="v-sous-titre">Retrouvez</h3>
+            <p className="v-prose-texte">
               Tapez un mot, avec ou sans accent : la fiche, sa zone, son système, ses photos, ce qui
               lui est arrivé. Ou promenez-vous de zone en zone, comme dans la maison.
             </p>
           </li>
           <li>
             <p className="v-rang">3</p>
-            <h3>Partagez, à la carte</h3>
-            <p>
+            <h3 className="v-sous-titre">Partagez, à la carte</h3>
+            <p className="v-prose-texte">
               Un lien par personne, avec un plafond de détail et des zones autorisées. Rien à
               installer ni à créer pour elle. Révocable d'un geste par vous.
             </p>
@@ -268,15 +268,15 @@ export default function Accueil() {
         </ol>
       </section>
 
-      <section className="v-sec">
-        <p className="v-cote">Le partage</p>
-        <h2>Une seule base. Quatre façons de la regarder.</h2>
-        <p>
+      <section className="planche v-sec">
+        <p className="cote">Le partage</p>
+        <h2 className="v-section-titre">Une seule base. Quatre façons de la regarder.</h2>
+        <p className="v-prose-texte">
           Vous ne montrez pas la même maison au locataire de passage, à l'artisan qui vient pour la
           chaudière et au jardinier. Vous ne tenez pourtant pas trois documents à jour : c'est la même
           base, vue à travers un filtre. Ce que chacun ne voit pas est dessiné en tiretés.
         </p>
-        <ul className="v-lecteurs large">
+        <ul className="v-lecteurs large v-parait">
           <li>
             <PlanMini
               titre="Le plan complet : toutes les zones sont visibles."
@@ -284,8 +284,8 @@ export default function Accueil() {
             />
             <Echelle plafond={4} />
             <p className="v-portee">Tout, partout</p>
-            <h3>Vous</h3>
-            <p>C'est votre maison, et c'est vous qui l'avez écrite.</p>
+            <h3 className="v-sous-titre">Vous</h3>
+            <p className="v-prose-texte">C'est votre maison, et c'est vous qui l'avez écrite.</p>
           </li>
           <li>
             <PlanMini
@@ -294,8 +294,8 @@ export default function Accueil() {
             />
             <Echelle plafond={3} />
             <p className="v-portee">Jusqu'au technique, dans son système</p>
-            <h3>L'artisan</h3>
-            <p>
+            <h3 className="v-sous-titre">L'artisan</h3>
+            <p className="v-prose-texte">
               La fiche de ce qu'il vient réparer, ses références, son historique. Pas les fiches du
               jardin.
             </p>
@@ -307,8 +307,8 @@ export default function Accueil() {
             />
             <Echelle plafond={2} />
             <p className="v-portee">Jusqu'à l'usage, dans ses zones</p>
-            <h3>Le locataire</h3>
-            <p>Où est le compteur, comment on coupe l'eau, comment marche l'induction.</p>
+            <h3 className="v-sous-titre">Le locataire</h3>
+            <p className="v-prose-texte">Où est le compteur, comment on coupe l'eau, comment marche l'induction.</p>
           </li>
           <li>
             <PlanMini
@@ -317,8 +317,8 @@ export default function Accueil() {
             />
             <Echelle plafond={2} />
             <p className="v-portee">Jusqu'à l'usage, à l'extérieur</p>
-            <h3>Le jardinier</h3>
-            <p>La vanne d'arrosage et le portail du fond. L'intérieur n'existe pas pour lui.</p>
+            <h3 className="v-sous-titre">Le jardinier</h3>
+            <p className="v-prose-texte">La vanne d'arrosage et le portail du fond. L'intérieur n'existe pas pour lui.</p>
           </li>
         </ul>
         <p className="v-suite">
@@ -326,19 +326,19 @@ export default function Accueil() {
         </p>
       </section>
 
-      <section className="v-sec">
-        <div className="v-duo large">
+      <section className="planche v-sec">
+        <div className="v-duo large v-parait">
           <article>
-            <h2>Un plan, et des points dessus</h2>
-            <p>
+            <h2 className="v-section-titre">Un plan, et des points dessus</h2>
+            <p className="v-prose-texte">
               Téléversez le plan que vous avez déjà : un scan, un extrait cadastral, la photo d'un
               tirage. Posez les objets dessus. « La vanne est là », un point sur une image, et c'est
               plus clair que trois phrases. Le jardinier le lit aussi bien que vous.
             </p>
           </article>
           <article>
-            <h2>Une histoire, pas un inventaire</h2>
-            <p>
+            <h2 className="v-section-titre">Une histoire, pas un inventaire</h2>
+            <p className="v-prose-texte">
               Un dépannage, une rénovation, un sinistre : chaque événement relie les objets touchés,
               les gens intervenus et les photos d'avant et d'après. Les garanties tiennent à l'objet
               qu'elles couvrent, et l'accueil vous montre celles qui arrivent à terme.
@@ -347,29 +347,28 @@ export default function Accueil() {
         </div>
       </section>
 
-      <section className="v-sec v-encre">
+      <section className="planche v-sec v-encre">
         <h2 className="v-encre-titre">Et quand vous n'y serez plus.</h2>
-        <p>
+        <p className="v-prose-texte">
           Une maison change de mains, et tout ce que vous savez d'elle part avec vous. Un classeur que
           personne ne tient à jour ne se transmet pas. Une base remplie au fil des jours, en
           photographiant ce qu'on a sous les yeux, si.
         </p>
       </section>
 
-      <section className="v-sec">
-        <p className="v-cote">Commencer</p>
-        <h2>Commencez par la vanne d'arrêt.</h2>
-        <p>
+      <section className="planche v-sec">
+        <p className="cote">Commencer</p>
+        <h2 className="v-section-titre">Commencez par la vanne d'arrêt.</h2>
+        <p className="v-prose-texte">
           Le premier objet prend le temps d'une photo. Les suivants viennent en marchant dans la
           maison. <Link to="/confidentialite">Ce que l'application stocke, et ce qu'elle refuse</Link>.
         </p>
 
         <p className="v-note">
-          L'inscription n'est pas encore ouverte. Laissez une adresse et vous serez prévenu quand elle
-          le sera. Pour être franc sur ce qui va se passer : rien, tout de suite. Il n'y a pas d'envoi
-          automatique de courrier dans ce projet, donc vous ne recevrez aucun message de confirmation.
-          Votre adresse est écrite dans une table, avec la date, et rien d'autre — pas votre adresse
-          IP, pas votre navigateur, pas d'où vous venez.
+          L'inscription n'est pas encore ouverte. Laissez une adresse : vous serez prévenu le jour
+          où elle le sera, et c'est tout ce qu'elle servira. Elle n'est transmise à personne, et vous
+          ne recevrez pas de message de confirmation : il n'y a pas d'envoi automatique de courrier
+          ici.
         </p>
 
         <Form method="post" className="v-formulaire">
@@ -388,12 +387,12 @@ export default function Accueil() {
         </Form>
 
         {resultat?.issue === "enregistre" && (
-          <p className="v-confirmation" role="status">
+          <p className="message-ok" role="status">
             C'est noté. Vous serez prévenu à cette adresse le jour où l'inscription ouvre.
           </p>
         )}
         {resultat?.issue === "adresse-invalide" && (
-          <p className="v-erreur" role="alert">
+          <p className="message-erreur" role="alert">
             Cette adresse ne ressemble pas à une adresse e-mail. Rien n'a été enregistré.
           </p>
         )}
@@ -402,7 +401,7 @@ export default function Accueil() {
             est la liste d'attente. « Mon espace » est celui du propriétaire,
             qui l'a déjà en haut de chaque page. */}
         <div className="v-actions">
-          <Link to={ACCUEIL} className="v-appel-second">
+          <Link to={ACCUEIL} className="bouton-trait">
             Mon espace
           </Link>
         </div>

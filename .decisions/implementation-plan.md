@@ -21,7 +21,7 @@ Séquence : une app qui marche d'abord, la vente de l'accès ensuite. Marché vi
 | 5 | Recherche et découverte | **Plein texte + alias** (B) | Interaction |
 | 6 | Photos, documents et fichiers | **Fichier autonome, liens multiples** (B) | Technique |
 | 7 | Stack et hébergement | **PWA + boîte d'envoi, puis Capacitor** (B) · React Router v7 + PostgreSQL + Drizzle | Technique |
-| 8 | Navigation et direction visuelle | **Recherche d'abord, style sobre** (B) | Archi info |
+| 8 | Navigation et direction visuelle | **Recherche d'abord, style sobre** (B) — la clause « police système » a été remplacée le 2026-09-15 par le relevé (deux polices auto-hébergées), voir README, décision #144 | Archi info |
 
 ## Le schéma
 

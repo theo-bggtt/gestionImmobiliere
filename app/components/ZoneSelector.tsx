@@ -21,9 +21,13 @@ function OptionsZone({ zones, profondeur = 0 }: { zones: ZoneAvecEnfants[]; prof
 }
 
 // Vocabulaire "zone" uniquement, jamais l'autre terme (règle non négociable #6).
+// Rend son étiquette : posé dans une rangée de formulaire à côté du type, un
+// sélecteur nu se retrouvait plus bas que son voisin, sans mot au-dessus.
 export function ZoneSelector({ arbre, name, defaultValue }: { arbre: Arbre; name: string; defaultValue?: number }) {
   return (
-    <select name={name} defaultValue={defaultValue} required>
+    <label>
+      Zone
+      <select name={name} defaultValue={defaultValue} required>
       <option value="">— choisir une zone —</option>
       {arbre.arbre.flatMap(({ batiment, niveaux }) =>
         niveaux.map(({ niveau, zones }) => (
@@ -37,6 +41,7 @@ export function ZoneSelector({ arbre, name, defaultValue }: { arbre: Arbre; name
           <OptionsZone zones={arbre.zonesExterieures} />
         </optgroup>
       )}
-    </select>
+      </select>
+    </label>
   );
 }

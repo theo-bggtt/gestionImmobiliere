@@ -138,6 +138,7 @@ describe("en-têtes de sécurité", () => {
       const csp = r.headers.get("Content-Security-Policy") ?? "";
       expect(csp, chemin).toContain("default-src 'none'");
       expect(csp, chemin).not.toContain("script-src");
+      expect(csp, chemin).toContain("font-src 'self'");
       expect(r.headers.get("X-Robots-Tag"), chemin).toBe("noindex, nofollow");
       expect(r.headers.get("Cache-Control"), chemin).toBe("private, no-store");
       expect(r.headers.get("Referrer-Policy"), chemin).toBe("no-referrer");
@@ -154,6 +155,10 @@ describe("en-têtes de sécurité", () => {
       expect(csp, chemin).not.toContain("script-src");
       expect(csp, chemin).not.toContain("nonce");
       expect(csp, chemin).toContain("frame-ancestors 'none'");
+      // Les polices de `releve.css` sont servies depuis ce serveur : sans
+      // `font-src`, `default-src 'none'` les bloquerait et la page d'un lien
+      // retomberait sur la police système, seule de tout le produit.
+      expect(csp, chemin).toContain("font-src 'self'");
       expect(r.headers.get("X-Robots-Tag"), chemin).toBe("noindex, nofollow");
       expect(r.headers.get("Cache-Control"), chemin).toBe("private, no-store");
       expect(r.headers.get("Referrer-Policy"), chemin).toBe("no-referrer");

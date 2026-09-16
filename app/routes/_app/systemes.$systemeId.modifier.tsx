@@ -48,7 +48,7 @@ export default function ModifierSysteme() {
   return (
     <main>
       <h1>Modifier {systeme.nom}</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" defaultValue={systeme.nom} required />
@@ -57,13 +57,23 @@ export default function ModifierSysteme() {
           Icône
           <input type="text" name="icone" defaultValue={systeme.icone ?? ""} />
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Enregistrer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Enregistrer</button>
+        </div>
       </Form>
-      <Form method="post">
-        <input type="hidden" name="_action" value="supprimer" />
-        <button type="submit">Supprimer le système</button>
-      </Form>
+      <div className="formulaire-danger">
+        <Form method="post">
+          <input type="hidden" name="_action" value="supprimer" />
+          <button type="submit" className="bouton-discret">
+            Supprimer le système
+          </button>
+        </Form>
+      </div>
     </main>
   );
 }

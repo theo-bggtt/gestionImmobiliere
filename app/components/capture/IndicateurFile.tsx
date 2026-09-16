@@ -14,7 +14,7 @@ export function IndicateurFile() {
   const bloquees = etat.bloquees.length;
   if (bloquees > 0) {
     return (
-      <div className="file-indicateur file-indicateur-erreur" role="alert">
+      <div className="etiquette etiquette-hors file-indicateur file-indicateur-erreur" role="alert">
         <span>
           {bloquees} capture{bloquees > 1 ? "s" : ""} non envoyée{bloquees > 1 ? "s" : ""} — {etat.bloquees[0].echec}
         </span>
@@ -26,7 +26,7 @@ export function IndicateurFile() {
   }
 
   return (
-    <div className="file-indicateur" role="status">
+    <div className="etiquette file-indicateur" role="status">
       <span>{etat.enAttente} en attente</span>
       <button type="button" onClick={() => void envoyerFile()} disabled={etat.envoiEnCours}>
         {etat.envoiEnCours ? "Envoi…" : "Envoyer"}

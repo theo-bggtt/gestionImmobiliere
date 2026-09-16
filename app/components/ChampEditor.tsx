@@ -22,9 +22,10 @@ export function ChampEditor({ nomChamp = "champs" }: { nomChamp?: string }) {
 
   return (
     <fieldset>
-      <legend>Champs du type</legend>
+      <legend className="cote">Champs du type</legend>
       {champs.map((champ, i) => (
-        <fieldset key={i}>
+        <fieldset key={i} className="champ-definition">
+          <legend className="champ-definition-rang">Champ {i + 1}</legend>
           <label>
             Clé (immuable une fois créée)
             <input
@@ -83,15 +84,19 @@ export function ChampEditor({ nomChamp = "champs" }: { nomChamp?: string }) {
             </select>
           </label>
           {champ.genre !== "booleen" && (
-            <label>
-              Obligatoire
+            <label className="champ-case">
               <input type="checkbox" checked={champ.obligatoire} onChange={(e) => modifier(i, { obligatoire: e.target.checked })} />
+              Obligatoire
             </label>
           )}
-          <button type="button" onClick={() => retirer(i)}>Retirer ce champ</button>
+          <button type="button" className="bouton-discret" onClick={() => retirer(i)}>
+            Retirer ce champ
+          </button>
         </fieldset>
       ))}
-      <button type="button" onClick={ajouter}>Ajouter un champ</button>
+      <button type="button" className="bouton-trait" onClick={ajouter}>
+        Ajouter un champ
+      </button>
       <input type="hidden" name={nomChamp} value={JSON.stringify(champs.map(({ optionsTexte, ...c }) => c))} />
     </fieldset>
   );

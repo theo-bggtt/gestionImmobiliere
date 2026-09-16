@@ -35,15 +35,27 @@ export default function ListeElements() {
   return (
     <main>
       <h1>Éléments — {propriete.nom}</h1>
-      <Link to={`/proprietes/${propriete.id}/elements/nouveau`}>Ajouter un élément</Link>
-      <ul>
-        {elements.map((e) => (
-          <li key={e.id}>
-            {e.nom} — {e.typeNom} — {e.zoneNom} — {libelleNiveau(e.niveau)}
-            <Link to={`/proprietes/${propriete.id}/elements/${e.id}/modifier`}> Modifier</Link>
-          </li>
-        ))}
-      </ul>
+      <p>
+        <Link to={`/proprietes/${propriete.id}/elements/nouveau`} className="bouton-trait" viewTransition>
+          Ajouter un élément
+        </Link>
+      </p>
+      {elements.length === 0 ? (
+        <p className="resultats-vide">Aucun élément pour l'instant.</p>
+      ) : (
+        <ul className="filets">
+          {elements.map((e) => (
+            <li key={e.id}>
+              <Link to={`/proprietes/${propriete.id}/elements/${e.id}/modifier`} className="nom" viewTransition>
+                {e.nom}
+              </Link>
+              <span className="lieu">
+                {e.typeNom} · {e.zoneNom} · {libelleNiveau(e.niveau)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

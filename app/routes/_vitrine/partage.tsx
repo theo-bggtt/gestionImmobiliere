@@ -18,7 +18,7 @@
 // ajoutée sans son libellé perdrait sa colonne en silence, sur téléphone
 // seulement.
 import { Link } from "react-router";
-import { Echelle } from "../../components/vitrine/Echelle";
+import { Echelle } from "../../components/Echelle";
 import { PlanMini } from "../../components/vitrine/PlanMini";
 import { ACCUEIL } from "../../lib/auth/redirection";
 
@@ -34,8 +34,8 @@ export const meta = () => [
 export default function Partage() {
   return (
     <>
-      <section className="v-sec">
-        <p className="v-cote">Partager</p>
+      <section className="planche v-sec">
+        <p className="cote">Partager</p>
         <h1 className="v-titre">
           Partagez <em>sans tout montrer</em>.
         </h1>
@@ -45,17 +45,17 @@ export default function Partage() {
         </p>
       </section>
 
-      <section className="v-sec">
-        <p className="v-cote">Le problème</p>
-        <h2>Un document ne se découpe pas</h2>
-        <p>
+      <section className="planche v-sec">
+        <p className="cote">Le problème</p>
+        <h2 className="v-section-titre">Un document ne se découpe pas</h2>
+        <p className="v-prose-texte">
           La solution habituelle est un classeur d'accueil, un PDF, un message épinglé. Ça marche une
           fois. Puis la chaudière est remplacée, et il faut corriger les trois, ou vivre avec trois
           versions dont deux sont fausses. Et le guide qui explique au locataire comment couper
           l'eau contient aussi, quelques lignes plus bas, le code du portail et le nom de votre
           assureur.
         </p>
-        <div className="v-tableau-cadre large">
+        <div className="v-tableau-cadre large v-parait">
           <table className="v-tableau">
             <thead>
               <tr>
@@ -101,18 +101,18 @@ export default function Partage() {
         </div>
       </section>
 
-      <section className="v-sec">
-        <p className="v-cote">Les deux réglages</p>
-        <h2>Un lien, deux réglages, rien d'autre à comprendre</h2>
-        <div className="v-duo large">
+      <section className="planche v-sec">
+        <p className="cote">Les deux réglages</p>
+        <h2 className="v-section-titre">Un lien, deux réglages, rien d'autre à comprendre</h2>
+        <div className="v-duo large v-parait">
           <article>
-            <h3>Jusqu'où il voit</h3>
-            <p>
+            <h3 className="v-sous-titre">Jusqu'où il voit</h3>
+            <p className="v-prose-texte">
               Chaque fiche porte un niveau de détail. Le lien porte un plafond, et ne montre rien
               au-dessus. Au sein d'une même fiche, un champ peut être plus sensible que les autres,
               la référence, le numéro de série, et se masquer seul.
             </p>
-            <ul className="v-niveaux">
+            <ul className="v-niveaux v-parait">
               <li>
                 <span className="v-niveau-nom">
                   <Echelle plafond={1} />
@@ -148,8 +148,8 @@ export default function Partage() {
             </ul>
           </article>
           <article>
-            <h3>Où il voit</h3>
-            <p>
+            <h3 className="v-sous-titre">Où il voit</h3>
+            <p className="v-prose-texte">
               Vous pouvez en plus le restreindre à des zones ou à des systèmes. Le jardinier voit
               l'extérieur et l'arrosage ; le reste de la maison n'existe pas pour lui. Pas grisé, pas
               verrouillé : absent.
@@ -158,7 +158,7 @@ export default function Partage() {
               titre="Le plan vu par le jardinier : seul le jardin est visible, le reste est en tiretés."
               visibles={["jardin"]}
             />
-            <p>
+            <p className="v-prose-texte">
               Il ne verra pas non plus qu'il existe une zone qu'il ne voit pas. Une zone sans rien à
               montrer n'apparaît pas, parce qu'une case vide dit déjà quelque chose.
             </p>
@@ -166,12 +166,12 @@ export default function Partage() {
         </div>
       </section>
 
-      <section className="v-sec">
-        <p className="v-cote">Ce qui passe, ce qui ne passe pas</p>
-        <div className="v-duo large">
+      <section className="planche v-sec">
+        <p className="cote">Ce qui passe, ce qui ne passe pas</p>
+        <div className="v-duo large v-parait">
           <article>
-            <h2>Ce que reçoit la personne</h2>
-            <ul className="v-coches">
+            <h2 className="v-section-titre">Ce que reçoit la personne</h2>
+            <ul className="filets">
               <li>Une adresse à ouvrir. Pas de compte, pas d'application, rien à accepter.</li>
               <li>Une page de texte et d'images, qui ne charge aucun script et n'installe rien.</li>
               <li>
@@ -182,12 +182,12 @@ export default function Partage() {
             </ul>
           </article>
           <article>
-            <h2>Ce qui ne sort jamais d'un lien</h2>
-            <p>
+            <h2 className="v-section-titre">Ce qui ne sort jamais d'un lien</h2>
+            <p className="v-prose-texte">
               Certaines choses ne dépendent d'aucun réglage : elles ne partent pas, quel que soit le
               plafond.
             </p>
-            <ul className="v-coches v-croix">
+            <ul className="filets v-croix">
               <li>Ce que vous avez payé pour une intervention.</li>
               <li>
                 Le téléphone, l'adresse et vos notes sur un artisan, qui n'a pas choisi de figurer
@@ -202,36 +202,35 @@ export default function Partage() {
         </div>
       </section>
 
-      <section className="v-sec">
-        <p className="v-cote">Reprendre la main</p>
-        <div className="v-duo large">
+      <section className="planche v-sec">
+        <p className="cote">Reprendre la main</p>
+        <div className="v-duo large v-parait">
           <article>
-            <h2>Un lien se révoque</h2>
-            <p>
+            <h2 className="v-section-titre">Un lien se révoque</h2>
+            <p className="v-prose-texte">
               Le locataire est parti, l'artisan a fini : vous coupez le lien, et il ne montre plus
               rien. Un lien peut aussi porter une date de fin dès sa création. Ce qui a été partagé,
               avec qui, et quand, reste consigné. C'est même l'intérêt.
             </p>
           </article>
           <article>
-            <h2>Vous voyez ce qu'ils voient</h2>
-            <p>
-              Avant d'envoyer un lien, vous l'ouvrez : la même page, servie par le même code, telle
-              qu'elle arrivera à son destinataire. Pas une simulation. La page réelle, avec en plus
-              le compte de ce qu'elle ne montre pas.
+            <h2 className="v-section-titre">Vous voyez ce qu'ils voient</h2>
+            <p className="v-prose-texte">
+              Avant d'envoyer un lien, vous l'ouvrez : la même page que recevra son destinataire,
+              pas une simulation, avec en plus le compte de ce qu'elle ne montre pas.
             </p>
           </article>
         </div>
       </section>
 
-      <section className="v-sec v-encre">
+      <section className="planche v-sec v-encre">
         <h2 className="v-encre-titre">Un lien pour le locataire, un pour le plombier.</h2>
-        <p>
+        <p className="v-prose-texte">
           Ils se créent depuis votre espace, en choisissant un plafond et des zones.{" "}
           <Link to="/confidentialite">Ce que l'application stocke, et ce qu'elle refuse</Link>.
         </p>
         <div className="v-actions">
-          <Link to={ACCUEIL} className="v-appel">
+          <Link to={ACCUEIL} className="bouton-plein">
             Ouvrir mon espace
           </Link>
         </div>

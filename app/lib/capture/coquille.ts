@@ -13,8 +13,8 @@ import { ACCUEIL } from "../auth/redirection";
 // suffixe DOIT suivre la `VERSION` de `sw.js`, dont le handler `activate`
 // supprime tout cache qui ne finit pas par elle ; `tests/pwa/coquille.test.ts`
 // échoue si les deux côtés divergent.
-export const COQUILLE = "coquille-v2";
-const ACTIFS = "actifs-v2";
+export const COQUILLE = "coquille-v3";
+const ACTIFS = "actifs-v3";
 
 /** Les caches de la version courante. Tout autre est un reste d'avant. */
 const CACHES_COURANTS = [COQUILLE, ACTIFS];

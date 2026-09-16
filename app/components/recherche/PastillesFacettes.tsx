@@ -34,7 +34,7 @@ function Groupe({
 
   return (
     <div className="facettes-groupe">
-      <h3 className="facettes-titre">{titre}</h3>
+      <h3 className="cote facettes-titre">{titre}</h3>
       <ul className="facettes-liste">
         {visibles.map((o) => {
           const active = actives.includes(o.id);
@@ -42,18 +42,18 @@ function Groupe({
             <li key={o.id}>
               <button
                 type="button"
-                className={active ? "pastille pastille-active" : "pastille"}
+                className={active ? "etiquette etiquette-active" : "etiquette"}
                 aria-pressed={active}
                 onClick={() => onBasculer(o.id)}
               >
-                {o.nom} <span className="pastille-nombre">{o.nombre}</span>
+                {o.nom} <span className="etiquette-nombre">{o.nombre}</span>
               </button>
             </li>
           );
         })}
         {caches > 0 && (
           <li>
-            <button type="button" className="pastille pastille-plus" onClick={() => setTout(true)}>
+            <button type="button" className="etiquette etiquette-plus" onClick={() => setTout(true)}>
               + {caches} autres
             </button>
           </li>

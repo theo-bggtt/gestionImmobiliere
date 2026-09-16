@@ -5,7 +5,7 @@
 // engage quelqu'un d'autre que lui : le nom d'une entreprise peut sortir vers
 // un lien qui circule, jamais son téléphone ni son adresse e-mail.
 import { Form } from "react-router";
-import { LIBELLES_NIVEAU } from "../../lib/partage/niveaux";
+import { ChoixNiveau } from "../ChoixNiveau";
 import {
   MAX_LONGUEUR_CHAMP_COURT,
   MAX_LONGUEUR_NOM_INTERVENANT,
@@ -41,7 +41,7 @@ export function FormulaireIntervenant({
   libelleBouton: string;
 }) {
   return (
-    <Form method="post" className="formulaire-evenement">
+    <Form method="post" className="formulaire">
       <label>
         Nom
         <input
@@ -75,33 +75,31 @@ export function FormulaireIntervenant({
           <input type="email" name="email" defaultValue={valeurs.email ?? ""} maxLength={MAX_LONGUEUR_CHAMP_COURT} />
         </label>
       </div>
-      <p className="formulaire-aide">
-        Le téléphone et l'e-mail ne sortent d'aucun lien de partage, quel que soit le niveau
-        ci-dessous. Ce sont les coordonnées d'un tiers, qui n'a pas choisi de figurer sur une adresse
-        que l'on peut faire suivre.
+      <p className="message-avis">
+        Le téléphone et l'e-mail ne sortent d'aucun lien de partage, quel que soit le niveau ci-dessous. Ce sont
+        les coordonnées d'un tiers, qui n'a pas choisi de figurer sur une adresse que l'on peut faire suivre.
       </p>
 
-      <label>
-        Visibilité du nom et du métier
-        <select name="niveau" defaultValue={String(valeurs.niveau)}>
-          {LIBELLES_NIVEAU.map((libelle, niveau) => (
-            <option key={niveau} value={niveau}>{niveau} · {libelle}</option>
-          ))}
-        </select>
-        <span className="formulaire-aide">
-          « privé » (le défaut) veut dire qu'aucun lien ne montre cet intervenant. Le baisser fait
-          apparaître son nom et son métier sur les événements déjà visibles.
-        </span>
-      </label>
+      <ChoixNiveau
+        valeur={valeurs.niveau}
+        etiquette="Visibilité du nom et du métier"
+        aide="« Privé » (le défaut) veut dire qu'aucun lien ne montre cet intervenant. Le baisser fait apparaître son nom et son métier sur les événements déjà visibles."
+      />
 
       <label>
         Notes (optionnel)
         <textarea name="notes" defaultValue={valeurs.notes ?? ""} rows={3} />
-        <span className="formulaire-aide">Pour vous seul : les notes ne sortent d'aucun lien.</span>
+        <span className="champ-aide">Pour vous seul : les notes ne sortent d'aucun lien.</span>
       </label>
 
-      {erreur && <p role="alert">{erreur}</p>}
-      <button type="submit">{libelleBouton}</button>
+      {erreur && (
+        <p role="alert" className="message-erreur">
+          {erreur}
+        </p>
+      )}
+      <div className="formulaire-actions">
+        <button type="submit">{libelleBouton}</button>
+      </div>
     </Form>
   );
 }

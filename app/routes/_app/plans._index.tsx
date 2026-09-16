@@ -136,7 +136,11 @@ export default function EcranPlans() {
         <p className="resultats-vide">
           Aucun plan pour l'instant. Un plan répond à « c'est où » sans qu'on ait à savoir comment l'objet s'appelle.
         </p>
-        <Link to="nouveau">Ajouter un plan</Link>
+        <p>
+          <Link to="nouveau" className="bouton-trait" viewTransition>
+            Ajouter un plan
+          </Link>
+        </p>
       </main>
     );
   }
@@ -154,7 +158,7 @@ export default function EcranPlans() {
             <Link
               key={p.id}
               to={`?${cible}`}
-              className={p.id === choisi.id ? "plan-niveau plan-niveau-actif" : "plan-niveau"}
+              className={p.id === choisi.id ? "etiquette etiquette-active" : "etiquette"}
               aria-current={p.id === choisi.id ? "page" : undefined}
             >
               {p.nom}
@@ -175,11 +179,12 @@ export default function EcranPlans() {
               donc un geste, et « Laisser » est un vrai choix — un objet peut
               légitimement être rangé ailleurs que là où il se voit. */}
           {proposition && (
-            <p className="plan-proposition" role="status">
+            <p className="message-ok plan-proposition" role="status">
               <strong>{proposition.elementNom}</strong> est posé dans le contour de «&nbsp;
               {proposition.zoneNom}&nbsp;», mais rangé dans «&nbsp;{proposition.zoneActuelleNom}&nbsp;».
               <button
                 type="button"
+                className="bouton-trait"
                 onClick={() =>
                   envoyer({
                     _action: "ranger",
@@ -254,7 +259,7 @@ export default function EcranPlans() {
                 Quelques clics par zone, sans mesure : le contour sert à repérer, jamais à coter. Un objet posé
                 dedans fera <em>proposer</em> cette zone — vous gardez la main sur ce qui est rangé où.
               </p>
-              <ul>
+              <ul className="filets">
                 {/* L'état du contour vient de `z.sommets`, chargé par la même
                     requête que la ligne, et non d'une recherche dans
                     `polygones` : ces deux listes n'ont pas le même contrat.
@@ -272,10 +277,8 @@ export default function EcranPlans() {
                     seule forme où les deux ne peuvent pas diverger. */}
                 {zonesTracables.map((z) => (
                   <li key={z.id}>
-                    <span>{z.nom}</span>
-                    <span className="selecteur-secondaire">
-                      {z.sommets === null ? "sans contour" : `${z.sommets} points`}
-                    </span>
+                    <span className="nom">{z.nom}</span>
+                    <span className="lieu">{z.sommets === null ? "sans contour" : `${z.sommets} points`}</span>
                     <button
                       type="button"
                       className="bouton-discret"
@@ -302,7 +305,11 @@ export default function EcranPlans() {
               </ul>
             </>
           )}
-          {contours.data?.erreur && <p role="alert">{contours.data.erreur}</p>}
+          {contours.data?.erreur && (
+            <p role="alert" className="message-erreur">
+              {contours.data.erreur}
+            </p>
+          )}
           {tracage && tracage.sommets.length < SOMMETS_MIN && (
             <p className="resultats-vide">
               Touchez le plan aux coins de «&nbsp;{tracage.zoneNom}&nbsp;» — {SOMMETS_MIN} points au minimum.
@@ -311,9 +318,13 @@ export default function EcranPlans() {
         </section>
       )}
 
-      <nav className="accueil-nav">
-        <Link to={`${choisi.id}/modifier`}>Modifier ce plan</Link>
-        <Link to="nouveau">Ajouter un plan</Link>
+      <nav className="plan-suite">
+        <Link to={`${choisi.id}/modifier`} viewTransition>
+          Modifier ce plan
+        </Link>
+        <Link to="nouveau" viewTransition>
+          Ajouter un plan
+        </Link>
       </nav>
     </main>
   );
