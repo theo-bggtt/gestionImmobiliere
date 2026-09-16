@@ -8,6 +8,7 @@
     "start": "node --env-file=.env server/app.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file=.env scripts/migrate.mjs",
+    "compte": "tsx --env-file=.env scripts/compte.ts",
     "seed:catalogue": "tsx --env-file=.env scripts/seed-catalogue.ts",
     "seed:exemple": "tsx --env-file=.env scripts/seed-exemple.ts",
     "typecheck": "tsc --noEmit",
