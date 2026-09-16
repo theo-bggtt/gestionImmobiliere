@@ -55,7 +55,7 @@ export default function ModifierBatiment() {
   return (
     <main>
       <h1>Modifier {batiment.nom}</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" defaultValue={batiment.nom} required />
@@ -64,17 +64,29 @@ export default function ModifierBatiment() {
           Type
           <select name="type" defaultValue={batiment.type}>
             {TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
           </select>
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Enregistrer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Enregistrer</button>
+        </div>
       </Form>
-      <Form method="post">
-        <input type="hidden" name="_action" value="supprimer" />
-        <button type="submit">Supprimer le bâtiment</button>
-      </Form>
+      <div className="formulaire-danger">
+        <Form method="post">
+          <input type="hidden" name="_action" value="supprimer" />
+          <button type="submit" className="bouton-discret">
+            Supprimer le bâtiment
+          </button>
+        </Form>
+      </div>
     </main>
   );
 }

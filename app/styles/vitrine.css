@@ -1,781 +1,1172 @@
 /* app/styles/vitrine.css
-   La feuille de la vitrine publique, servie par un `links` de route et NON
-   versée dans `app.css`. Celle-ci part à tous les arbres, page de partage
-   comprise : un locataire venu voir où sont les prises n'a pas à télécharger
-   la mise en page d'une page de vente.
+   Les mises en page de vente, servies par un `links` de route et NON versées
+   dans `app.css` : celle-ci part à tous les arbres, page de partage comprise,
+   et un locataire venu voir où sont les prises n'a pas à télécharger la mise
+   en page d'une page de vente.
 
-   Les variables de `:root` viennent d'`app.css`, qui est servie partout par
-   `root.tsx` : la vitrine doit RESSEMBLER au produit, c'est la moitié de
-   l'intérêt d'une vitrine maison plutôt qu'un site à part. Même vert, même
-   papier, mêmes rayons. Ce qu'elle ajoute, c'est une voix : un titrage à
-   empattements, des grilles, un rythme de page de vente. Le corps du texte
-   reste en police système, comme l'application.
+   Le langage — les jetons, les deux polices, les trois traits, les boutons,
+   les champs, la cote, les filets, la pastille, l'échelle — vit dans
+   `releve.css`, servie partout, et cette feuille NE REDÉCLARE RIEN de tout
+   cela : elle compose. Ce qui est ici est propre à la vente :
 
-   UNE SEULE police chargée, et depuis ce serveur : Fraunces, pour les titres
-   seulement. Latin seul (67 Ko), variable en graisse, OFL (la licence est à
-   côté du fichier). Elle ne vient pas d'un service tiers, et ce n'est pas un
-   détail : `/confidentialite` affirme qu'aucune police n'est chargée chez un
-   tiers, et `server/application.js` n'ouvre `font-src` qu'à `'self'`.
+   ── LA GRILLE CALÉE À GAUCHE ───────────────────────────────────────────
+
+   `.planche` (dans `releve.css`) pose trois portées — texte, large, pleine —
+   et sa colonne de texte commence où commence la piste large : tout le mou
+   est à droite. Centrer le texte dans la piste large a été essayé et constaté
+   au navigateur — chaque titre se retrouvait décalé vers la droite du bloc
+   qu'il annonce. Calé à gauche, c'est la mise en page d'une planche : le pavé
+   de texte sur la marge, les dessins et les lignes de cote qui filent dans la
+   marge droite. La marge droite vide est voulue, et c'est la cote qui la
+   traverse qui le dit. Chaque section porte la grille (`class="planche
+   v-sec"`), pas `<main>` : `subgrid` n'est pas lu par tous les navigateurs.
+
+   ── LE RELEVÉ EN BANDE ─────────────────────────────────────────────────
+
+   Le tirage du héros traverse l'écran d'un bord à l'autre, sous le titre, sur
+   sa propre feuille d'un autre ton. Pleine largeur et NON derrière le titre :
+   la version chevauchée a été essayée, et sur un écran large les murs
+   traversaient la colonne de texte. C'est le seul endroit du site où l'on
+   dépense de l'audace, et le seul qui bouge au chargement.
+
+   ── DEUX APLATS D'ENCRE, PAS TROIS ─────────────────────────────────────
+
+   Le passage sur la transmission, et le cartouche final : c'est ce qui leur
+   donne leur poids.
+
+   ── CE QUE CETTE FEUILLE S'INTERDIT ────────────────────────────────────
 
    Aucun attribut `style` en ligne nulle part dans cet arbre : sa politique de
-   sécurité n'a pas d'`'unsafe-inline'`, contrairement à celle de `/p/` qui
-   en a besoin pour la géométrie des plans. Le schéma de l'accueil est donc un
-   SVG dont chaque trait est une CLASSE, jamais un attribut `style`. */
+   sécurité n'a pas d'`'unsafe-inline'`. Les plans dessinés ici sont des SVG
+   dont chaque trait est une CLASSE. Aucune règle sur un élément nu (`p`,
+   `h2`, `a`) : c'est ce qui a coûté trois télescopages de spécificité à la
+   version précédente (`.v-sec p` battait `.v-jour`), et `releve.css` les
+   tient déjà. Les étiquettes de cote sont en casse normale : une cote se lit,
+   elle ne s'annonce pas. */
 
-@font-face {
-  font-family: "Fraunces";
-  src: url("/polices/fraunces-latin.woff2") format("woff2");
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+/* ── Les sections ─────────────────────────────────────────────────────
+   Le trait de coupe entre deux sections : la page est une suite de niveaux,
+   et on en traverse un mur à chaque fois. Sauf après un aplat d'encre, où le
+   changement de fond fait déjà la séparation. */
+.v-sec {
+  padding: 72px 0;
+}
+.v-sec + .v-sec {
+  border-top: var(--coupe) solid var(--encre);
+}
+.v-sec.v-encre + .v-sec,
+.v-sec.v-encre {
+  border-top: 0;
 }
 
-:root {
-  --v-titrage: "Fraunces", Georgia, "Times New Roman", serif;
-  --v-largeur: 1080px;
-  /* L'accent dilué : fonds de zone du schéma, colonne gagnante d'un tableau.
-     En `rgba` sur la valeur d'`--accent` (#1f4f46) plutôt qu'en `color-mix`,
-     que les navigateurs d'il y a trois ans ne lisent pas. */
-  --v-teinte: rgba(31, 79, 70, 0.08);
-  --v-teinte-forte: rgba(31, 79, 70, 0.16);
-}
-
-/* ── Charpente ────────────────────────────────────────────────────── */
-
-.v-corps {
-  max-width: var(--v-largeur);
-  margin: 0 auto;
-  padding: 0 var(--gouttiere) 72px;
-}
-
+/* ── L'en-tête ────────────────────────────────────────────────────────
+   La marque à gauche, la navigation au milieu, l'espace du propriétaire à
+   droite, alignés sur la piste large des pages. */
 .v-tete {
+  padding: 0;
+  border-bottom: var(--vu) solid var(--pale);
+}
+.v-tete-int {
+  grid-column: large-g / large-d;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   flex-wrap: wrap;
-  gap: 12px 20px;
-  max-width: var(--v-largeur);
-  margin: 0 auto;
-  padding: 16px var(--gouttiere);
+  gap: 10px 24px;
+  padding: 18px 0;
 }
 .v-marque {
-  font-family: var(--v-titrage);
-  font-weight: 600;
-  font-size: 1.25rem;
-  letter-spacing: -0.01em;
+  font-family: var(--titrage);
+  font-weight: 500;
+  font-size: 1.2rem;
   text-decoration: none;
-  color: var(--accent);
+  color: var(--encre);
 }
-/* C'est la navigation qui pousse « Mon espace » à droite, et non une marge
-   automatique sur la marque : une marge `auto` absorbe TOUT l'espace libre
-   avant que le bouton ne soit placé, ce qui le renvoyait à la ligne alors
-   qu'il restait la place (mesuré : 152 px de marge, bouton en seconde
-   ligne). En `flex: 1 1 auto` avec `min-width: 0`, la navigation prend ce
-   qui reste et se comprime au lieu de provoquer un retour. */
 .v-nav {
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px 18px;
-  font-size: 0.92rem;
+  gap: 6px 20px;
+  font-size: 0.94rem;
 }
 .v-nav a {
-  color: var(--texte-doux);
+  color: var(--graphite);
   text-decoration: none;
-  padding: 4px 0;
-  border-bottom: 2px solid transparent;
+  padding-bottom: 3px;
+  border-bottom: var(--vu) solid transparent;
 }
-.v-nav a:hover { color: var(--texte); }
-/* La page courante se marque par un trait et non par une graisse : passer en
-   gras ÉLARGIT le lien, donc la navigation, donc l'en-tête, et « Mon espace »
-   passait à la ligne sur les pages du menu et seulement sur elles (mesuré :
-   navigation à 533 px sur `/partage` contre 372 sur `/`). Le trait est
-   réservé sur chaque lien, transparent, pour que l'état n'ait aucune largeur
-   à lui. */
+.v-nav a:hover {
+  color: var(--encre);
+  border-bottom-color: var(--pale);
+}
+/* La page courante est marquée d'un trait de coupe, pas d'une couleur. */
 .v-nav a[aria-current="page"] {
-  color: var(--texte);
-  border-bottom-color: var(--accent);
+  color: var(--encre);
+  border-bottom: var(--coupe) solid var(--encre);
 }
-/* Sur un téléphone, l'en-tête passe à trois lignes : aligner à droite une
-   navigation qui a déjà replié laisse « À propos » seul et décalé. Elle
-   revient à gauche, sous la marque. */
-@media (max-width: 620px) {
-  .v-nav {
-    justify-content: flex-start;
-    /* Resserrée d'un cran pour que les quatre entrées tiennent sur une ligne
-       à 390 px (mesuré : « À propos » passait seul à la ligne, et l'en-tête
-       prenait quatre rangées). */
-    gap: 8px 14px;
-    font-size: 0.88rem;
-  }
-}
-
 .v-espace {
-  border: 1px solid var(--accent);
-  border-radius: var(--rayon);
-  padding: 8px 16px;
+  color: var(--encre);
   text-decoration: none;
-  font-weight: 600;
+  font-size: 0.94rem;
   white-space: nowrap;
+  border-bottom: var(--vu) solid var(--encre);
+  padding-bottom: 2px;
 }
-.v-espace:hover { background: var(--v-teinte); }
+.v-espace:hover {
+  border-bottom-width: var(--coupe);
+}
 
-.v-pied {
-  border-top: 1px solid var(--trait);
-  margin-top: 72px;
-  padding: 28px var(--gouttiere) 44px;
-  color: var(--texte-doux);
-  font-size: 0.9rem;
-}
-.v-pied-int {
-  max-width: var(--v-largeur);
-  margin: 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px 28px;
-}
-.v-pied-liens {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-.v-pied p { margin: 0; }
-
-/* ── Titres et texte ──────────────────────────────────────────────── */
-
-.v-surtitre {
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.12em;
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--accent);
-  margin: 0 0 12px;
-}
+/* ── Titres et corps ──────────────────────────────────────────────────
+   L'échelle est franche : un titre de page écrase tout le reste, et il est
+   LÉGER. Fraunces à 300 en très grand corps se lit comme un tracé, là où la
+   même taille en gras se lirait comme une réclame. */
 .v-titre {
-  font-family: var(--v-titrage);
-  font-weight: 500;
-  font-size: clamp(2.1rem, 1.2rem + 3.4vw, 3.6rem);
-  line-height: 1.04;
-  letter-spacing: -0.02em;
-  margin: 0 0 20px;
-  max-width: 18ch;
+  font-family: var(--titrage);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 6.4vw, 4.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.022em;
+  color: var(--encre);
+  margin: 0 0 24px;
+  text-wrap: balance;
 }
-/* Le mot qu'on souligne dans un titre : en vert, pas en italique. Le fichier
-   de police ne porte que le droit, et un italique synthétisé par le
-   navigateur est ce qui donne aux titres leur air de brouillon. */
-.v-titre em { font-style: normal; color: var(--accent); }
+.v-titre em {
+  font-style: italic;
+  font-weight: 300;
+}
+.v-section-titre {
+  font-family: var(--titrage);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.15;
+  letter-spacing: -0.014em;
+  color: var(--encre);
+  margin: 0 0 16px;
+  text-wrap: balance;
+}
+.v-sous-titre {
+  font-family: var(--titrage);
+  font-weight: 500;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  color: var(--encre);
+  margin: 0 0 8px;
+}
+.v-prose-texte {
+  margin: 0 0 16px;
+  line-height: 1.62;
+  color: var(--graphite);
+}
+.v-prose-texte:last-child {
+  margin-bottom: 0;
+}
 .v-chapeau {
-  font-size: 1.2rem;
+  font-size: 1.12rem;
   line-height: 1.55;
-  color: var(--texte-doux);
-  margin: 0 0 28px;
-  max-width: 56ch;
-}
-.v-corps h2 {
-  font-family: var(--v-titrage);
-  font-weight: 500;
-  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.2rem);
-  line-height: 1.12;
-  letter-spacing: -0.015em;
-  margin: 0 0 12px;
-}
-.v-corps h3 {
-  font-size: 1.05rem;
-  margin: 0 0 6px;
-}
-.v-intro {
-  font-size: 1.05rem;
-  color: var(--texte-doux);
-  margin: 0;
-  max-width: 60ch;
-}
-/* Le lien qui clôt une section et mène à la page suivante. */
-.v-suite {
-  margin: 22px 0 0;
-  font-weight: 600;
+  color: var(--graphite);
+  max-width: 32rem;
 }
 
-.v-section { padding: 52px 0 8px; }
-.v-section-tete { max-width: 64ch; margin-bottom: 26px; }
-
-/* Les pages écrites (« À propos », « Vos données ») : une colonne de lecture,
-   même rythme de titres. */
-.v-prose { max-width: 720px; }
-.v-prose h2 { margin-top: 44px; }
-.v-prose p,
-.v-prose li { max-width: 68ch; }
-.v-prose p { line-height: 1.6; }
-
+/* ── Appels ───────────────────────────────────────────────────────────
+   Les boutons sont ceux de `releve.css`. Ici, seulement leur rangée. */
 .v-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 12px;
+  margin: 28px 0 0;
 }
-.v-appel {
-  display: inline-block;
-  background: var(--accent);
-  color: #fff;
-  text-decoration: none;
-  font-weight: 600;
-  border-radius: var(--rayon);
-  padding: 14px 28px;
-  margin: 8px 0;
-}
-.v-appel:hover { background: var(--accent-clair); }
-.v-appel-second {
-  display: inline-block;
-  background: var(--surface);
-  border: 1px solid var(--trait);
-  color: var(--texte);
-  text-decoration: none;
-  font-weight: 600;
-  border-radius: var(--rayon);
-  padding: 13px 22px;
-  margin: 8px 0;
-}
-.v-appel-second:hover { border-color: var(--accent); }
 
-/* ── L'entrée de page ─────────────────────────────────────────────── */
-
+/* ── Le héros et son relevé ───────────────────────────────────────────*/
 .v-heros {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: 32px 56px;
-  align-items: center;
-  padding: 48px 0 56px;
+  padding-top: 0;
+  padding-bottom: 44px;
 }
-/* Le papier millimétré d'un plan, sous l'entrée seulement, qui s'efface vers
-   le bas. Un dégradé radial répété et non une image : rien à télécharger,
-   rien à autoriser dans la politique.
-
-   Il déborde de la gouttière exactement, et pas plus : à `-24px` sur une
-   gouttière de 16, il dépassait la page de 8 px sur téléphone, c'est-à-dire
-   un défilement horizontal que rien de visible n'expliquait (mesuré au
-   navigateur : `scrollWidth` à +8 sur les cinq pages, aucun élément plus
-   large que la fenêtre). Un pseudo-élément n'apparaît dans aucun
-   `querySelectorAll`, c'est ce qui le rend difficile à trouver. */
-.v-heros::before {
-  content: "";
-  position: absolute;
-  inset: -16px calc(var(--gouttiere) * -1) 0;
-  z-index: -1;
-  background-image: radial-gradient(var(--trait) 1.2px, transparent 1.3px);
-  background-size: 22px 22px;
-  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+.v-heros-texte {
+  padding: 60px 0 44px;
 }
-.v-heros-simple {
-  grid-template-columns: minmax(0, 1fr);
-  padding-bottom: 24px;
+/* Le relevé est posé sur SA feuille : une bande de papier d'un autre ton,
+   d'un bord à l'autre de l'écran. C'est ce qui le fait lire comme un tirage
+   déroulé sur la table plutôt que comme une décoration derrière le texte. */
+.v-heros-dessin {
+  overflow: hidden;
+  background: var(--creux);
+  padding: 30px 0;
 }
-@media (max-width: 860px) {
-  .v-heros {
-    grid-template-columns: 1fr;
-    padding: 24px 0 40px;
-  }
-}
-
-/* Une seule apparition orchestrée au chargement, et rien d'autre qui bouge :
-   la vitrine n'a pas de script, donc tout ce qui s'anime est ici, et tout ce
-   qui s'anime respecte le réglage de mouvement réduit. */
-@media (prefers-reduced-motion: no-preference) {
-  .v-heros-texte > *,
-  .v-schema {
-    animation: v-apparition 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-  .v-heros-texte > :nth-child(2) { animation-delay: 0.08s; }
-  .v-heros-texte > :nth-child(3) { animation-delay: 0.16s; }
-  .v-heros-texte > :nth-child(4) { animation-delay: 0.24s; }
-  .v-schema { animation-delay: 0.3s; }
-}
-@keyframes v-apparition {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: none; }
-}
-
-/* ── Le schéma de l'accueil ───────────────────────────────────────── */
-
-/* Un plan abstrait, dessiné en SVG dans la page : trois zones, trois objets
-   repérés, une légende. Ce n'est la maison de personne. */
-.v-schema {
-  background: var(--surface);
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon);
-  padding: 18px;
-  box-shadow: 0 28px 56px -36px rgba(31, 79, 70, 0.5);
-}
-.v-schema svg {
+.v-heros-dessin svg {
   display: block;
   width: 100%;
   height: auto;
+  /* Deux plafonds, pour deux débordements différents. `62vh` protège les
+     écrans BAS (un portable en 1280×600, un téléphone couché) où un dessin à
+     hauteur libre pousserait tout le texte sous la ligne de flottaison.
+     `520px` protège les écrans LARGES : à 2560 px, la hauteur naturelle du
+     relevé est de 896 px, soit une frise qui occupe l'écran entier pour dire
+     ce que 500 px disaient déjà. */
+  max-height: min(62vh, 520px);
 }
-.v-schema-legende {
-  list-style: none;
-  margin: 14px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-  font-size: 0.9rem;
-  color: var(--texte-doux);
-}
-.v-schema-legende li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.v-schema-legende strong { color: var(--texte); font-weight: 600; }
-.v-pastille {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.s-terrain {
-  fill: var(--fond);
-  stroke: var(--texte-doux);
-  stroke-width: 1;
-  stroke-dasharray: 4 4;
-}
-.s-mur {
-  fill: var(--surface);
-  stroke: var(--accent);
-  stroke-width: 2.5;
-}
-.s-cloison {
+
+/* Le dessin lui-même. Trois épaisseurs, et rien d'autre. */
+.d-parcelle {
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.5;
+  stroke: var(--pale);
+  stroke-width: 1.6;
+  stroke-dasharray: 14 5 2 5;
 }
-.s-zone { fill: var(--v-teinte); }
-.s-etiquette {
-  font: 600 10.5px system-ui, -apple-system, "Segoe UI", sans-serif;
-  fill: var(--texte-doux);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.s-halo {
+.d-mur {
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--encre);
+  stroke-width: 4;
+}
+.d-cloison {
+  fill: none;
+  stroke: var(--graphite);
   stroke-width: 1;
-  opacity: 0.35;
 }
-.s-point {
-  fill: var(--accent);
-  stroke: var(--surface);
-  stroke-width: 2;
+/* Le remplissage des deux zones citées par la légende. En teinte d'encre et
+   non en `--creux` : la bande porte déjà ce ton, un sol de la même couleur
+   ne se verrait pas. */
+.d-sol {
+  fill: rgba(31, 79, 70, 0.08);
 }
-.s-num {
-  font: 700 11px system-ui, -apple-system, "Segoe UI", sans-serif;
-  fill: #fff;
+.d-cotation {
+  fill: none;
+  stroke: var(--pale);
+  stroke-width: 1;
+}
+.d-nom {
+  fill: var(--graphite);
+  font-family: var(--titrage);
+  font-size: 20px;
+  font-weight: 500;
+}
+.d-mesure {
+  fill: var(--graphite);
+  font-family: var(--titrage);
+  font-size: 16px;
+  text-anchor: middle;
+}
+.d-point {
+  fill: var(--encre);
+}
+.d-num {
+  fill: var(--papier);
+  font-family: var(--titrage);
+  font-size: 17px;
+  font-weight: 600;
   text-anchor: middle;
   dominant-baseline: central;
 }
 
-/* ── Blocs ────────────────────────────────────────────────────────── */
+/* Le relevé du héros se trace, une fois, au chargement. Il dit ce que fait le
+   produit — on dessine sa maison.
 
-.v-cartes {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.v-carte {
-  background: var(--surface);
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon);
-  padding: 22px;
-}
-.v-carte h3 {
-  margin: 0 0 8px;
-  font-size: 1.1rem;
-}
-.v-carte p { margin: 0; color: var(--texte-doux); }
-.v-carte p + p { margin-top: 10px; }
-/* Les cartes de « Ce que ça fait » : deux paragraphes chacune, donc plus
-   larges, trois par rangée au bureau et une sur téléphone. */
-.v-cartes-larges { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-.v-carte-jour {
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.1em;
-  font-weight: 600;
-  color: var(--accent);
-  margin: 0 0 6px;
+   Le tracé (`stroke-dashoffset`) ne porte QUE sur le mur, qui est un contour
+   fermé dont on connaît la longueur. Les cloisons sont quatre segments courts
+   de longueurs différentes : leur appliquer le même `stroke-dasharray` les
+   ferait apparaître à des vitesses sans rapport entre elles. Elles se posent
+   après, en fondu, ce qui raconte la même chose — les murs d'abord, les zones
+   ensuite.
+
+   Un peu plus d'une seconde en tout, et c'est un plafond : `both` tient le
+   début de l'animation pendant son délai, donc tout ce qui est listé ci-
+   dessous est ABSENT du relevé jusque-là. Un délai d'une seconde avant que
+   les points numérotés n'apparaissent a été mesuré à l'écran, et c'était
+   trop long pour une page d'accueil. */
+@media (prefers-reduced-motion: no-preference) {
+  .v-heros-dessin .d-mur {
+    stroke-dasharray: 1904;
+    animation: v-tracer 1s ease-out both;
+  }
+  @keyframes v-tracer {
+    from {
+      stroke-dashoffset: 1904;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  .v-heros-dessin .d-parcelle,
+  .v-heros-dessin .d-sol,
+  .v-heros-dessin .d-cloison,
+  .v-heros-dessin .d-nom,
+  .v-heros-dessin .d-cotation,
+  .v-heros-dessin .d-mesure,
+  .v-heros-dessin .d-point,
+  .v-heros-dessin .d-num {
+    animation: v-paraitre 0.55s ease-out 0.55s both;
+  }
+  @keyframes v-paraitre {
+    from {
+      opacity: 0;
+    }
+  }
 }
 
-/* Les trois gestes, numérotés en grand. */
-.v-etapes {
-  display: grid;
-  gap: 24px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-@media (max-width: 760px) {
-  .v-etapes { grid-template-columns: 1fr; }
-}
-.v-etape {
-  border-top: 2px solid var(--accent);
-  padding-top: 14px;
-}
-.v-etape-num {
-  font-family: var(--v-titrage);
-  font-weight: 300;
-  font-size: 3rem;
-  line-height: 1;
-  color: var(--accent);
-  margin: 0 0 10px;
-}
-.v-etape h3 { font-size: 1.15rem; }
-.v-etape p { margin: 0; color: var(--texte-doux); }
-
-/* Les quatre lecteurs de la même base. Chaque carte porte une échelle à
-   quatre barreaux, les niveaux de détail du produit (public, usage,
-   technique, privé), remplie jusqu'au plafond du lien. La première est
-   inversée : c'est vous, et vous voyez tout. */
-.v-lecteurs {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  list-style: none;
-  margin: 26px 0 0;
-  padding: 0;
-}
-@media (max-width: 900px) {
-  .v-lecteurs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 480px) {
-  .v-lecteurs { grid-template-columns: 1fr; }
-}
-.v-lecteur {
+/* La légende du relevé : une liste de cotes, pas une liste à puces. */
+.v-legende {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: var(--surface);
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon);
-  padding: 20px;
-}
-.v-lecteur h3 { margin: 0; font-size: 1.15rem; }
-.v-lecteur p { margin: 0; color: var(--texte-doux); }
-.v-echelle {
-  display: flex;
-  gap: 4px;
-  margin: 0 0 4px;
-}
-.v-barreau {
-  flex: 1;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--trait);
-}
-.v-barreau.plein { background: var(--accent); }
-.v-plafond {
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.08em;
-  font-size: 0.85rem;
-  color: var(--texte-doux);
+  flex-wrap: wrap;
+  gap: 0;
   margin: 0;
-}
-.v-lecteur-vous {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-.v-lecteur-vous p,
-.v-lecteur-vous .v-plafond { color: rgba(255, 255, 255, 0.82); }
-.v-lecteur-vous .v-barreau { background: rgba(255, 255, 255, 0.28); }
-.v-lecteur-vous .v-barreau.plein { background: #fff; }
-
-/* Les quatre niveaux, expliqués un par un sur la page du partage : une barre
-   qui s'allonge, du public au privé. */
-.v-niveaux {
-  list-style: none;
-  margin: 18px 0 0;
   padding: 0;
-  display: grid;
-  gap: 10px;
-}
-.v-niveaux li {
-  display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-}
-.v-niveau-nom {
-  font-weight: 600;
-  border-left: 4px solid var(--accent);
-  padding-left: 10px;
-}
-.v-niveau-nom.n1 { border-color: var(--trait); }
-.v-niveau-nom.n2 { border-color: var(--v-teinte-forte); }
-.v-niveau-nom.n3 { border-color: var(--accent-clair); }
-.v-niveaux span:last-child { color: var(--texte-doux); }
-
-/* Deux arguments côte à côte. */
-.v-duo {
-  display: grid;
-  gap: 24px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-@media (max-width: 760px) {
-  .v-duo { grid-template-columns: 1fr; }
-}
-.v-duo article {
-  border-top: 1px solid var(--trait);
-  padding-top: 18px;
-}
-.v-duo p { color: var(--texte-doux); }
-
-/* Une liste de ce qu'on obtient (coche) ou de ce qui ne sort pas (croix). */
-.v-coches {
   list-style: none;
-  padding: 0;
-  margin: 12px 0 0;
-  display: grid;
+  border-top: var(--vu) solid var(--pale);
+}
+.v-legende li {
+  flex: 1 1 12rem;
+  display: flex;
+  align-items: baseline;
   gap: 10px;
+  padding: 14px 18px 14px 0;
+  border-left: var(--vu) solid var(--pale);
+  padding-left: 18px;
 }
-.v-coches li {
-  position: relative;
-  padding-left: 30px;
-  max-width: 68ch;
+.v-legende li:first-child {
+  border-left: 0;
+  padding-left: 0;
 }
-.v-coches li::before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  top: 2px;
-  display: grid;
-  place-items: center;
+.v-legende .pastille {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
-  background: var(--v-teinte-forte);
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  align-self: center;
+  box-shadow: none;
 }
-.v-croix li::before {
-  content: "×";
-  background: rgba(140, 47, 31, 0.12);
-  color: var(--alerte);
-}
-
-/* Le document contre le lien. Le tableau déborde dans son cadre, jamais la
-   page. */
-.v-tableau-cadre {
-  overflow-x: auto;
-  margin: 26px 0 0;
-}
-.v-tableau {
-  width: 100%;
-  min-width: 600px;
-  border-collapse: collapse;
-  font-size: 0.95rem;
-}
-.v-tableau th,
-.v-tableau td {
-  text-align: left;
-  vertical-align: top;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--trait);
-}
-.v-tableau th { font-weight: 600; }
-.v-tableau thead th {
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.08em;
-  color: var(--texte-doux);
-  border-bottom-color: var(--accent);
-}
-.v-tableau td:nth-child(2) { color: var(--texte-doux); }
-.v-tableau td:last-child { background: var(--v-teinte); }
-/* Sur téléphone, le tableau ne défile pas : il s'empile. Faire défiler
-   cachait précisément la colonne « Avec un lien », c'est-à-dire l'argument
-   (mesuré à 390 px : seules les deux premières colonnes étaient visibles).
-   Chaque ligne devient un bloc, et le libellé de colonne revient par
-   `data-libelle`, un attribut de donnée et non un attribut `style`. */
-@media (max-width: 700px) {
-  .v-tableau { min-width: 0; }
-  .v-tableau thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-  }
-  .v-tableau tr {
-    display: block;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--trait);
-  }
-  .v-tableau th,
-  .v-tableau td {
-    display: block;
-    padding: 4px 0;
-    border: 0;
-  }
-  .v-tableau th[scope="row"] {
-    font-family: var(--v-titrage);
-    font-weight: 500;
-    font-size: 1.2rem;
-    margin-bottom: 4px;
-  }
-  .v-tableau th[scope="row"]::before { content: "Le jour où "; }
-  .v-tableau td::before {
-    content: attr(data-libelle);
-    display: block;
-    font-variant-caps: all-small-caps;
-    letter-spacing: 0.08em;
-    font-size: 0.85rem;
-    color: var(--texte-doux);
-  }
-  .v-tableau td:last-child {
-    background: transparent;
-    border-left: 3px solid var(--accent);
-    padding-left: 10px;
-    margin-top: 8px;
-  }
-  .v-tableau td:last-child::before { color: var(--accent); }
-}
-
-/* La bande verte : l'argument qu'on ne met pas dans une carte. */
-.v-bande {
-  position: relative;
-  overflow: hidden;
-  margin: 60px 0 0;
-  padding: clamp(28px, 5vw, 56px);
-  border-radius: calc(var(--rayon) * 1.5);
-  background: var(--accent);
-  color: #fff;
-}
-.v-bande::after {
-  content: "";
-  position: absolute;
-  right: -90px;
-  top: -90px;
-  width: 340px;
-  height: 340px;
-  border-radius: 50%;
-  border: 64px solid rgba(255, 255, 255, 0.06);
-  pointer-events: none;
-}
-.v-bande h2 {
-  color: #fff;
-  max-width: 20ch;
-}
-.v-bande p {
-  position: relative;
-  margin: 0;
-  max-width: 60ch;
-  font-size: 1.1rem;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.86);
-}
-
-/* L'appel de fin de page. */
-.v-final {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px 32px;
-  margin: 60px 0 0;
-  padding: clamp(24px, 4vw, 40px);
-  background: var(--surface);
-  border: 1px solid var(--trait);
-  border-radius: calc(var(--rayon) * 1.5);
-}
-@media (max-width: 760px) {
-  .v-final { grid-template-columns: 1fr; }
-}
-.v-final h2 { margin: 0 0 6px; }
-.v-final p {
-  margin: 0;
-  max-width: 52ch;
-  color: var(--texte-doux);
-}
-
-.v-note {
-  color: var(--texte-doux);
-  font-size: 0.9rem;
-}
-
-/* ── Liste d'attente ──────────────────────────────────────────────── */
-
-/* Le formulaire vit dans la carte de fin de l'accueil, où `.v-final p` met
-   toutes les marges à zéro pour serrer le titre et sa ligne. Ce qui s'y
-   ajoute doit les reposer, sinon la note et les messages se collent. */
-.v-final .v-note { margin: 14px 0 0; }
-.v-final .v-confirmation,
-.v-final .v-erreur { margin: 12px 0 0; }
-
-/* La même carte sur trois pages, mais seule celle de l'accueil porte le
-   formulaire : sa colonne de texte devient haute, et l'appel du propriétaire,
-   centré, pendait au milieu du vide. Il descend au niveau de la ligne
-   d'envoi, et le formulaire prend la mesure des paragraphes au lieu de courir
-   sur toute la carte. D'où une classe en plus : `fonctionnalites` et
-   `partage` gardent la carte courte, qui est bien centrée. */
-.v-final-liste { align-items: end; }
-.v-final-liste .v-formulaire { max-width: 52ch; }
-
-.v-formulaire { margin: 16px 0 8px; }
-.v-formulaire label {
+.v-legende b {
   display: block;
   font-weight: 600;
-  margin-bottom: 6px;
+  color: var(--encre);
+  font-size: 0.95rem;
+}
+.v-legende span span {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--graphite);
+}
+
+/* ── Les relevés d'entrée (« le jour où… ») ───────────────────────────
+   Trois colonnes séparées par des traits fins, comme trois cases d'un
+   cartouche. Le fond ne change pas, seul le trait sépare. */
+.v-releves {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--coupe) solid var(--encre);
+}
+.v-releves > li {
+  padding: 22px 22px 4px 0;
+  border-left: var(--vu) solid var(--pale);
+  padding-left: 22px;
+}
+.v-releves > li:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+.v-jour {
+  font-family: var(--titrage);
+  font-size: 0.85rem;
+  color: var(--revision);
+  margin: 0 0 10px;
+}
+.v-releves .v-sous-titre {
+  font-size: 1.22rem;
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+.v-releves .v-prose-texte {
+  font-size: 0.95rem;
+}
+
+/* ── La séquence des trois gestes ─────────────────────────────────────
+   Le seul endroit de la vitrine où une numérotation est légitime : c'est une
+   suite d'actions, faites dans cet ordre. Chaque geste est une cote dont
+   l'embout porte le rang. */
+.v-gestes {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.v-gestes > li {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr;
+  gap: 0 24px;
+  padding: 26px 0;
+  border-top: var(--vu) solid var(--pale);
+}
+.v-gestes > li:first-child {
+  border-top: var(--coupe) solid var(--encre);
+}
+.v-rang {
+  font-family: var(--titrage);
+  font-size: 2.6rem;
+  font-weight: 400;
+  line-height: 0.9;
+  color: var(--encre);
+  margin: 0;
+  grid-row: span 2;
+}
+.v-gestes .v-sous-titre {
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+.v-gestes .v-prose-texte {
+  font-size: 0.98rem;
+}
+
+/* ── Les quatre lecteurs ──────────────────────────────────────────────
+   Le morceau qui porte l'argument : le MÊME plan, quatre fois, et ce que
+   chacun ne voit pas y est en tiretés. Il n'y a rien à lire pour comprendre,
+   ce qui est précisément ce que le produit prétend faire. */
+.v-lecteurs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--coupe) solid var(--encre);
+}
+.v-lecteurs > li {
+  padding: 20px 16px 6px;
+  border-left: var(--vu) solid var(--pale);
+}
+.v-lecteurs > li:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+.v-lecteurs > li:last-child {
+  padding-right: 0;
+}
+.v-lecteurs .v-sous-titre {
+  font-size: 1.1rem;
+  margin-top: 14px;
+}
+.v-lecteurs .v-prose-texte {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.v-lecteurs .echelle {
+  margin-bottom: 12px;
+}
+.v-portee {
+  font-family: var(--titrage);
+  font-size: 0.8rem;
+  color: var(--graphite);
+  margin: 0 0 2px;
+}
+.v-mini svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* Ce que ce lecteur voit, et ce qu'il ne voit pas. Toute la démonstration
+   tient dans ces deux règles. */
+.m-vu {
+  fill: var(--creux);
+  stroke: var(--encre);
+  stroke-width: 1.6;
+}
+.m-hors {
+  fill: none;
+  stroke: var(--pale);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+/* L'extérieur reste sans remplissage même quand il est visible : un jardin
+   n'est pas une zone de plus dans la maison, et quatre rectangles pleins
+   identiques ne le diraient pas. */
+.m-exterieur {
+  fill: none;
+}
+.m-parcelle {
+  fill: none;
+  stroke: var(--pale);
+  stroke-width: 1;
+  stroke-dasharray: 8 3 1.5 3;
+}
+.m-objet {
+  fill: var(--encre);
+}
+.m-objet-hors {
+  fill: none;
+  stroke: var(--pale);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+/* ── Le duo ───────────────────────────────────────────────────────────
+   Deux colonnes séparées par un trait fin. Pas de fond, pas de cadre. */
+.v-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 40px;
+  margin: 8px 0 0;
+  border-top: var(--coupe) solid var(--encre);
+  padding-top: 26px;
+}
+.v-duo > * + * {
+  border-left: var(--vu) solid var(--pale);
+  padding-left: 40px;
+  margin-left: -40px;
+}
+/* Dans une colonne de duo, le plan garde sa taille de dessin : étiré sur la
+   colonne entière il emporterait toute la page, alors qu'il n'y illustre
+   qu'un paragraphe. */
+.v-duo .v-mini {
+  max-width: 260px;
+  margin: 4px 0 18px;
+}
+
+/* ── L'aplat d'encre ──────────────────────────────────────────────────*/
+.v-encre {
+  background: var(--encre);
+  color: var(--papier);
+  padding: 84px 0;
+}
+.v-encre .v-section-titre,
+.v-encre .v-sous-titre,
+.v-encre .v-titre {
+  color: var(--papier);
+}
+.v-encre .v-prose-texte,
+.v-encre .v-chapeau {
+  color: rgba(250, 249, 247, 0.82);
+}
+.v-encre .cote {
+  color: rgba(250, 249, 247, 0.72);
+}
+.v-encre .cote::before {
+  border-left-color: var(--papier);
+}
+.v-encre .cote::after {
+  border-top-color: rgba(250, 249, 247, 0.28);
+}
+.v-encre a {
+  color: var(--papier);
+  text-decoration-color: rgba(250, 249, 247, 0.4);
+}
+.v-encre a:hover {
+  text-decoration-color: var(--papier);
+}
+.v-encre .bouton-plein {
+  background: var(--papier);
+  color: var(--encre);
+  border-color: var(--papier);
+}
+.v-encre .bouton-plein:hover {
+  background: #fff;
+  border-color: #fff;
+}
+.v-encre .bouton-trait {
+  color: var(--papier);
+  border-color: rgba(250, 249, 247, 0.5);
+}
+.v-encre .bouton-trait:hover {
+  background: rgba(250, 249, 247, 0.1);
+}
+.v-encre-titre {
+  font-family: var(--titrage);
+  font-weight: 300;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.018em;
+  margin: 0 0 18px;
+  color: var(--papier);
+  text-wrap: balance;
+}
+.v-encre .echelle > span {
+  background: rgba(250, 249, 247, 0.28);
+}
+.v-encre .echelle > span.plein {
+  background: var(--papier);
+}
+.v-encre a:focus-visible {
+  outline-color: var(--papier);
+}
+
+/* ── La liste d'attente ───────────────────────────────────────────────
+   Le seul envoi de tout l'arbre. Un formulaire natif, sans une ligne de
+   script — l'arbre porte `handle.sansScripts` et sa politique n'a pas de
+   `script-src`, donc un envoi par `fetch` ne partirait même pas. Le champ et
+   le bouton sont ceux de `releve.css`. */
+.v-formulaire {
+  margin: 26px 0 0;
+  max-width: 30rem;
 }
 .v-formulaire-ligne {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  align-items: stretch;
 }
-.v-formulaire input {
-  font: inherit;
-  flex: 1 1 16rem;
+.v-formulaire-ligne .champ {
+  flex: 1 1 14rem;
+  width: auto;
   min-width: 0;
-  padding: 0 14px;
-  /* Même plancher de cible que l'application : la taille d'un pouce. */
-  min-height: var(--cible);
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon);
-  background: var(--surface);
-  color: var(--texte);
+  margin-top: 0;
 }
-.v-formulaire input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.v-formulaire button {
-  border: none;
-  min-height: var(--cible);
-  margin: 0;
+/* Dans un aplat d'encre, le formulaire s'inverse. */
+.v-encre .v-formulaire label {
+  color: rgba(250, 249, 247, 0.82);
+}
+.v-encre .v-formulaire .champ {
+  background: rgba(250, 249, 247, 0.08);
+  border-color: rgba(250, 249, 247, 0.4);
+  color: var(--papier);
+}
+.v-encre .v-formulaire .champ::placeholder {
+  color: rgba(250, 249, 247, 0.5);
+}
+.v-encre .v-formulaire .champ:focus {
+  border-color: var(--papier);
+  box-shadow: inset 0 0 0 1.5px var(--papier);
 }
 
-.v-confirmation,
-.v-erreur {
-  border-radius: var(--rayon);
-  padding: 12px 16px;
-  margin: 12px 0;
-  max-width: 68ch;
+.v-note {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--graphite);
+  max-width: 34rem;
+  margin: 0 0 16px;
+  padding-left: 16px;
+  border-left: var(--vu) solid var(--pale);
 }
-.v-confirmation {
-  background: var(--surface);
-  border: 1px solid var(--accent);
+.v-encre .v-note {
+  color: rgba(250, 249, 247, 0.82);
+  border-left-color: rgba(250, 249, 247, 0.3);
 }
-.v-erreur {
-  background: var(--surface);
-  border: 1px solid var(--alerte);
-  color: var(--alerte);
+.v-encre .message-ok {
+  color: var(--papier);
+}
+.v-encre .message-erreur {
+  color: #f3b5a8;
+}
+
+/* ── Prose (à propos, confidentialité) ────────────────────────────────
+   Deux pages de texte suivi. Chaque titre reçoit son embout de coupe dans la
+   marge : le même vocabulaire que les cotes, appliqué à un sommaire. */
+.v-prose .v-section-titre {
+  font-size: 1.45rem;
+  margin: 44px 0 12px;
+  padding-left: 18px;
+  border-left: var(--coupe) solid var(--encre);
+}
+.v-prose > .v-section-titre:first-child {
+  margin-top: 0;
+}
+.v-prose ul {
+  margin: 0 0 16px;
+  padding-left: 0;
+  list-style: none;
+}
+.v-prose li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 8px;
+  line-height: 1.62;
+  color: var(--graphite);
+}
+.v-prose li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 9px;
+  border-top: var(--vu) solid var(--pale);
+}
+
+/* ── Ce qui sort, et ce qui ne sort pas ───────────────────────────────
+   Deux listes en filets. La seconde est en rouge de révision et en trait
+   interrompu : c'est ce qui est barré sur le tirage. */
+.v-duo .filets > li {
+  display: block;
+  min-height: 0;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--graphite);
+}
+.v-croix > li {
+  border-bottom-style: dashed;
+  border-bottom-color: var(--revision);
+  color: var(--revision);
+}
+.v-croix {
+  border-top-color: var(--revision);
+}
+
+/* ── L'échelle des quatre niveaux ─────────────────────────────────────*/
+.v-niveaux {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.v-niveaux li {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-top: var(--vu) solid var(--pale);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--graphite);
+}
+.v-niveaux li:first-child {
+  border-top: var(--coupe) solid var(--encre);
+}
+.v-niveau-nom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: var(--titrage);
+  font-weight: 500;
+  color: var(--encre);
+}
+.v-niveaux .echelle {
+  margin-bottom: 6px;
+}
+
+/* ── Le tableau de comparaison ────────────────────────────────────────
+   Sans cadre extérieur ni fond alterné : des filets, et une colonne dont le
+   trait d'en-tête est une coupe — celle qu'on retient. */
+.v-tableau-cadre {
+  overflow-x: auto;
+}
+.v-tableau {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.94rem;
+}
+.v-tableau th,
+.v-tableau td {
+  text-align: left;
+  padding: 13px 16px 13px 0;
+  border-top: var(--vu) solid var(--pale);
+  vertical-align: top;
+  color: var(--graphite);
+}
+.v-tableau thead th {
+  border-top: 0;
+  border-bottom: var(--coupe) solid var(--encre);
+  font-family: var(--titrage);
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--encre);
+  white-space: nowrap;
+}
+.v-tableau tbody th {
+  font-weight: 400;
+  color: var(--encre);
+}
+.v-tableau td:last-child,
+.v-tableau th:last-child {
+  padding-right: 0;
+}
+
+/* ── Les fonctionnalités ──────────────────────────────────────────────
+   Neuf entrées en deux colonnes de filets, chacune ouverte par son
+   pictogramme. Pas neuf cartes. */
+.v-fonctions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 40px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--coupe) solid var(--encre);
+}
+.v-fonctions > li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 0 18px;
+  /* Deux entrées côte à côte ont la hauteur de la plus haute : sans ceci, la
+     plus courte répartit le surplus entre ses rangées et un blanc s'ouvre
+     sous son titre. Constaté au navigateur. */
+  align-content: start;
+  padding: 24px 0 4px;
+  border-top: var(--vu) solid var(--pale);
+}
+.v-fonctions > li:nth-child(-n + 2) {
+  border-top: 0;
+}
+.v-fonctions .v-picto {
+  grid-row: span 4;
+}
+.v-fonctions .v-sous-titre {
+  font-size: 1.16rem;
+  font-weight: 400;
+}
+.v-fonctions .v-prose-texte {
+  font-size: 0.95rem;
+}
+
+/* Les pictogrammes : le vocabulaire du relevé en 44 px. Trait d'encre pour
+   ce qui est là, tireté graphite pour ce qui est proposé ou hors de vue, un
+   aplat d'encre pour un point. Chaque trait est une classe (voir
+   `Picto.tsx`). */
+.v-picto {
+  width: 44px;
+  height: 44px;
+  fill: none;
+  stroke: var(--encre);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.v-picto .p-tirete {
+  stroke: var(--graphite);
+  stroke-width: 1;
+  stroke-dasharray: 2.5 2.5;
+}
+.v-picto .p-plein {
+  fill: var(--encre);
+  stroke: none;
+}
+.v-suite-picto {
+  margin-bottom: 12px;
+}
+
+/* ── La suite, et le pied ─────────────────────────────────────────────*/
+.v-suite {
+  margin: 26px 0 0;
+  font-family: var(--titrage);
+}
+
+.v-pied {
+  padding: 0;
+  border-top: var(--coupe) solid var(--encre);
+}
+.v-pied-int {
+  grid-column: large-g / large-d;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px 32px;
+  padding: 28px 0 44px;
+  font-size: 0.9rem;
+}
+.v-pied-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+}
+.v-pied a {
+  color: var(--graphite);
+  text-decoration: none;
+}
+.v-pied a:hover {
+  color: var(--encre);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.v-pied-texte {
+  margin: 0;
+  font-family: var(--titrage);
+  color: var(--graphite);
+}
+
+/* ── Le mouvement ─────────────────────────────────────────────────────
+   Deux mouvements liés au défilement, en CSS seul — cet arbre n'a aucun
+   script. La cote de chaque section s'étire en entrant dans l'écran : la
+   page se mesure à mesure qu'on la lit. Un bloc large monte de 10 px et
+   s'opacifie. Là où `animation-timeline` n'est pas lue, rien ne bouge et
+   tout est là d'emblée : `@supports` garde l'état de repos, qui est l'état
+   final. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .v-sec .cote::after {
+      transform-origin: left;
+      animation: v-tirer-cote linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 45%;
+    }
+    .v-parait {
+      animation: v-paraitre-bloc linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 35%;
+    }
+  }
+}
+@keyframes v-tirer-cote {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes v-paraitre-bloc {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Sur papier il n'y a pas de défilement : un bloc qui attend d'entrer dans
+   l'écran resterait blanc. Mesuré avec une capture pleine page, qui a le
+   même problème qu'une impression. */
+@media print {
+  .v-sec .cote::after,
+  .v-parait,
+  .v-heros-dessin * {
+    animation: none;
+  }
+}
+
+/* Pas de fondu entre deux pages de vente : l'en-tête est identique et les
+   pages courtes, un fondu ferait clignoter la navigation. `app.css`, servie
+   ici aussi, l'active pour l'app et la page d'un lien ; cette feuille est
+   chargée après et a le dernier mot. */
+@view-transition {
+  navigation: none;
+}
+
+/* ── Étroit ───────────────────────────────────────────────────────────
+   `--large` et `--marge` tombent d'eux-mêmes aux mêmes seuils, dans
+   `releve.css` : tous les blocs « larges » s'alignent sur la colonne de
+   texte sans rien changer ici. */
+@media (max-width: 1000px) {
+  .v-lecteurs {
+    grid-template-columns: 1fr 1fr;
+  }
+  .v-lecteurs > li:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .v-lecteurs > li:nth-child(-n + 2) {
+    border-bottom: var(--vu) solid var(--pale);
+    padding-bottom: 20px;
+  }
+  .v-lecteurs > li:nth-child(2),
+  .v-lecteurs > li:nth-child(4) {
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .v-sec {
+    padding: 52px 0;
+  }
+  .v-encre {
+    padding: 60px 0;
+  }
+  .v-heros-texte {
+    padding: 40px 0 32px;
+  }
+  /* Trois lignes d'en-tête avant le titre sur un téléphone : la marque, la
+     navigation sur deux lignes, puis « Mon espace ». Remis en deux — la
+     marque et l'espace se partagent la première ligne, la navigation prend
+     la seconde — par l'ordre et non par un second balisage. */
+  .v-tete-int {
+    gap: 10px 16px;
+    padding: 14px 0;
+  }
+  .v-marque {
+    order: 1;
+    flex: 1 1 auto;
+  }
+  .v-espace {
+    order: 2;
+  }
+  .v-nav {
+    order: 3;
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+  .v-heros-dessin svg {
+    max-height: none;
+  }
+  /* Le relevé en pleine largeur d'un téléphone : sa boîte fait 375 px pour
+     1200 unités de dessin, donc tout ce qui y est dimensionné pour un écran
+     tombe au tiers. Les noms de zone passaient à 6 px — illisibles, et les
+     agrandir assez les ferait déborder de la zone qu'ils nomment. Ils sont
+     donc RETIRÉS et non rétrécis : la légende sous le dessin les donne déjà,
+     nommément, et c'est elle qu'on lit sur un téléphone. Restent les traits,
+     les trois points, et le seul nom qui n'a pas de mur pour le contenir. */
+  .v-heros-dessin .d-nom {
+    display: none;
+  }
+  .v-heros-dessin .d-mesure,
+  .v-heros-dessin .d-cotation {
+    display: none;
+  }
+  .v-heros-dessin .d-jardin {
+    display: inline;
+    font-size: 46px;
+  }
+  .v-heros-dessin .d-num {
+    font-size: 44px;
+  }
+  /* `r` en propriété CSS (SVG 2) : là où elle n'est pas lue, le point garde
+     le rayon de son attribut, donc il est petit et non absent. */
+  .v-heros-dessin .d-point {
+    r: 46;
+  }
+  .v-heros-dessin .d-mur {
+    stroke-width: 10;
+  }
+  .v-heros-dessin .d-cloison {
+    stroke-width: 4;
+  }
+  .v-heros-dessin .d-parcelle {
+    stroke-width: 4;
+    stroke-dasharray: 34 12 5 12;
+  }
+  .v-releves,
+  .v-fonctions,
+  .v-duo {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .v-releves > li,
+  .v-duo > * + * {
+    border-left: 0;
+    padding-left: 0;
+    margin-left: 0;
+    border-top: var(--vu) solid var(--pale);
+    padding-top: 22px;
+  }
+  .v-releves > li:first-child {
+    border-top: 0;
+    padding-top: 22px;
+  }
+  .v-duo {
+    padding-top: 0;
+  }
+  .v-duo > * {
+    padding-top: 24px;
+  }
+  .v-fonctions > li:nth-child(2) {
+    border-top: var(--vu) solid var(--pale);
+  }
+  .v-legende li {
+    flex: 1 1 100%;
+    border-left: 0;
+    padding-left: 0;
+    border-top: var(--vu) solid var(--pale);
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .v-legende li:first-child {
+    border-top: 0;
+  }
+  .v-niveaux li {
+    grid-template-columns: 1fr;
+  }
+  /* ── Le tableau de comparaison s'empile ───────────────────────────
+     Mesuré à 320 px : trois colonnes de prose tombent à 87 px, et les faire
+     défiler dans une fenêtre de 269 px ne rend pas une phrase lisible, ça
+     déplace le problème. Chaque ligne devient donc un bloc — le jour, puis
+     les deux réponses, chacune sous son libellé de colonne rendu depuis
+     `data-libelle`. La colonne qui gagne garde son trait de coupe. */
+  .v-tableau,
+  .v-tableau tbody,
+  .v-tableau tr,
+  .v-tableau tbody th,
+  .v-tableau td {
+    display: block;
+    width: auto;
+  }
+  .v-tableau thead {
+    display: none;
+  }
+  .v-tableau tr {
+    padding: 20px 0 6px;
+    border-top: var(--coupe) solid var(--encre);
+  }
+  .v-tableau tbody th {
+    padding: 0 0 12px;
+    border-top: 0;
+    font-family: var(--titrage);
+    font-size: 1.08rem;
+    line-height: 1.25;
+  }
+  /* Le libellé de la ligne est un fragment (« la chaudière change ») : sans
+     l'en-tête de colonne qui le portait, il lui faut son début de phrase. */
+  .v-tableau tbody th::before {
+    content: "Le jour où ";
+  }
+  .v-tableau td {
+    padding: 0 0 14px 16px;
+    border-top: 0;
+    border-left: var(--vu) solid var(--pale);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  .v-tableau td::before {
+    content: attr(data-libelle);
+    display: block;
+    margin-bottom: 3px;
+    font-family: var(--titrage);
+    font-size: 0.82rem;
+    color: var(--graphite);
+  }
+  .v-tableau td:last-child {
+    border-left: var(--coupe) solid var(--encre);
+    padding-right: 0;
+  }
+
+  /* ── Cibles tactiles ──────────────────────────────────────────────
+     Le doigt, pas le curseur. Le produit se donne un plancher de 56 px
+     (`--cible`) ; la vitrine se contente de 48, parce qu'elle n'est pas un
+     flux de saisie qu'on parcourt en marchant — mais un lien de navigation
+     de 20 px de haut se rate, et c'est le premier geste que fait un
+     visiteur. */
+  .v-nav a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-bottom: 0;
+  }
+  .v-espace {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .v-actions .bouton-plein,
+  .v-actions .bouton-trait,
+  .v-formulaire .champ,
+  .v-formulaire .bouton-plein {
+    min-height: 48px;
+  }
+  .v-pied-liens a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+  }
+  .v-gestes > li {
+    grid-template-columns: 2.4rem 1fr;
+    gap: 0 16px;
+  }
+  .v-rang {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .v-lecteurs {
+    grid-template-columns: 1fr;
+  }
+  .v-lecteurs > li {
+    padding: 20px 0 6px;
+    border-left: 0;
+    border-top: var(--vu) solid var(--pale);
+  }
+  .v-lecteurs > li:first-child {
+    border-top: 0;
+  }
+  .v-lecteurs > li:nth-child(-n + 2) {
+    border-bottom: 0;
+    padding-bottom: 6px;
+  }
+  /* Le plan miniature ne sert plus à rien seul sur une ligne pleine
+     largeur : il se cale à gauche, à sa taille de dessin. */
+  .v-mini {
+    max-width: 190px;
+  }
 }

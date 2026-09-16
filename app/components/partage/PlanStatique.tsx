@@ -33,7 +33,7 @@ export function PlanStatique({
             <a
               key={p.id}
               href={liens.plan(p.id)}
-              className={p.id === plan.id ? "plan-niveau plan-niveau-actif" : "plan-niveau"}
+              className={p.id === plan.id ? "etiquette etiquette-active" : "etiquette"}
               aria-current={p.id === plan.id ? "page" : undefined}
             >
               {p.etiquette}
@@ -114,10 +114,15 @@ export function PlanStatique({
         plan.imageFichierId !== null && <p className="resultats-vide">Aucun objet repéré sur ce plan.</p>
       ) : (
         <ol className="plan-legende">
-          {plan.points.map((pt) => (
+          {plan.points.map((pt, rang) => (
             <li key={pt.id}>
-              <a href={liens.fiche(pt.elementId)}>{pt.nom}</a>
-              <span className="selecteur-secondaire"> · {pt.zoneNom}</span>
+              <span className="pastille" aria-hidden="true">
+                {rang + 1}
+              </span>
+              <a href={liens.fiche(pt.elementId)} className="nom">
+                {pt.nom}
+              </a>
+              <span className="lieu">{pt.zoneNom}</span>
             </li>
           ))}
         </ol>

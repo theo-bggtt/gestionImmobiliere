@@ -41,17 +41,24 @@ export default function NouveauNiveau() {
   return (
     <main>
       <h1>Ajouter un niveau à {batiment.nom}</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" required placeholder="Rez-de-chaussée, cave à vin..." />
         </label>
         <label>
-          Ordinal (entier signé : -1 cave, 0 rez, 1 premier, 2 combles...)
+          Ordinal
           <input type="number" name="ordinal" required step={1} />
+          <span className="champ-aide">Un entier signé : -1 cave, 0 rez, 1 premier, 2 combles. C'est lui qui range les niveaux.</span>
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Créer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Créer</button>
+        </div>
       </Form>
     </main>
   );

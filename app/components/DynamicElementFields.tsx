@@ -50,6 +50,17 @@ export function DynamicElementFields({ champs, valeurs = {} }: { champs: ChampDe
           }
         }
 
+        // Une case à cocher est une ligne de choix, pas une cote : le texte
+        // passe après la case, en corps.
+        if (champ.genre === "booleen") {
+          return (
+            <label key={champ.cle} className="champ-case">
+              {input}
+              {champ.label}
+            </label>
+          );
+        }
+
         return (
           <label key={champ.cle}>
             {champ.label}

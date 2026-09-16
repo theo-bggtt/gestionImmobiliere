@@ -32,6 +32,7 @@ export function RechercheAdresse({
 
   return (
     <section className="demarrage-regbl">
+      <p className="cote">L'adresse</p>
       <h2>Votre bâtiment est en Suisse ?</h2>
       <p className="demarrage-aide">
         Son adresse permet de pré-remplir deux réponses depuis le registre fédéral des bâtiments.
@@ -55,7 +56,7 @@ export function RechercheAdresse({
           aria-label="Adresse du bâtiment"
           className="demarrage-adresse-champ"
         />
-        <button type="button" onClick={chercher} disabled={enCours || adresse.trim().length < 4}>
+        <button type="button" className="bouton-trait" onClick={chercher} disabled={enCours || adresse.trim().length < 4}>
           {enCours ? "Recherche…" : "Chercher"}
         </button>
       </div>
@@ -92,7 +93,7 @@ function Resultats({
   // s'il doit réessayer ou si son adresse n'est simplement pas dans le registre.
   if (resultat.statut === "indisponible") {
     return (
-      <p className="demarrage-avis" role="status">
+      <p className="message-avis" role="status">
         Le registre ne répond pas. Répondez aux questions ci-dessous, le résultat est le même.
       </p>
     );
@@ -100,7 +101,7 @@ function Resultats({
 
   if (resultat.statut === "aucun") {
     return (
-      <p className="demarrage-avis" role="status">
+      <p className="message-avis" role="status">
         Aucun bâtiment trouvé à cette adresse. Le registre ne couvre que la Suisse&nbsp;; répondez aux
         questions ci-dessous.
       </p>
@@ -132,7 +133,7 @@ function Resultats({
         ))}
       </ul>
       {retenu && (
-        <p className="demarrage-avis" role="status">
+        <p className="message-avis" role="status">
           Réponses pré-remplies. Vérifiez-les, en particulier le sous-sol&nbsp;: le registre ne
           recense pas les caves.
           {/* Le registre décrit l'immeuble ; la structure décrit le logement.

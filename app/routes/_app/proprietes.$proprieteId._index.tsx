@@ -109,14 +109,14 @@ function Accueil({
       )}
 
       <nav className="accueil-nav">
-        <Link to="batiments">Bâtiments et niveaux</Link>
-        <Link to="zones">Zones</Link>
-        <Link to="systemes">Systèmes</Link>
-        <Link to="elements">Éléments</Link>
-        <Link to="plans">Plans</Link>
-        <Link to="evenements">Historique</Link>
-        <Link to="intervenants">Intervenants</Link>
-        <Link to="partages">Partages</Link>
+        <Link to="batiments" viewTransition>Bâtiments et niveaux</Link>
+        <Link to="zones" viewTransition>Zones</Link>
+        <Link to="systemes" viewTransition>Systèmes</Link>
+        <Link to="elements" viewTransition>Éléments</Link>
+        <Link to="plans" viewTransition>Plans</Link>
+        <Link to="evenements" viewTransition>Historique</Link>
+        <Link to="intervenants" viewTransition>Intervenants</Link>
+        <Link to="partages" viewTransition>Partages</Link>
       </nav>
     </section>
   );
@@ -141,23 +141,23 @@ function Echeances({ echeances }: { echeances: GarantieProprietaire[] }) {
 
   return (
     <section className="accueil-echeances">
-      <h2>Échéances</h2>
+      <p className="cote">Ce qui arrive à terme</p>
       <ul>
         {echeances.map((g) => (
-          <li key={g.id}>
+          <li key={g.id} className={g.expiree ? "expiree" : undefined}>
             {/* `chargerEcheances` filtre `fin IS NOT NULL` : une garantie sans
                 terme connu n'est pas une échéance. Le type est celui de la
                 liste d'un objet, où le cas existe — d'où ce garde, qui ne se
                 déclenche pas ici. */}
-            <Link to={`garanties/${g.id}/modifier`}>
+            <Link to={`garanties/${g.id}/modifier`} viewTransition>
               {g.fin ? jourLisible(g.fin) : "Sans terme connu"}
             </Link>
-            {g.expiree && <span className="garantie-expiree"> · expirée</span>}
-            <span className="chrono-objet-zone">
-              {" · "}
-              <Link to={`elements/${g.elementId}/modifier`}>{g.elementNom}</Link>
-              {" · "}
-              {g.zoneNom}
+            <span>
+              {g.expiree && <span className="garantie-expiree">expirée · </span>}
+              <Link to={`elements/${g.elementId}/modifier`} viewTransition>
+                {g.elementNom}
+              </Link>
+              <span className="chrono-objet-zone"> · {g.zoneNom}</span>
             </span>
           </li>
         ))}

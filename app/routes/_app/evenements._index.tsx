@@ -36,10 +36,13 @@ export default function EcranChronologie() {
   return (
     <main>
       <h1>Historique — {d.propriete.nom}</h1>
-      <p className="accueil-lien-filtres">
-        <Link to={`${base}/nouveau`}>Ajouter un événement</Link>
-        {" · "}
-        <Link to={`/proprietes/${d.propriete.id}/intervenants`}>Intervenants</Link>
+      <p className="rangee-actions">
+        <Link to={`${base}/nouveau`} className="bouton-trait" viewTransition>
+          Ajouter un événement
+        </Link>
+        <Link to={`/proprietes/${d.propriete.id}/intervenants`} viewTransition>
+          Intervenants
+        </Link>
       </p>
 
       <FiltreTypes base={base} facettes={d.facettes} actifs={d.types} />

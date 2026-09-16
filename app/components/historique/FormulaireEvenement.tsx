@@ -5,7 +5,7 @@
 // `tests/exports-routes.test.ts` le refuserait.
 import { useState } from "react";
 import { Form } from "react-router";
-import { LIBELLES_NIVEAU } from "../../lib/partage/niveaux";
+import { ChoixNiveau } from "../ChoixNiveau";
 import {
   LIBELLES_TYPE_EVENEMENT,
   MAX_LONGUEUR_TITRE,
@@ -63,7 +63,7 @@ export function FormulaireEvenement({
     setLies((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
 
   return (
-    <Form method="post" className="formulaire-evenement">
+    <Form method="post" className="formulaire">
       <label>
         Titre
         <input
@@ -87,24 +87,17 @@ export function FormulaireEvenement({
         </label>
       </div>
 
-      <div className="formulaire-ligne">
-        <label>
-          Type
-          <select name="type" defaultValue={valeurs.type}>
-            {TYPES_EVENEMENT.map((t) => (
-              <option key={t} value={t}>{LIBELLES_TYPE_EVENEMENT[t]}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Visibilité
-          <select name="niveau" defaultValue={String(valeurs.niveau)}>
-            {LIBELLES_NIVEAU.map((libelle, niveau) => (
-              <option key={niveau} value={niveau}>{niveau} · {libelle}</option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <label>
+        Type
+        <select name="type" defaultValue={valeurs.type}>
+          {TYPES_EVENEMENT.map((t) => (
+            <option key={t} value={t}>
+              {LIBELLES_TYPE_EVENEMENT[t]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <ChoixNiveau valeur={valeurs.niveau} etiquette="Visibilité de l'événement" />
 
       <label>
         Description (optionnel)
@@ -114,17 +107,17 @@ export function FormulaireEvenement({
       <label>
         Coût (optionnel)
         <input type="text" name="cout" defaultValue={valeurs.cout ?? ""} inputMode="decimal" placeholder="4800.00" />
-        <span className="formulaire-aide">Ne sort d'aucun lien de partage, quel que soit le niveau.</span>
+        <span className="champ-aide">Ne sort d'aucun lien de partage, quel que soit le niveau.</span>
       </label>
 
       <fieldset className="formulaire-liaisons">
-        <legend>Objets concernés</legend>
+        <legend className="cote">Objets concernés</legend>
         {/* La note dit un fait, pas un score de complétude (règle non
             négociable #2) : un événement sans objet lié n'a aucune zone d'où
             se rattacher à la portée d'un lien, donc il ne s'affiche sur aucun.
             Un événement dont UN objet sort de la portée disparaît de même :
             c'est écrit ici plutôt que découvert après coup. */}
-        <p className={lies.length === 0 ? "formulaire-avis formulaire-avis-fort" : "formulaire-aide"}>
+        <p className={lies.length === 0 ? "message-erreur" : "message-avis"}>
           {lies.length === 0
             ? "Sans objet lié, cet événement n'apparaîtra sur aucun lien de partage."
             : "Un lien de partage ne montre cet événement que si TOUS les objets ci-dessous sont dans sa portée."}
@@ -153,7 +146,7 @@ export function FormulaireEvenement({
       </fieldset>
 
       <fieldset className="formulaire-liaisons">
-        <legend>Intervenants</legend>
+        <legend className="cote">Intervenants</legend>
         {intervenants.length === 0 ? (
           <p className="formulaire-aide">Aucun intervenant enregistré.</p>
         ) : (
@@ -176,8 +169,14 @@ export function FormulaireEvenement({
         )}
       </fieldset>
 
-      {erreur && <p role="alert">{erreur}</p>}
-      <button type="submit">{libelleBouton}</button>
+      {erreur && (
+        <p role="alert" className="message-erreur">
+          {erreur}
+        </p>
+      )}
+      <div className="formulaire-actions">
+        <button type="submit">{libelleBouton}</button>
+      </div>
     </Form>
   );
 }

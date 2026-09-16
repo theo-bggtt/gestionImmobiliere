@@ -19,15 +19,25 @@ export default function ListeSystemes() {
   return (
     <main>
       <h1>Systèmes — {propriete.nom}</h1>
-      <Link to={`/proprietes/${propriete.id}/systemes/nouveau`}>Ajouter un système</Link>
-      <ul>
-        {systemes.map((s) => (
-          <li key={s.id}>
-            {s.nom}
-            <Link to={`/proprietes/${propriete.id}/systemes/${s.id}/modifier`}> Modifier</Link>
-          </li>
-        ))}
-      </ul>
+      <p>
+        <Link to={`/proprietes/${propriete.id}/systemes/nouveau`} className="bouton-trait" viewTransition>
+          Ajouter un système
+        </Link>
+      </p>
+      {systemes.length === 0 ? (
+        <p className="resultats-vide">Aucun système pour l'instant.</p>
+      ) : (
+        <ul className="filets">
+          {systemes.map((s) => (
+            <li key={s.id}>
+              <span className="nom">{s.nom}</span>
+              <Link to={`/proprietes/${propriete.id}/systemes/${s.id}/modifier`} className="bouton-discret" viewTransition>
+                Modifier
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

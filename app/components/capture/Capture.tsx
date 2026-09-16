@@ -328,7 +328,7 @@ export function Capture({
                   <div className="feuille-actions">
                     <button
                       type="button"
-                      className="bouton-primaire"
+                      className="bouton-plein"
                       onClick={enregistrer}
                       disabled={!pretAEnregistrer || enregistrement}
                     >

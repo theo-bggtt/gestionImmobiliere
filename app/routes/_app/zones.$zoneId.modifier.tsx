@@ -10,6 +10,7 @@ import { chargerRessourceOu404 } from "../../lib/db/scopedResource.server";
 import { chargerPartagesActifs } from "../../lib/partage/partage.server";
 import { appliquerRenivelage, previsualiserRenivelage } from "../../lib/partage/niveaux.server";
 import { libelleNiveau, lireNiveauSaisi } from "../../lib/partage/niveaux";
+import { ChoixNiveau } from "../../components/ChoixNiveau";
 
 const TYPES = ["interieur", "exterieur", "annexe", "technique"] as const;
 
@@ -84,7 +85,7 @@ export default function ModifierZone() {
   return (
     <main>
       <h1>Modifier {zone.nom}</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" defaultValue={zone.nom} required />
@@ -92,34 +93,44 @@ export default function ModifierZone() {
         <label>
           Type
           <select name="type" defaultValue={zone.type}>
-            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
         </label>
-        {actionData && "erreur" in actionData && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Enregistrer</button>
+        {actionData && "erreur" in actionData && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Enregistrer</button>
+        </div>
       </Form>
 
       {objets > 0 && (
         <section className="zone-renivelage">
           <h2>Visibilité des objets</h2>
-          <Form method="post">
+          <Form method="post" className="formulaire">
             <input type="hidden" name="_action" value="niveau-masse-verifier" />
-            <label>
-              Mettre les {objets} objets de cette zone à
-              <select name="niveau" defaultValue={String(apercu?.cible ?? 1)}>
-                {NIVEAUX_RENIVELAGE.map((valeur) => (
-                  <option key={valeur} value={valeur}>{valeur} · {libelleNiveau(valeur)}</option>
-                ))}
-              </select>
-            </label>
-            <span className="formulaire-aide">
-              Les sous-zones ont leur propre écran : seuls les objets rangés dans « {zone.nom} » sont concernés.
-            </span>
-            <button type="submit">Voir ce que ça change</button>
+            <ChoixNiveau
+              valeur={apercu?.cible ?? 1}
+              depuis={1}
+              etiquette={`Mettre les ${objets} objets de cette zone à`}
+              aide={`Les sous-zones ont leur propre écran : seuls les objets rangés dans « ${zone.nom} » sont concernés.`}
+            />
+            <div className="formulaire-actions">
+              <button type="submit" className="bouton-trait">
+                Voir ce que ça change
+              </button>
+            </div>
           </Form>
 
           {apercu && (
             <div className="zone-renivelage-apercu">
+              <p className="cote">Ce que ça changerait</p>
               <p>
                 En « {libelleNiveau(apercu.cible)} » : {apercu.plusVisibles} objet(s) deviennent plus visibles,{" "}
                 {apercu.plusMasques} plus masqués, sur {apercu.total}.
@@ -145,17 +156,21 @@ export default function ModifierZone() {
           )}
 
           {renivele && (
-            <p role="status">
+            <p role="status" className="message-ok">
               {renivele.ecrits} objet(s) de cette zone sont désormais en « {libelleNiveau(renivele.cible)} ».
             </p>
           )}
         </section>
       )}
 
-      <Form method="post">
-        <input type="hidden" name="_action" value="supprimer" />
-        <button type="submit">Supprimer la zone</button>
-      </Form>
+      <div className="formulaire-danger">
+        <Form method="post">
+          <input type="hidden" name="_action" value="supprimer" />
+          <button type="submit" className="bouton-discret">
+            Supprimer la zone
+          </button>
+        </Form>
+      </div>
     </main>
   );
 }

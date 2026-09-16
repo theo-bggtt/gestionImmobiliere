@@ -15,7 +15,7 @@
 // modules de l'application. Duplication assumée et signalée des deux côtés,
 // comme le nom de `french_sans_accent` et comme `SOMMETS_MIN` — et
 // `tests/pwa/coquille.test.ts` échoue si les deux côtés divergent.
-const VERSION = "v2";
+const VERSION = "v3";
 const COQUILLE = `coquille-${VERSION}`;
 const ACTIFS = `actifs-${VERSION}`;
 

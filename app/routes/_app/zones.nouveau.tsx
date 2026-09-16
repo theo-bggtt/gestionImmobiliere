@@ -74,7 +74,7 @@ export default function NouvelleZone() {
   return (
     <main>
       <h1>Ajouter une zone</h1>
-      <Form method="post">
+      <Form method="post" className="formulaire">
         <label>
           Nom
           <input type="text" name="nom" required placeholder="Cuisine, jardin, garage, local technique..." />
@@ -82,17 +82,24 @@ export default function NouvelleZone() {
         <label>
           Type
           <select name="type" defaultValue="interieur">
-            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
         </label>
         <label>
-          Rattachement (laisser vide pour une zone extérieure, rattachée à la propriété)
+          Rattachement
           <select name="niveauId" defaultValue="">
             <option value="">— zone extérieure (aucun niveau) —</option>
             {niveaux.map((n) => (
-              <option key={n.id} value={n.id}>{n.batimentNom} — {n.nom}</option>
+              <option key={n.id} value={n.id}>
+                {n.batimentNom} — {n.nom}
+              </option>
             ))}
           </select>
+          <span className="champ-aide">Laisser vide pour une zone extérieure, rattachée à la propriété.</span>
         </label>
         <label>
           Sous-zone de (optionnel)
@@ -101,8 +108,14 @@ export default function NouvelleZone() {
             <OptionsZonesPlates zones={toutesLesZones} />
           </select>
         </label>
-        {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
-        <button type="submit">Créer</button>
+        {actionData?.erreur && (
+          <p role="alert" className="message-erreur">
+            {actionData.erreur}
+          </p>
+        )}
+        <div className="formulaire-actions">
+          <button type="submit">Créer</button>
+        </div>
       </Form>
     </main>
   );
