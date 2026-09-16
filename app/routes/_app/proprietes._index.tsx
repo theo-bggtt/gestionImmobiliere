@@ -56,6 +56,11 @@ export default function MesProprietes() {
         {actionData?.erreur && <p role="alert">{actionData.erreur}</p>}
         <button type="submit">Créer</button>
       </Form>
+
+      {/* La seule entrée vers les invitations : elles ne parlent d'aucune
+          propriété, donc elles n'ont pas leur place dans la navigation d'une
+          propriété. */}
+      <p><Link to="/proprietes/invitations">Inviter quelqu'un</Link></p>
     </main>
   );
 }

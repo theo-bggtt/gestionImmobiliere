@@ -30,6 +30,18 @@ export default [
     // worker, et `tests/pwa/coquille.test.ts` les compare à cette table.
     ...prefix("proprietes", [
       index("routes/_app/proprietes._index.tsx"),
+      // Les invitations. Le SEUL écran authentifié qui ne parle d'aucune
+      // propriété — une invitation pend à l'instance — d'où sa place ici, à
+      // côté de la liste des propriétés et non sous `:proprieteId`.
+      //
+      // Sous ce préfixe et pas à la racine du site, pour deux raisons : c'est
+      // `ACCUEIL` (`/proprietes`) qui est la racine de l'application, et c'est
+      // aussi la portée du service worker — un `/invitations` à la racine
+      // serait dans l'arbre protégé tout en sortant de cette portée, sans que
+      // rien ne le signale. Le segment statique passe avant `:proprieteId`
+      // dans le classement de React Router, donc `invitations` n'est jamais
+      // lu comme un identifiant de propriété.
+      route("invitations", "routes/_app/invitations._index.tsx"),
       ...prefix(":proprieteId", [
         index("routes/_app/proprietes.$proprieteId._index.tsx"),
         // Le démarrage. `demarrer/adresse` est une route de ressource : la

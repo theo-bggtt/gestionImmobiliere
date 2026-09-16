@@ -60,9 +60,6 @@ services:
       # PAS de ça : son `Secure` vient de `NODE_ENV=production`, ci-dessus
       # (`app/lib/auth/cookie.server.ts`). Voir `server/application.js`.
       PROXYS_DE_CONFIANCE: 1
-      # Fermée dès le premier compte ; 1 pour en créer UN autre (plafond dur
-      # à deux comptes : laissée en place, elle n'ouvre rien de plus).
-      AUTORISER_INSCRIPTION: ${AUTORISER_INSCRIPTION:-0}
     # Pas de `ports:` : seul Caddy atteint l'application.
     expose:
       - "3000"

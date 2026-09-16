@@ -3,82 +3,115 @@
 // propriétaire unique : `/inscription` sur Internet sans cette porte est un
 // hébergement de photos ouvert à tous, sur le disque qui porte la maison
 // (issue #26). Le premier compte s'inscrit librement — c'est le démarrage —
-// et les suivants demandent une décision explicite du propriétaire :
-// `AUTORISER_INSCRIPTION=1` dans l'environnement, le temps de créer le
-// compte, puis retiré.
+// et les suivants demandent une INVITATION : un lien à jeton que le
+// propriétaire crée, qui expire, et qu'il peut révoquer (issue #62).
 //
-// « LE TEMPS DE CRÉER LE COMPTE » EST MAINTENANT BORNÉ EN CODE, et ne l'était
-// pas : la variable posée autorisait autant de comptes qu'on voulait — mesuré,
-// six comptes créés d'affilée en la laissant en place. Un opérateur qui oublie
-// de la retirer, ou un `docker compose up -d` qui la relit d'un `.env` jamais
-// nettoyé, rouvrait une inscription publique. Elle vaut désormais pour UN
-// compte de plus que ceux qui existent au moment où on la pose.
-import { count, eq, sql } from "drizzle-orm";
+// CE QUI A REMPLACÉ `AUTORISER_INSCRIPTION` ET SON PLAFOND DUR. La variable
+// bornait un mécanisme sans état, et c'est ce qui l'a rendue fragile : posée,
+// elle autorisait autant de comptes qu'on voulait — mesuré, six d'affilée —
+// d'où le plafond à deux comptes en code pour se protéger d'un `.env` jamais
+// nettoyé. Une invitation porte son propre état : un compte, une date de fin,
+// révocable, et tracée en base au lieu d'être posée dans un fichier. Elle se
+// borne donc toute seule, il n'y a plus de variable à oublier, et la décision
+// explicite du propriétaire passe du shell du VPS à un clic.
+import { and, count, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { utilisateur } from "../../db/schema/index";
+import { invitation, utilisateur } from "../../db/schema/index";
 
 export { MESSAGE_INSCRIPTION_FERMEE } from "./inscription";
 
 // Clé du verrou consultatif qui sérialise deux premières inscriptions
 // simultanées : sans lui, chacune lirait zéro compte et les deux passeraient.
+// La course sur un MÊME JETON n'en dépend pas — elle est fermée par la
+// condition de l'`UPDATE` qui consomme l'invitation, voir `consommer`.
 const VERROU_INSCRIPTION = 8_101;
 
-function autoriseeParLEnvironnement(): boolean {
-  return process.env.AUTORISER_INSCRIPTION === "1";
-}
+// Un jeton fait 43 caractères ; refuser au-delà évite d'aller demander à la
+// base de comparer une chaîne d'un mégaoctet. Même borne que `partage`.
+const JETON_MAX = 128;
 
-async function nombreDeComptes(tx: Pick<typeof db, "select">): Promise<number> {
+type Lecteur = Pick<typeof db, "select">;
+
+async function nombreDeComptes(tx: Lecteur): Promise<number> {
   const [{ n }] = await tx.select({ n: count() }).from(utilisateur);
   return n;
 }
 
 /**
- * Le plafond que `AUTORISER_INSCRIPTION=1` lève, et le seul.
- *
- * Deux comptes en tout, pas « un de plus à chaque fois ». C'est un plafond
- * DUR : la variable laissée en place n'ouvre pas une troisième inscription,
- * elle ne fait plus rien. Un opérateur qui oublie de la retirer, ou un
- * `docker compose up -d` qui la relit d'un `.env` jamais nettoyé, ne rouvre
- * donc pas une inscription publique — c'était le cas avant, mesuré à six
- * comptes créés d'affilée.
- *
- * Deux et pas trois parce que le produit a un propriétaire, et que le cas
- * réel du second compte est le conjoint. Au-delà, ce n'est plus le même
- * produit : plusieurs comptes par bâtiment est la ligne « multi-logement » du
- * plan, en attente d'un besoin réel, et elle demandera bien autre chose qu'une
- * variable d'environnement.
+ * Le tout premier compte s'inscrit sans rien demander : c'est le démarrage, et
+ * exiger une invitation ici enfermerait dehors qui monte une instance neuve.
  */
-const COMPTES_MAX = 2;
+const estLePremier = async (tx: Lecteur) => (await nombreDeComptes(tx)) === 0;
 
-async function porteOuverte(tx: Pick<typeof db, "select">): Promise<boolean> {
-  const comptes = await nombreDeComptes(tx);
-  // Le tout premier compte s'inscrit sans rien demander : c'est le démarrage,
-  // et exiger la variable ici enfermerait dehors qui monte une instance neuve.
-  if (comptes === 0) return true;
-  return autoriseeParLEnvironnement() && comptes < COMPTES_MAX;
+/**
+ * Les conditions d'une invitation utilisable, écrites UNE fois : elles servent
+ * à la vérification du loader comme à l'`UPDATE` qui la consomme. Deux
+ * écritures de « ni consommée, ni révoquée, ni expirée » divergeraient.
+ *
+ * `now()` et non l'horloge de Node : une seule horloge décide de l'expiration,
+ * celle de la base — même raisonnement que `garantie.expiree`.
+ */
+const conditionsUtilisable = (jeton: string) =>
+  and(
+    eq(invitation.jeton, jeton),
+    isNull(invitation.utiliseeLe),
+    isNull(invitation.revoqueLe),
+    sql`${invitation.expireLe} > now()`,
+  );
+
+async function invitationUtilisable(tx: Lecteur, jeton: string | null | undefined): Promise<boolean> {
+  if (!jeton || jeton.length > JETON_MAX) return false;
+  const [trouvee] = await tx.select({ id: invitation.id }).from(invitation).where(conditionsUtilisable(jeton));
+  return trouvee !== undefined;
 }
 
 /** Ce que les écrans lisent pour afficher, ou non, le formulaire et son lien. */
-export async function inscriptionOuverte(): Promise<boolean> {
-  return porteOuverte(db);
+export async function inscriptionOuverte(jeton?: string | null): Promise<boolean> {
+  return (await estLePremier(db)) || invitationUtilisable(db, jeton);
 }
 
 export type ResultatInscription = { statut: "cree"; id: number } | { statut: "fermee" } | { statut: "email_pris" };
 
 /**
- * Crée le compte si la porte est ouverte, sous verrou. `email_pris` n'est
- * rendu que porte ouverte : fermée, on ne regarde même pas l'adresse.
+ * Crée le compte si la porte est ouverte, sous verrou, et consomme
+ * l'invitation dans LA MÊME TRANSACTION — sinon un compte pourrait exister
+ * sans que la porte qui l'a laissé entrer soit refermée.
+ *
+ * `email_pris` n'est rendu que porte ouverte : fermée, on ne regarde même pas
+ * l'adresse. Et il est rendu AVANT que l'invitation soit consommée, pour
+ * qu'une faute de frappe sur une adresse déjà prise ne brûle pas le lien.
  */
-export async function inscrire(email: string, motDePasseHash: string): Promise<ResultatInscription> {
+export async function inscrire(
+  email: string,
+  motDePasseHash: string,
+  jeton?: string | null,
+): Promise<ResultatInscription> {
   return db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(${VERROU_INSCRIPTION}::bigint)`);
 
-    if (!(await porteOuverte(tx))) return { statut: "fermee" };
+    const premier = await estLePremier(tx);
+    if (!premier && !(await invitationUtilisable(tx, jeton))) return { statut: "fermee" };
 
     const [existe] = await tx.select({ id: utilisateur.id }).from(utilisateur).where(eq(utilisateur.email, email));
     if (existe) return { statut: "email_pris" };
 
     const [cree] = await tx.insert(utilisateur).values({ email, motDePasseHash }).returning({ id: utilisateur.id });
+
+    if (!premier) {
+      // Les mêmes conditions qu'à la vérification, et non un `WHERE jeton =` :
+      // c'est cet `UPDATE` conditionnel qui rend la consommation atomique,
+      // sans dépendre du verrou. Zéro ligne touchée ne peut donc arriver que
+      // si la vérification et l'écriture ont cessé de dire la même chose — on
+      // le fait échouer bruyamment plutôt que de créer un compte sans
+      // refermer sa porte.
+      const consommees = await tx
+        .update(invitation)
+        .set({ utiliseeLe: new Date(), utiliseeParId: cree.id })
+        .where(conditionsUtilisable(jeton!))
+        .returning({ id: invitation.id });
+      if (consommees.length !== 1) throw new Error("Invitation non consommée alors qu'elle venait d'être validée");
+    }
+
     return { statut: "cree", id: cree.id };
   });
 }
