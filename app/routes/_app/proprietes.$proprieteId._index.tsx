@@ -116,6 +116,7 @@ function Accueil({
         <Link to="plans" viewTransition>Plans</Link>
         <Link to="evenements" viewTransition>Historique</Link>
         <Link to="intervenants" viewTransition>Intervenants</Link>
+        <Link to="coffre" viewTransition>Coffre</Link>
         <Link to="partages" viewTransition>Partages</Link>
       </nav>
     </section>

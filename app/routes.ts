@@ -111,6 +111,11 @@ export default [
           // corrige pas — c'est une trace, pas un brouillon.
           route(":partageId/modifier", "routes/_app/partages.$partageId.modifier.tsx"),
         ]),
+        // Le coffre de la propriété : créer, changer la phrase, vider. Les
+        // secrets eux-mêmes se posent depuis la fiche de leur objet
+        // (`secret.element_id` NOT NULL, comme une garantie) : pas de route
+        // par secret.
+        route("coffre", "routes/_app/coffre.tsx"),
         // L'écran de recherche (dont l'URL porte texte et facettes) et sa route
         // de ressource JSON, interrogée à la frappe depuis l'accueil.
         ...prefix("recherche", [

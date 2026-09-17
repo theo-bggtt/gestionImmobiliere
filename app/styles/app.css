@@ -603,6 +603,55 @@ nav {
   border-bottom-style: dashed;
   border-bottom-color: var(--graphite);
 }
+/* Le coffre. Un secret est une ligne de filets : libellé, puis ce qu'on en
+   fait — révéler (un champ de phrase, hors de tout formulaire), retirer. Le
+   clair révélé et la clé de secours sont en chasse fixe : ce sont des choses
+   qu'on recopie caractère par caractère, sur une serrure ou sur un papier. */
+.fiche-coffre {
+  margin: 20px 0;
+}
+.fiche-coffre-liste {
+  margin-bottom: 16px;
+}
+.fiche-coffre-liste > li {
+  flex-wrap: wrap;
+}
+.fiche-coffre-liste .message-erreur {
+  flex-basis: 100%;
+  margin: 0;
+}
+.coffre-clair,
+.coffre-ouverture {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.coffre-ouverture input {
+  min-width: 14ch;
+  min-height: 40px;
+  font-size: 0.9rem;
+}
+.coffre-clair code,
+.coffre-cle code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--texte);
+  user-select: all;
+}
+.coffre-cle {
+  margin: 8px 0 12px;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+/* La clé de secours ouvre sur une coupe, comme tout ce qui commence, et
+   n'est là qu'une fois : rien ne la distingue par la couleur, c'est le texte
+   autour qui dit son poids. */
+.coffre-secours {
+  border-top: var(--coupe) solid var(--encre);
+  padding-top: 12px;
+}
+
 /* La légende d'une photo d'événement. Elle dit « avant » ou « après » — c'est
    du récit, jamais de la permission : le droit de lire l'octet vient de la
    visibilité de l'événement, pas du rôle. */
