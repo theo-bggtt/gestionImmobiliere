@@ -231,7 +231,7 @@ export async function chargerEvenementProprietaire(
   return ligne;
 }
 
-export type ElementChoisissable = { id: number; nom: string; zoneNom: string; typeNom: string };
+export type ElementChoisissable = { id: number; nom: string; zoneNom: string; typeNom: string | null };
 
 /** Le sélecteur d'objets liés. Toute la propriété : c'est l'écran du propriétaire. */
 export async function chargerElementsChoisissables(proprieteId: number): Promise<ElementChoisissable[]> {
@@ -239,7 +239,7 @@ export async function chargerElementsChoisissables(proprieteId: number): Promise
     SELECT e.id, e.nom, z.nom AS "zoneNom", t.nom AS "typeNom"
     FROM element e
     JOIN zone z ON z.id = e.zone_id
-    JOIN type_element t ON t.id = e.type_id
+    LEFT JOIN type_element t ON t.id = e.type_id
     WHERE e.propriete_id = ${proprieteId}
     ORDER BY z.nom, e.nom, e.id
   `);

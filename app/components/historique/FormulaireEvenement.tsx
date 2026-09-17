@@ -13,7 +13,7 @@ import {
   type TypeEvenement,
 } from "../../lib/historique/types";
 
-export type ChoixElement = { id: number; nom: string; zoneNom: string; typeNom: string };
+export type ChoixElement = { id: number; nom: string; zoneNom: string; typeNom: string | null };
 export type ChoixIntervenant = { id: number; nom: string; metier: string | null };
 
 export type ValeursEvenement = {
@@ -137,7 +137,9 @@ export function FormulaireEvenement({
                     onChange={() => basculer(e.id)}
                   />
                   {e.nom}
-                  <span className="formulaire-detail"> · {e.zoneNom} · {e.typeNom}</span>
+                  <span className="formulaire-detail">
+                    {[e.zoneNom, e.typeNom].filter(Boolean).map((m) => ` · ${m}`).join("")}
+                  </span>
                 </label>
               </li>
             ))}

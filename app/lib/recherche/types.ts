@@ -23,8 +23,9 @@ export type ResultatRecherche = {
   zoneNom: string;
   /** « Maison principale · Rez-de-chaussée », ou « Extérieur » si la zone n'a pas de niveau. */
   zoneChemin: string;
-  typeId: number;
-  typeNom: string;
+  /** Nuls ensemble : un objet peut être consigné sans type. */
+  typeId: number | null;
+  typeNom: string | null;
   systemeId: number | null;
   systemeNom: string | null;
   /** Vignette de la photo la plus récente, ou null. */

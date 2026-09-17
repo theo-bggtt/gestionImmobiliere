@@ -16,7 +16,12 @@ export const element = pgTable("element", {
   id: serial("id").primaryKey(),
   proprieteId: integer("propriete_id").notNull().references(() => propriete.id, { onDelete: "cascade" }),
   nom: text("nom").notNull(),
-  typeId: integer("type_id").notNull().references(() => typeElement.id),
+  // Nullable : un objet peut exister sans type. Le type PROPOSE des champs et
+  // un niveau suggéré, il ne conditionne pas la fiche — « le truc gris à côté
+  // du compteur » se consigne d'abord et se qualifie ensuite, ou jamais. À la
+  // différence de `zone_id`, rien ne dépend de cette colonne pour décider
+  // d'une visibilité : `niveau` porte seul le filtre de partage.
+  typeId: integer("type_id").references(() => typeElement.id),
   // NOT NULL garanti par la base : une fiche sans zone échapperait au
   // filtre de partage (règle non négociable #1). Ce n'est PAS une
   // validation de formulaire, c'est une contrainte de schéma.

@@ -67,7 +67,7 @@ export type PointPlan = {
   id: number;
   elementId: number;
   nom: string;
-  typeNom: string;
+  typeNom: string | null;
   zoneNom: string;
   x: number;
   y: number;

@@ -39,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const form = await request.formData();
 
   const nom = String(form.get("nom") ?? "").trim();
-  const typeId = Number(form.get("typeId"));
+  const typeIdBrut = String(form.get("typeId") ?? "").trim();
   const zoneId = Number(form.get("zoneId"));
   const systemeIdBrut = String(form.get("systemeId") ?? "");
 
@@ -57,15 +57,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (!(await systemeAppartientALaPropriete(propriete.id, systemeId))) return { erreur: "Système invalide." };
   }
 
-  // Le type est rechargé et revalidé côté serveur : ne jamais faire
-  // confiance aux champs envoyés par le client pour décider quels details
-  // sont attendus.
-  const typesDisponibles = await chargerTypesDisponibles(propriete.id);
-  const type = typesDisponibles.find((t) => t.id === typeId);
-  if (!type) return { erreur: "Type invalide." };
+  // Sans type : aucun champ n'est attendu, donc `details` reste vide. Un objet
+  // sans type n'est pas une fiche incomplète, c'est une fiche qui ne dit que ce
+  // qu'on sait. Le type se pose plus tard, depuis l'écran de modification, et
+  // les champs apparaissent alors.
+  let type: Awaited<ReturnType<typeof chargerTypesDisponibles>>[number] | undefined;
+  if (typeIdBrut) {
+    // Le type est rechargé et revalidé côté serveur : ne jamais faire
+    // confiance aux champs envoyés par le client pour décider quels details
+    // sont attendus.
+    const typesDisponibles = await chargerTypesDisponibles(propriete.id);
+    type = typesDisponibles.find((t) => t.id === Number(typeIdBrut));
+    if (!type) return { erreur: "Type invalide." };
+  }
 
-  const detailsBruts = extraireDetails(form, type.champs);
-  const resultat = validerDetails(type.champs, detailsBruts);
+  const resultat = type
+    ? validerDetails(type.champs, extraireDetails(form, type.champs))
+    : ({ success: true, data: {} } as const);
   if (!resultat.success) {
     return { erreur: `Détails invalides : ${resultat.error.issues.map((i) => i.message).join(", ")}` };
   }
@@ -73,7 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   await db.insert(element).values({
     proprieteId: propriete.id,
     nom,
-    typeId: type.id,
+    typeId: type?.id ?? null,
     zoneId,
     systemeId,
     niveau,
@@ -102,6 +110,7 @@ export default function NouvelElement() {
     <main>
       <h1>Ajouter un élément</h1>
       <p className="champ-aide">
+        Le type est facultatif : il propose des champs et un niveau de visibilité, il ne conditionne pas la fiche.{" "}
         <a href={`/proprietes/${propriete.id}/types/nouveau`}>Créer un type personnalisé</a> s'il n'est pas dans la
         liste.
       </p>
@@ -113,13 +122,8 @@ export default function NouvelElement() {
         <div className="formulaire-ligne">
           <label>
             Type
-            <select
-              name="typeId"
-              required
-              value={typeId ?? ""}
-              onChange={(e) => choisirType(Number(e.target.value) || null)}
-            >
-              <option value="">— choisir un type —</option>
+            <select name="typeId" value={typeId ?? ""} onChange={(e) => choisirType(Number(e.target.value) || null)}>
+              <option value="">— sans type —</option>
               {types.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.nom}
