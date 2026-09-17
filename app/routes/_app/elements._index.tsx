@@ -23,7 +23,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     niveau: element.niveau,
   })
     .from(element)
-    .innerJoin(typeElement, eq(element.typeId, typeElement.id))
+    // `leftJoin` sur le type, `innerJoin` sur la zone : le premier est
+    // facultatif depuis la migration 0013, la seconde est NOT NULL en base
+    // (règle non négociable #1). La différence entre les deux jointures dit
+    // laquelle des deux colonnes porte le filtre de partage.
+    .leftJoin(typeElement, eq(element.typeId, typeElement.id))
     .innerJoin(zone, eq(element.zoneId, zone.id))
     .where(eq(element.proprieteId, propriete.id));
 
@@ -50,7 +54,7 @@ export default function ListeElements() {
                 {e.nom}
               </Link>
               <span className="lieu">
-                {e.typeNom} · {e.zoneNom} · {libelleNiveau(e.niveau)}
+                {[e.typeNom, e.zoneNom, libelleNiveau(e.niveau)].filter(Boolean).join(" · ")}
               </span>
             </li>
           ))}

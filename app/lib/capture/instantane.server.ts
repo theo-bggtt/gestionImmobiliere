@@ -58,10 +58,18 @@ export async function chargerInstantaneCapture(proprieteId: number, proprieteNom
   const derniereParType = new Map<number, string>();
 
   // `usages` arrive déjà trié par fréquence décroissante : empiler suffit.
+  //
+  // Le groupe à `typeId` nul (les objets consignés sans type, migration 0013)
+  // compte pour la récence d'une ZONE — y avoir posé une fiche est une activité
+  // dans cette zone, typée ou non — et pour rien d'autre : il ne propose aucun
+  // type, puisqu'il n'en nomme aucun. La capture, elle, continue d'en demander
+  // un : c'est le geste des 30 secondes (règle #8), et le type y est justement
+  // ce qu'on tape.
   for (const u of usages) {
-    (typesParZone[u.zoneId] ??= []).push(u.typeId);
     const zonePrec = derniereParZone.get(u.zoneId);
     if (!zonePrec || u.dernier > zonePrec) derniereParZone.set(u.zoneId, u.dernier);
+    if (u.typeId === null) continue;
+    (typesParZone[u.zoneId] ??= []).push(u.typeId);
     const typePrec = derniereParType.get(u.typeId);
     if (!typePrec || u.dernier > typePrec) derniereParType.set(u.typeId, u.dernier);
   }

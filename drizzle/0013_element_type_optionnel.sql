@@ -1,0 +1,29 @@
+-- drizzle/0013_element_type_optionnel.sql
+--
+-- `element.type_id` perd son NOT NULL. Un objet peut désormais être consigné
+-- sans type : « le truc gris à côté du compteur » se saisit d'abord et se
+-- qualifie ensuite, ou jamais. Le type reste ce qu'il a toujours été — une
+-- PROPOSITION de champs et de niveau suggéré — et cesse d'être un péage.
+--
+-- Ce qui ne change pas, et c'est ce qui rend l'assouplissement sans danger :
+--
+-- * `element.zone_id` reste NOT NULL (règle non négociable #1). C'est la zone,
+--   pas le type, qui décide si une fiche entre dans la portée d'un lien, et
+--   `element.niveau` porte seul le plafond. Rien de ce que le type apporte
+--   n'entre dans une décision de visibilité.
+-- * `maj_recherche_element` (migration 0005) n'a pas besoin d'être retouchée :
+--   son `SELECT … INTO v_type_nom, v_type_alias FROM type_element WHERE
+--   id = NEW.type_id` ne ramène aucune ligne quand la colonne est nulle, les
+--   variables restent NULL, et `concat_ws` les saute. Le poids B tombe alors à
+--   l'alias de la fiche seul — ce qui est exactement vrai : il n'y a pas de
+--   vocabulaire de type à indexer. Épinglé par `tests/schema/recherche-trigger.test.ts`.
+-- * Le déclencheur de propagation `trg_maj_recherche_par_type` (migration 0003)
+--   filtre `WHERE type_id = NEW.id` : une ligne à type nul n'y répond jamais,
+--   et n'a rien à y répondre.
+--
+-- Les lectures qui joignaient `type_element` en JOIN interne passent en LEFT
+-- JOIN côté application. Les facettes de recherche gardent le JOIN interne :
+-- une pastille a besoin d'un identifiant, et « sans type » n'en est pas un —
+-- même traitement que `systeme`, nullable depuis toujours.
+
+ALTER TABLE "element" ALTER COLUMN "type_id" DROP NOT NULL;

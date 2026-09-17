@@ -1,20 +1,24 @@
 // app/routes/_app/partages._index.tsx
 // La gestion des liens de partage : créer, lister, révoquer. Le lien lui-même
 // n'existe qu'ici — c'est la seule surface qui montre un jeton en clair.
+//
+// La correction d'un lien vit sur son propre écran (`:partageId/modifier`), et
+// la lecture du formulaire dans `lireSaisiePartage` : les deux écrans qui
+// écrivent un lien lisent la MÊME saisie, sinon celui de correction finirait
+// par oublier une borne que celui-ci vérifie.
 import { Form, Link, redirect, useActionData, useLoaderData } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client";
-import { partage, systeme } from "../../db/schema/index";
+import { intervenant, partage, systeme } from "../../db/schema/index";
 import { requireUtilisateurId } from "../../lib/auth/session.server";
 import { requireProprieteAccess } from "../../lib/db/proprieteAccess.server";
 import { chargerZonesVignettes } from "../../lib/recherche/recherche.server";
-import { creerJeton, partageActif } from "../../lib/partage/partage.server";
+import { creerPartage, lireSaisiePartage, partageActif } from "../../lib/partage/partage.server";
+import { chargerIntervenants } from "../../lib/historique/intervenants.server";
 import { libelleNiveau } from "../../lib/partage/niveaux";
-import { ChoixNiveau } from "../../components/ChoixNiveau";
+import { FormulairePartage, PARTAGE_VIERGE } from "../../components/partage/FormulairePartage";
 import { jourLisible } from "../../lib/dates";
-
-const NOM_MAX = 120;
 
 /** « Toute la propriété », ou la portée en clair — le filtre est un OU. */
 function resumerPortee(
@@ -35,10 +39,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
   const propriete = await requireProprieteAccess(utilisateurId, params.proprieteId);
 
-  const [lignes, zones, systemes] = await Promise.all([
-    db.select().from(partage).where(eq(partage.proprieteId, propriete.id)).orderBy(desc(partage.creeLe)),
+  const [lignes, zones, systemes, intervenants] = await Promise.all([
+    db
+      .select({ partage, intervenantNom: intervenant.nom })
+      .from(partage)
+      .leftJoin(intervenant, eq(intervenant.id, partage.intervenantId))
+      .where(eq(partage.proprieteId, propriete.id))
+      .orderBy(desc(partage.creeLe)),
     chargerZonesVignettes(propriete.id),
     db.select().from(systeme).where(eq(systeme.proprieteId, propriete.id)).orderBy(asc(systeme.nom)),
+    chargerIntervenants(propriete.id),
   ]);
 
   const nomsZone = new Map(zones.map((z) => [z.id, z.nom]));
@@ -47,11 +57,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     propriete,
-    zones,
-    systemes,
-    partages: lignes.map((p) => ({
+    zones: zones.map((z) => ({ id: z.id, nom: z.nom, chemin: z.chemin })),
+    systemes: systemes.map((s) => ({ id: s.id, nom: s.nom })),
+    intervenants: intervenants.map(({ id, nom, metier }) => ({ id, nom, metier })),
+    partages: lignes.map(({ partage: p, intervenantNom }) => ({
       id: p.id,
       nom: p.nom,
+      intervenantNom,
       lien: `${origine}/p/${p.jeton}`,
       plafond: libelleNiveau(p.niveauMax),
       portee: resumerPortee(p.porteeZones, p.porteeSystemes, nomsZone, nomsSysteme),
@@ -77,52 +89,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return redirect(`/proprietes/${propriete.id}/partages`);
   }
 
-  const nom = String(form.get("nom") ?? "").trim().slice(0, NOM_MAX);
-  if (!nom) return { erreur: "Le nom est obligatoire." };
+  const saisie = await lireSaisiePartage(propriete.id, form);
+  if (!saisie.ok) return { erreur: saisie.message };
 
-  const niveauMax = Number(form.get("niveauMax"));
-  if (!Number.isInteger(niveauMax) || niveauMax < 0 || niveauMax > 3) {
-    return { erreur: "Plafond de visibilité invalide." };
-  }
-
-  const expireLeBrut = String(form.get("expireLe") ?? "").trim();
-  let expireLe: Date | null = null;
-  if (expireLeBrut) {
-    // Le lien du locataire expire « au départ », c'est-à-dire à la fin du
-    // jour choisi, pas à minuit le matin.
-    expireLe = new Date(`${expireLeBrut}T23:59:59`);
-    if (Number.isNaN(expireLe.getTime())) return { erreur: "Date d'expiration invalide." };
-  }
-
-  // Jamais confiance à un identifiant venu du formulaire : une portée écrite
-  // avec les zones du voisin ne fuirait rien (le filtre porte aussi sur la
-  // propriété) mais elle mentirait sur l'écran de gestion.
-  const [zones, systemes] = await Promise.all([
-    chargerZonesVignettes(propriete.id),
-    db.select({ id: systeme.id }).from(systeme).where(eq(systeme.proprieteId, propriete.id)),
-  ]);
-  const ids = (champ: string, connus: Set<number>) =>
-    [...new Set(form.getAll(champ).map(Number))].filter((id) => connus.has(id));
-
-  const porteeZones = ids("zone", new Set(zones.map((z) => z.id)));
-  const porteeSystemes = ids("systeme", new Set(systemes.map((s) => s.id)));
-
-  await db.insert(partage).values({
-    proprieteId: propriete.id,
-    nom,
-    jeton: creerJeton(),
-    niveauMax,
-    porteeZones,
-    porteeSystemes,
-    expireLe,
-  });
-
+  await creerPartage(propriete.id, saisie.valeur);
   return redirect(`/proprietes/${propriete.id}/partages`);
 }
 
 export default function EcranPartages() {
-  const { propriete, partages, zones, systemes } = useLoaderData<typeof loader>();
+  const { propriete, partages, zones, systemes, intervenants } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const base = `/proprietes/${propriete.id}`;
 
   return (
     <main>
@@ -147,6 +124,7 @@ export default function EcranPartages() {
                   </span>
                 </div>
                 <p className="partage-detail">
+                  {p.intervenantNom ? `Donné à ${p.intervenantNom} · ` : ""}
                   Jusqu'au niveau <strong>{p.plafond}</strong>, sur {p.portee}
                   {p.expireLe ? ` · expire le ${jourLisible(p.expireLe)}` : " · sans expiration"}
                 </p>
@@ -155,6 +133,13 @@ export default function EcranPartages() {
                   <Link to={`${p.id}/apercu`} viewTransition>
                     Voir ce que verra le destinataire
                   </Link>
+                  {/* Un lien expiré se corrige aussi : prolonger la date est
+                      exactement le cas où l'on veut garder le même jeton. */}
+                  {!p.revoque && (
+                    <Link to={`${p.id}/modifier`} viewTransition>
+                      Corriger
+                    </Link>
+                  )}
                   {p.actif && (
                     <Form method="post">
                       <input type="hidden" name="_action" value="revoquer" />
@@ -173,63 +158,17 @@ export default function EcranPartages() {
 
       <section className="bloc">
         <p className="cote">Nouveau lien</p>
-        <Form method="post" className="formulaire">
-          <label>
-            Nom (pour vous seul)
-            <input type="text" name="nom" required maxLength={NOM_MAX} placeholder="Jardinier Marc" />
-          </label>
-
-          <ChoixNiveau
-            nom="niveauMax"
-            valeur={1}
-            etiquette="Plafond de visibilité"
-            aide="Le lien montre les fiches jusqu'à ce niveau, jamais au-dessus."
-          />
-
-          <label>
-            Expiration (optionnelle)
-            <input type="date" name="expireLe" />
-          </label>
-
-          <fieldset className="portee-choix">
-            <legend className="cote">Portée — ne rien cocher donne toute la propriété</legend>
-            <div className="portee-groupe">
-              <h3 className="cote facettes-titre">Zones</h3>
-              <div className="portee-cases">
-                {zones.map((z) => (
-                  <label key={z.id} className="portee-case">
-                    <input type="checkbox" name="zone" value={z.id} />
-                    {z.nom} <span className="selecteur-secondaire">{z.chemin}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="portee-groupe">
-              <h3 className="cote facettes-titre">Systèmes</h3>
-              {systemes.length === 0 ? (
-                <p className="resultats-vide">Aucun système.</p>
-              ) : (
-                <div className="portee-cases">
-                  {systemes.map((s) => (
-                    <label key={s.id} className="portee-case">
-                      <input type="checkbox" name="systeme" value={s.id} />
-                      {s.nom}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </fieldset>
-
-          {actionData?.erreur && (
-          <p role="alert" className="message-erreur">
-            {actionData.erreur}
-          </p>
-        )}
-          <div className="formulaire-actions">
-            <button type="submit">Créer le lien</button>
-          </div>
-        </Form>
+        <FormulairePartage
+          valeurs={PARTAGE_VIERGE}
+          zones={zones}
+          systemes={systemes}
+          intervenants={intervenants}
+          erreur={actionData?.erreur}
+          libelleBouton="Créer le lien"
+        />
+        <p className="champ-aide">
+          Le carnet d'artisans est sur <Link to={`${base}/intervenants`} viewTransition>Intervenants</Link>.
+        </p>
       </section>
     </main>
   );

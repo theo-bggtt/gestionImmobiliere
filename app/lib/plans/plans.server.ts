@@ -205,7 +205,7 @@ export async function chargerPointsDuPlan(
     FROM point pt
     JOIN element e ON e.id = pt.element_id
     JOIN zone z ON z.id = e.zone_id
-    JOIN type_element t ON t.id = e.type_id
+    LEFT JOIN type_element t ON t.id = e.type_id
     WHERE pt.plan_id = ${planId}
       AND e.propriete_id = ${proprieteId}
       AND ${clausePortee(portee)}

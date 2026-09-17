@@ -117,7 +117,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const nom = String(form.get("nom") ?? "").trim();
-  const typeId = Number(form.get("typeId"));
+  const typeIdBrut = String(form.get("typeId") ?? "").trim();
   const zoneId = Number(form.get("zoneId"));
   const systemeIdBrut = String(form.get("systemeId") ?? "");
 
@@ -136,23 +136,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (!(await systemeAppartientALaPropriete(propriete.id, systemeId))) return { erreur: "Système invalide." };
   }
 
-  const typesDisponibles = await chargerTypesDisponibles(propriete.id);
-  const type = typesDisponibles.find((t) => t.id === typeId);
-  if (!type) return { erreur: "Type invalide." };
+  let type: Awaited<ReturnType<typeof chargerTypesDisponibles>>[number] | undefined;
+  if (typeIdBrut) {
+    const typesDisponibles = await chargerTypesDisponibles(propriete.id);
+    type = typesDisponibles.find((t) => t.id === Number(typeIdBrut));
+    if (!type) return { erreur: "Type invalide." };
+  }
 
-  const detailsBruts = extraireDetails(form, type.champs);
-  const resultat = validerDetails(type.champs, detailsBruts);
-  if (!resultat.success) {
-    return { erreur: `Détails invalides : ${resultat.error.issues.map((i) => i.message).join(", ")}` };
+  let details: Record<string, unknown> | undefined;
+  if (type) {
+    const resultat = validerDetails(type.champs, extraireDetails(form, type.champs));
+    if (!resultat.success) {
+      return { erreur: `Détails invalides : ${resultat.error.issues.map((i) => i.message).join(", ")}` };
+    }
+    details = resultat.data;
   }
 
   await db.update(element).set({
     nom,
-    typeId: type.id,
+    typeId: type?.id ?? null,
     zoneId,
     systemeId,
     niveau,
-    details: resultat.data,
+    // `details` est laissé INTACT quand le type est retiré, et non vidé : c'est
+    // la règle #5, celle d'un champ supprimé d'un type — on masque, on n'efface
+    // jamais. Reposer le même type plus tard rend ses valeurs telles quelles.
+    // Le formulaire n'affiche alors aucun champ, donc il n'en renvoie aucun :
+    // écrire `{}` ici effacerait la saisie d'un simple passage par « sans type ».
+    ...(details === undefined ? {} : { details }),
     majLe: new Date(),
   }).where(eq(element.id, Number(params.elementId)));
 
@@ -177,7 +188,7 @@ export default function ModifierElement() {
   const { propriete, element, types, arbre, systemes, photos, plans, evenements, garanties } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-  const [typeId, setTypeId] = useState<number>(element.typeId);
+  const [typeId, setTypeId] = useState<number | null>(element.typeId);
   const typeChoisi = types.find((t) => t.id === typeId);
 
   const liens = liensPropriete(propriete.id);
@@ -194,10 +205,7 @@ export default function ModifierElement() {
       <h1>{element.nom}</h1>
       <p className="fiche-type">
         <Echelle plafond={(element.niveau + 1) as 1 | 2 | 3 | 4} />
-        <span>
-          {LIBELLES_NIVEAU[element.niveau]} · {typeChoisi?.nom ?? ""}
-          {nomSysteme ? ` · ${nomSysteme}` : ""}
-        </span>
+        <span>{[LIBELLES_NIVEAU[element.niveau], typeChoisi?.nom, nomSysteme].filter(Boolean).join(" · ")}</span>
       </p>
 
       <section className="fiche-photos">
@@ -263,7 +271,12 @@ export default function ModifierElement() {
         <div className="formulaire-ligne">
           <label>
             Type
-            <select name="typeId" required value={typeId} onChange={(e) => setTypeId(Number(e.target.value))}>
+            <select
+              name="typeId"
+              value={typeId ?? ""}
+              onChange={(e) => setTypeId(Number(e.target.value) || null)}
+            >
+              <option value="">— sans type —</option>
               {types.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.nom}

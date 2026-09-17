@@ -106,6 +106,10 @@ export default [
         ...prefix("partages", [
           index("routes/_app/partages._index.tsx"),
           route(":partageId/apercu", "routes/_app/partages.$partageId.apercu.tsx"),
+          // Corriger un lien sans faire tourner son jeton : l'adresse déjà
+          // distribuée continue de marcher. Un lien révoqué, lui, ne se
+          // corrige pas — c'est une trace, pas un brouillon.
+          route(":partageId/modifier", "routes/_app/partages.$partageId.modifier.tsx"),
         ]),
         // L'écran de recherche (dont l'URL porte texte et facettes) et sa route
         // de ressource JSON, interrogée à la frappe depuis l'accueil.

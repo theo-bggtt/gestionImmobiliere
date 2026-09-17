@@ -85,7 +85,10 @@ export type FichePartage = {
   proprieteNom: string;
   id: number;
   nom: string;
-  typeNom: string;
+  /** Nul quand l'objet n'a pas de type. `FicheObjet` compose sa ligne de
+   *  provenance en filtrant les vides, donc il n'y a rien de plus à faire :
+   *  une fiche sans type affiche « Cuisine · Rez », pas « — · Cuisine ». */
+  typeNom: string | null;
   zoneNom: string;
   zoneChemin: string;
   systemeNom: string | null;
@@ -198,8 +201,8 @@ type LigneFiche = {
   id: number;
   nom: string;
   details: Record<string, unknown>;
-  typeNom: string;
-  champs: ChampDefinition[];
+  typeNom: string | null;
+  champs: ChampDefinition[] | null;
   zoneNom: string;
   batimentNom: string | null;
   niveauNom: string | null;
@@ -231,7 +234,7 @@ export async function chargerFichePartage(
       s.nom    AS "systemeNom"
     FROM element e
     JOIN zone z ON z.id = e.zone_id
-    JOIN type_element t ON t.id = e.type_id
+    LEFT JOIN type_element t ON t.id = e.type_id
     LEFT JOIN niveau n ON n.id = z.niveau_id
     LEFT JOIN batiment b ON b.id = n.batiment_id
     LEFT JOIN systeme s ON s.id = e.systeme_id

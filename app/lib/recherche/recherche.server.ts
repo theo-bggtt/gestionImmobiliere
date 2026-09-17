@@ -92,8 +92,8 @@ type LigneResultat = {
   zoneNom: string;
   batimentNom: string | null;
   niveauNom: string | null;
-  typeId: number;
-  typeNom: string;
+  typeId: number | null;
+  typeNom: string | null;
   systemeId: number | null;
   systemeNom: string | null;
   fichierId: number | null;
@@ -174,7 +174,7 @@ export async function rechercher(options: {
     FROM element e
     CROSS JOIN q
     JOIN zone z ON z.id = e.zone_id
-    JOIN type_element t ON t.id = e.type_id
+    LEFT JOIN type_element t ON t.id = e.type_id
     LEFT JOIN niveau n ON n.id = z.niveau_id
     LEFT JOIN batiment b ON b.id = n.batiment_id
     LEFT JOIN systeme s ON s.id = e.systeme_id
@@ -273,6 +273,11 @@ export async function chargerFacettes(
       WHERE e.propriete_id = ${proprieteId} AND ${clausePortee(portee)}
       GROUP BY s.id, s.nom
     UNION ALL
+      -- JOIN interne, et non LEFT : une pastille de facette a besoin d'un
+      -- identifiant à cocher, et « sans type » n'en est pas un. Les objets sans
+      -- type sont donc absents de cette dimension, exactement comme ceux sans
+      -- système le sont de la sienne depuis toujours. Corollaire assumé : la
+      -- somme des pastilles d'une dimension peut être inférieure au fonds.
       SELECT 'type', t.id, t.nom, count(*)::int
       FROM element e JOIN type_element t ON t.id = e.type_id
       WHERE e.propriete_id = ${proprieteId} AND ${clausePortee(portee)}
