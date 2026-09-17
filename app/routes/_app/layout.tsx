@@ -196,5 +196,6 @@ const ENTREES_MARGE: ReadonlyArray<[string, string]> = [
   ["/plans", "Plans"],
   ["/evenements", "Historique"],
   ["/intervenants", "Intervenants"],
+  ["/coffre", "Coffre"],
   ["/partages", "Liens de partage"],
 ];

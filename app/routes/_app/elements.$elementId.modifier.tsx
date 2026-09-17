@@ -18,6 +18,14 @@ import {
   lireSaisieGarantie,
   supprimerGarantie,
 } from "../../lib/historique/garanties.server";
+import {
+  chargerCoffre,
+  chargerSecretsDeLElement,
+  creerSecret,
+  lireSaisieSecret,
+  supprimerSecret,
+} from "../../lib/coffre/coffre.server";
+import { SectionCoffre } from "../../components/coffre/SectionCoffre";
 import { Chronologie } from "../../components/historique/Chronologie";
 import { liensPropriete } from "../../components/recherche/liens";
 import { validerDetails } from "../../lib/forms/champSchema";
@@ -72,7 +80,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     chargerPlansDeLElement(propriete.id, Number(params.elementId)),
     chargerEvenementsDeLElement(propriete.id, Number(params.elementId)),
   ]);
-  const garanties = await chargerGarantiesProprietaire(propriete.id, Number(params.elementId));
+  const [garanties, coffre, secrets] = await Promise.all([
+    chargerGarantiesProprietaire(propriete.id, Number(params.elementId)),
+    chargerCoffre(propriete.id),
+    // Les blocs chiffrés, jamais le clair : c'est le navigateur qui ouvre.
+    chargerSecretsDeLElement(propriete.id, Number(params.elementId)),
+  ]);
   // Un objet déjà placé reste plaçable ailleurs : l'écran le montre (« déjà
   // sur Sous-sol ») plutôt que de l'interdire.
   const posesParPlan = new Set(poses.map((p) => p.planId));
@@ -86,7 +99,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     plans: plans.map((p) => ({ id: p.id, nom: p.nom, pose: posesParPlan.has(p.id) })),
     evenements,
     garanties,
+    coffre,
+    secrets,
   };
+}
+
+/**
+ * Exécute une écriture demandée par un fetcher et RENVOIE ses 404 au lieu de
+ * les relancer : lancée, une `Response` remonte à la frontière d'erreur et
+ * remplace la page (voir `plans.contours.tsx`). Le code reste 404 et le
+ * message ne dépend pas du motif — règle #4.
+ */
+async function rendreLes404<T>(travail: () => Promise<T>): Promise<{ resultat: T } | { refus: Response }> {
+  try {
+    return { resultat: await travail() };
+  } catch (e) {
+    if (!(e instanceof Response)) throw e;
+    return { refus: Response.json({ erreur: "Introuvable." }, { status: e.status }) };
+  }
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -114,6 +144,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (form.get("_action") === "garantie-supprimer") {
     await supprimerGarantie(propriete.id, Number(form.get("garantieId")));
     return redirect(`/proprietes/${propriete.id}/elements/${params.elementId}/modifier`);
+  }
+
+  // Le coffre. Ce qui arrive ici est un libellé et un BLOC chiffré par le
+  // navigateur : le serveur en vérifie la forme et l'écrit, il ne l'ouvre
+  // jamais. Les deux gestes viennent d'un fetcher, d'où les 404 rendus.
+  if (form.get("_action") === "secret-creer") {
+    const saisie = lireSaisieSecret(form);
+    if (!saisie.ok) return { erreur: saisie.message };
+    const ecriture = await rendreLes404(() => creerSecret(propriete.id, Number(params.elementId), saisie.valeur));
+    if ("refus" in ecriture) return ecriture.refus;
+    return ecriture.resultat.ok ? { ok: true } : { erreur: ecriture.resultat.message };
+  }
+
+  if (form.get("_action") === "secret-supprimer") {
+    const ecriture = await rendreLes404(() => supprimerSecret(propriete.id, Number(form.get("secretId"))));
+    if ("refus" in ecriture) return ecriture.refus;
+    return { ok: true };
   }
 
   const nom = String(form.get("nom") ?? "").trim();
@@ -185,7 +232,7 @@ function nomDeZone(arbre: Awaited<ReturnType<typeof chargerArbreZones>>, zoneId:
 }
 
 export default function ModifierElement() {
-  const { propriete, element, types, arbre, systemes, photos, plans, evenements, garanties } =
+  const { propriete, element, types, arbre, systemes, photos, plans, evenements, garanties, coffre, secrets } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [typeId, setTypeId] = useState<number | null>(element.typeId);
@@ -391,6 +438,10 @@ export default function ModifierElement() {
           </div>
         </Form>
       </section>
+
+      {/* Une seule section par écran : deux instances ne partageraient pas
+          leur état, et la phrase tapée dans l'une ne servirait pas l'autre. */}
+      <SectionCoffre proprieteId={propriete.id} coffre={coffre} secrets={secrets} />
 
       <div className="formulaire-danger">
         <Form method="post">

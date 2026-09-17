@@ -33,6 +33,14 @@ const MARQUEURS = [
   { motif: "fichier_lien", quoi: "le schéma de la base (drizzle)" },
   { motif: "type_element", quoi: "le schéma de la base (drizzle)" },
   { motif: "interesse", quoi: "le schéma de la base (drizzle)" },
+  // Les deux tables du coffre. Ajoutées AVANT d'écrire le composant qui les
+  // lit : le module de chiffrement est neutre et va au navigateur, le schéma
+  // ne doit jamais le suivre. Un nom de colonne et un nom d'index plutôt que
+  // `coffre` et `secret` nus, qui sont aussi des mots de l'interface (le titre
+  // de la section, une action `secret-creer`) et feraient échouer le bundle
+  // sur un libellé légitime.
+  { motif: "cle_par_secours", quoi: "le schéma de la base (drizzle) — table coffre" },
+  { motif: "idx_secret_element", quoi: "le schéma de la base (drizzle) — table secret" },
   { motif: "SCRAM-SHA-256", quoi: "le client PostgreSQL (pg)" },
   { motif: "pg_catalog", quoi: "le client PostgreSQL (pg)" },
 ];

@@ -73,12 +73,22 @@ export default function Confidentialite() {
             contact est la réponse vraie ; un bouton serait la réponse rassurante.
           </p>
 
-          <h2 className="v-section-titre">Ce que l'application refuse de stocker</h2>
+          <h2 className="v-section-titre">Ce que l'application refuse de stocker en clair</h2>
           <p className="v-prose-texte">
-            Aucun mot de passe de vos appareils, aucun code de portail ou d'alarme, aucune combinaison de
-            coffre, aucun emplacement de clé, aucune coordonnée bancaire. Ce n'est pas un coffre-fort, et
-            un coffre-fort qui ne dit pas son nom est pire qu'un carnet. Les mots de passe des comptes,
-            eux, ne sont pas stockés : seule une empreinte qui ne permet pas de les retrouver l'est.
+            Un code de portail ou d'alarme, une combinaison, l'emplacement d'une clé, le mot de passe
+            d'un routeur : ces valeurs ont leur place, le coffre, et une seule. Elles y sont chiffrées{" "}
+            <strong>par votre navigateur</strong>, avec une phrase que le serveur ne reçoit jamais, et une
+            clé de secours affichée une seule fois à la création. Nous ne pouvons ni lire ces codes, ni
+            vous les rendre si la phrase et la clé sont perdues : il ne reste alors qu'à vider le coffre
+            et à les ressaisir. Un coffre-fort qui ne dit pas son nom est pire qu'un carnet ; celui-ci dit
+            son nom, et ce qu'il ne peut pas faire.
+          </p>
+          <p className="v-prose-texte">
+            Le coffre ne s'étend pas au reste de la maison, et c'est délibéré : la recherche, les liens
+            de partage et le traitement des photos lisent ce que vous saisissez, et ne le pourraient plus.
+            Un code, lui, ne se cherche pas, ne se partage pas, et se remplace en reprogrammant la serrure.
+            Aucune coordonnée bancaire nulle part. Les mots de passe des comptes ne sont pas stockés non
+            plus : seule une empreinte qui ne permet pas de les retrouver l'est.
           </p>
 
           <h2 className="v-section-titre">Ce qui ne sort jamais d'un lien de partage</h2>

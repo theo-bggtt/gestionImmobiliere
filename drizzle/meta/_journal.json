@@ -106,6 +106,13 @@
       "when": 1789644833200,
       "tag": "0014_partage_intervenant",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1789679450876,
+      "tag": "0015_coffre",
+      "breakpoints": true
     }
   ]
 }
