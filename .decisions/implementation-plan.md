@@ -297,6 +297,6 @@ WHERE e.niveau <= :niveau_max
 ## Volontairement exclu
 
 - Codes d'accès, combinaisons de coffre, emplacements de clés
-- Chiffrement de bout en bout côté client (envisageable plus tard en module « coffre »)
+- Chiffrement de bout en bout côté client (envisageable plus tard en module « coffre ») — **cadré le 17 septembre 2026**, voir `note-2026-09-17-chiffrement.md` : le bout en bout global reste exclu, le coffre devient l'issue #73 et amendera la règle #9
 - Estimation du bien, hypothèques, mise en relation avec des artisans — c'est le terrain de Houzy, adossé à 17 banques cantonales, et ce n'est pas le nôtre
 - Comptabilité, décomptes de charges, gestion locative
