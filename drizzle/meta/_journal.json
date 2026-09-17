@@ -99,6 +99,13 @@
       "when": 1789644297175,
       "tag": "0013_element_type_optionnel",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789644833200,
+      "tag": "0014_partage_intervenant",
+      "breakpoints": true
     }
   ]
 }
