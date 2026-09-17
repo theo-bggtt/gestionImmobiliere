@@ -1,4 +1,5 @@
 // app/routes/_app/zones.$zoneId.modifier.tsx
+import { Fragment } from "react";
 import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { and, count, eq } from "drizzle-orm";
@@ -11,6 +12,13 @@ import { chargerPartagesActifs } from "../../lib/partage/partage.server";
 import { appliquerRenivelage, previsualiserRenivelage } from "../../lib/partage/niveaux.server";
 import { libelleNiveau, lireNiveauSaisi } from "../../lib/partage/niveaux";
 import { ChoixNiveau } from "../../components/ChoixNiveau";
+import {
+  chargerArbreZones,
+  niveauAppartientALaPropriete,
+  zoneParenteValide,
+  type ZoneAvecEnfants,
+} from "../../lib/zoneTree";
+import { deplacerZone, descendanceDeZone } from "../../lib/zones/deplacement.server";
 
 const TYPES = ["interieur", "exterieur", "annexe", "technique"] as const;
 
@@ -30,11 +38,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const utilisateurId = await requireUtilisateurId(request);
   const propriete = await requireProprieteAccess(utilisateurId, params.proprieteId);
   const z = await chargerZone(propriete.id, params.zoneId);
-  const [{ objets }] = await db
-    .select({ objets: count() })
-    .from(element)
-    .where(and(eq(element.proprieteId, propriete.id), eq(element.zoneId, z.id)));
-  return { propriete, zone: z, objets };
+  const [[{ objets }], { arbre, zonesExterieures }, descendance] = await Promise.all([
+    db
+      .select({ objets: count() })
+      .from(element)
+      .where(and(eq(element.proprieteId, propriete.id), eq(element.zoneId, z.id))),
+    chargerArbreZones(propriete.id),
+    descendanceDeZone(propriete.id, z.id),
+  ]);
+  // Dérivés de `arbre` plutôt que requêtés à part, comme à la création : la
+  // jointure bâtiment/niveau est déjà faite.
+  const niveaux = arbre.flatMap(({ batiment: b, niveaux: ns }) =>
+    ns.map(({ niveau: n }) => ({ ...n, batimentNom: b.nom })),
+  );
+  return { propriete, zone: z, objets, niveaux, arbre, zonesExterieures, descendance };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -67,17 +84,77 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return redirect(`/proprietes/${propriete.id}/zones`);
   }
 
+  const zoneId = Number(params.zoneId);
   const nom = String(form.get("nom") ?? "").trim();
   const type = String(form.get("type") ?? "");
+  const niveauIdBrut = String(form.get("niveauId") ?? "");
+  const parentIdBrut = String(form.get("parentId") ?? "");
+
   if (!nom) return { erreur: "Le nom est obligatoire." };
   if (!TYPES.includes(type as (typeof TYPES)[number])) return { erreur: "Type de zone invalide." };
 
-  await db.update(zone).set({ nom, type: type as (typeof TYPES)[number] }).where(eq(zone.id, Number(params.zoneId)));
+  const niveauId = niveauIdBrut ? Number(niveauIdBrut) : null;
+  if (niveauId !== null && !(await niveauAppartientALaPropriete(propriete.id, niveauId))) {
+    return { erreur: "Niveau invalide." };
+  }
+
+  const parentId = parentIdBrut ? Number(parentIdBrut) : null;
+  if (parentId !== null) {
+    // Le seul contrôle que la création n'a pas à faire : une zone neuve n'a
+    // pas de descendance, celle-ci en a une. Se ranger sous son propre enfant
+    // ferait un cycle dont `chargerArbreZones` ne sortirait pas — il ne
+    // planterait même pas, il ferait disparaître la branche de l'écran, parce
+    // que `grouperParParent` ne considère comme racine que ce dont le parent
+    // est absent du lot.
+    if (parentId === zoneId || (await descendanceDeZone(propriete.id, zoneId)).includes(parentId)) {
+      return { erreur: "Une zone ne peut pas être rangée sous elle-même ni sous l'une de ses sous-zones." };
+    }
+    if (!(await zoneParenteValide(propriete.id, parentId, niveauId))) {
+      return { erreur: "Zone parente invalide (doit être sur le même niveau)." };
+    }
+  }
+
+  await db.update(zone).set({ nom, type: type as (typeof TYPES)[number] }).where(eq(zone.id, zoneId));
+  // Le rattachement s'écrit à part : il emporte la descendance et fait le
+  // ménage des contours, ce qu'un `set` de plus ne dirait pas.
+  await deplacerZone(propriete.id, zoneId, niveauId, parentId);
   return redirect(`/proprietes/${propriete.id}/zones`);
 }
 
+/** Les zones offertes comme parente, à plat et indentées — même rendu qu'à la
+ *  création. `exclues` retire la zone qu'on modifie et toute sa descendance :
+ *  les options d'un cycle ne sont pas proposées avant d'être refusées. */
+function OptionsZonesPlates({
+  zones,
+  exclues,
+  profondeur = 0,
+}: {
+  zones: ZoneAvecEnfants[];
+  exclues: number[];
+  profondeur?: number;
+}) {
+  return (
+    <>
+      {zones.map((z) =>
+        exclues.includes(z.id) ? null : (
+          <Fragment key={z.id}>
+            <option value={z.id}>{"— ".repeat(profondeur)}{z.nom}</option>
+            {z.enfants.length > 0 && (
+              <OptionsZonesPlates zones={z.enfants} exclues={exclues} profondeur={profondeur + 1} />
+            )}
+          </Fragment>
+        ),
+      )}
+    </>
+  );
+}
+
 export default function ModifierZone() {
-  const { zone, objets } = useLoaderData<typeof loader>();
+  const { zone, objets, niveaux, arbre, zonesExterieures, descendance } = useLoaderData<typeof loader>();
+  const toutesLesZones = [
+    ...arbre.flatMap(({ niveaux: ns }) => ns.flatMap((n) => n.zones)),
+    ...zonesExterieures,
+  ];
   const actionData = useActionData<typeof action>();
   const apercu = actionData && "apercuRenivelage" in actionData ? actionData.apercuRenivelage : null;
   const renivele = actionData && "renivele" in actionData ? actionData.renivele : null;
@@ -99,6 +176,29 @@ export default function ModifierZone() {
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          Rattachement
+          <select name="niveauId" defaultValue={zone.niveauId ?? ""}>
+            <option value="">— zone extérieure (aucun niveau) —</option>
+            {niveaux.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.batimentNom} — {n.nom}
+              </option>
+            ))}
+          </select>
+          <span className="champ-aide">
+            Changer d'étage emmène les sous-zones et les objets rangés ici. Les contours tracés sur les plans de
+            l'ancien étage sont effacés : ils désigneraient une zone qui n'y est plus.
+          </span>
+        </label>
+        <label>
+          Sous-zone de (optionnel)
+          <select name="parentId" defaultValue={zone.parentId ?? ""}>
+            <option value="">— aucune, zone de premier niveau —</option>
+            <OptionsZonesPlates zones={toutesLesZones} exclues={descendance} />
+          </select>
+          <span className="champ-aide">La zone parente doit être au même étage.</span>
         </label>
         {actionData && "erreur" in actionData && (
           <p role="alert" className="message-erreur">
